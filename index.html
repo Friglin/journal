@@ -528,7 +528,7 @@ function norm(r) {
   return { row:r._row, a:r.Asset, d, ym: d? d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0') : '', o, out:r.Outcome, em:r.EM, idea:r['5m Idea'], news:r.News,
            lvn:r['Coming from LVN'], smt:r.SMT, clean: r['1m Clean STR']===true||r['1m Clean STR']==='TRUE', best, max, rr:num(r.RR), tp:r.TP,
            h:[1,2,3,4,5].map(k=>mins(r['Holding time '+k+'rr'])), hold:mins(r['Holding time']), day: d? L.days[(d.getDay()+6)%7] : '',
-           dir:r.Direzione, exe:r.Esecuzione, errs:splitL(r.Errori), note:r.Note, raw:r };
+           dir:r.Direzione, exe:r.Esecuzione, errs:splitL(r.Errori), note:r.Note, cc2:/^s[iì]$/i.test(String(r['2° CC']||'').trim()), raw:r };
 }
 let allCache=null, allRows=null, allLen=-1, allRev=-1, rowsRev=0;
 const touchRows = () => { rowsRev++; };
@@ -902,6 +902,7 @@ function renderStats() {
   html+=card('SMT', '', bdRows(ts,m,t=>t.smt,L.smt), 480);
   html+=card('Asset', '', bdRows(ts,m,t=>t.a,L.asset), 500);
   if (hasCol('Direzione')) html+=card('Direzione', '', bdRows(ts,m,t=>t.dir,L.dir), 505);
+  if (E && hasCol('2° CC')) html+=card('2° CC', '', bdRows(ts,m,t=>t.cc2?'Con 2° CC':'Senza 2° CC',['Con 2° CC','Senza 2° CC']), 507);
   if (!E && hasCol('Esecuzione')) html+=card('Disciplina', 'trade validi ed errori', bdRows(ts,m,t=>t.exe,L.exe)+'<div style="height:10px"></div>'+bdRows(ts,m,t=>t.errs,L.errs), 510);
   html+=card('Coming from LVN e struttura 1m', '', bdRows(ts,m,t=>t.lvn==='Si'?'Da LVN':t.lvn==='No'?'Non da LVN':'',['Da LVN','Non da LVN'])+'<div style="height:10px"></div>'+bdRows(ts,m,t=>t.clean?'1m pulito':'1m non pulito',['1m pulito','1m non pulito']), 520);
   if (E) {
@@ -935,6 +936,7 @@ function coachData() {
     ['SMT',t=>t.smt,L.smt],['Coming from LVN',t=>t.lvn==='Si'?'Da LVN':t.lvn==='No'?'Non da LVN':'',['Da LVN','Non da LVN']],
     ['Struttura 1m',t=>t.clean?'1m pulito':'1m non pulito',['1m pulito','1m non pulito']],['Asset',t=>t.a,L.asset]];
   if (hasCol('Direzione')) dims.push(['Direzione',t=>t.dir,['Long','Short']]);
+  if (E && hasCol('2° CC')) dims.push(['2° CC',t=>t.cc2?'Con 2° CC':'Senza 2° CC',['Con 2° CC','Senza 2° CC']]);
   const groups={}; dims.forEach(([name,fn,keys])=>{ const g=coachGroups(ts,m,fn,keys,overall); if (g.length) groups[name]=g; });
   let targets=null;
   if (E) targets=[1,2,3,4,5].map(k=>{ const mm=model(k), st=rStats(ts.map(mm.rOf)); return { T:k, wr:ts.filter(mm.isWin).length/ts.length, exp:st.mean, lo:st.lo }; });
@@ -1122,7 +1124,7 @@ function openForm(row) {
     S.f = { Asset:r.Asset, Data:p[2]+'-'+p[1]+'-'+p[0], Ora:String(r.Ora).slice(0,5).padStart(5,'0'), Idea:r['5m Idea'], News:r.News,
             LVN:r['Coming from LVN'], SMT:r.SMT, clean: r['1m Clean STR']===true||r['1m Clean STR']==='TRUE', dd:num(r['SL DD']), maxrr:num(r['Max Real RR']),
             Dir:r.Direzione||'', Esecuzione:r.Esecuzione||'', Errori:splitL(r.Errori), L5:r['5m Link']||'', L1:r['1m Link']||'', Note:r.Note||'' };
-    if (E) { S.f.sl=num(r['SL Points']); S.f.PB=String(r['Candele PB']??'');
+    if (E) { S.f.sl=num(r['SL Points']); S.f.PB=String(r['Candele PB']??''); S.f.CC2=/^s[iì]$/i.test(String(r['2° CC']||'').trim())?'Si':'No';
       const o=mins(r.Ora); for (let k=1;k<=5;k++){ const hm=mins(r['Holding time '+k+'rr']); if (isFinite(hm)&&isFinite(o)) S.f['t'+k]=hhmm(o+holdBack(hm)).padStart(5,'0'); } }
     else { S.f.sl=num(r.SL); S.f.rr=num(r.RR); S.f.TP=r.TP; const hm=mins(r['Holding time']); if (isFinite(hm)) { S.f.holdH=String(Math.floor(hm/60)); S.f.holdM=String(hm%60); } }
     ['sl','dd','maxrr','rr'].forEach(k=>{ if (!isFinite(S.f[k])) S.f[k]=''; });
@@ -1161,6 +1163,7 @@ function renderForm() {
   if (E) {
     h+='<div class="fsec"><div class="fsec-h"><div class="h2">Livelli raggiunti</div><span class="mut" style="font-size:12.5px">ora in cui li hai toccati</span></div><div id="fx-lv" style="display:flex;flex-direction:column;gap:12px"></div></div>';
     h+='<div class="fsec"><div class="fsec-h"><div class="h2">Dettagli</div></div>'+fld('PB',fspan('Candele di pullback'),chips('PB',L.pb,f.PB))+
+      (hasCol('2° CC')?fld('CC2',fspan('2° CC'),seg('CC2',[{v:'Si',l:'Sì'},'No'],f.CC2||'No')):'')+
       linksNote(f, 'Es. raggiunge 2,4R, torna a 1,5R, poi 4R')+'</div>';
   } else {
     h+='<div class="fsec"><div class="fsec-h"><div class="h2">Uscita</div></div><div id="fx-tp"></div></div>';
@@ -1303,7 +1306,7 @@ async function save() {
   const d = { 'Asset':f.Asset, 'Direzione':f.Dir||'', 'Data':f.Data, 'Ora':f.Ora, 'Outcome':c.out, 'EM':EM1, '5m Idea':f.Idea, 'News':f.News||'',
               'Coming from LVN':f.LVN||'', 'SMT':f.SMT||'', 'SL DD':isFinite(c.dd)?c.dd:'', '1m Clean STR':!!f.clean,
               'Best Real RR':c.bestLbl, 'Max Real RR':c.max };
-  if (E) { d['SL Points']=c.sl; for (let k=1;k<=5;k++) d['Holding time '+k+'rr']=c.h[k]||''; d['Candele PB']=f.PB||''; }
+  if (E) { d['SL Points']=c.sl; for (let k=1;k<=5;k++) d['Holding time '+k+'rr']=c.h[k]||''; d['Candele PB']=f.PB||''; if (hasCol('2° CC')) d['2° CC']=f.CC2==='Si'?'Si':''; }
   else { d['SL']=c.sl; d['RR']=c.rr; d['TP']=c.rr>0?(f.TP||''):''; d['Holding time']=c.hold;
     if (hasCol('Esecuzione')) { d['Esecuzione']=f.Esecuzione||''; d['Errori']=f.Esecuzione==='Errore'?(f.Errori||[]).join(', '):''; } }
   d['5m Link']=f.L5||''; d['1m Link']=f.L1||''; d['Note']=f.Note||'';
