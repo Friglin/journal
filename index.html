@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-<base target="_top">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <title>Journal</title>
@@ -17,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap">
 <style>
-/* Layout: app a una colonna per telefono – header con cambio file, viste Home / Trade / Analisi, scheda a comparsa per inserire */
+/* Layout: app a una colonna per telefono – header con cambio file, viste Home / Trade / Analisi / Simula, scheda a comparsa per inserire */
 /* Palette: inchiostro blu notte e cobalto, verde/rosso solo per vinti e persi. Titoli e numeri in Sora, testo in Geist. */
 :root {
   --bg:#EDF0F6; --surface:#FFFFFF; --sunk:#E3E8F1; --line:#D7DEEA; --fg:#0C1424; --fg2:#4A5468; --fg3:#848EA3;
@@ -153,10 +152,6 @@ main { padding-bottom:calc(150px + env(safe-area-inset-bottom,0px)); }
 .stat-h h1 { font-family:var(--display); font-weight:400; font-size:30px; letter-spacing:-.025em; margin:0; }
 .fbtn { display:inline-flex; align-items:center; gap:7px; border:1px solid var(--line); background:var(--surface); border-radius:99px; padding:8px 14px; font-weight:600; font-size:13.5px; }
 .fbtn em { font-style:normal; background:var(--accent); color:var(--accent-ink); border-radius:99px; min-width:20px; height:20px; display:grid; place-items:center; font-size:11.5px; padding:0 6px; }
-.active-f { display:flex; flex-wrap:wrap; gap:6px; }
-.active-f span { font-size:12px; background:var(--accent-soft); color:var(--accent); padding:4px 9px; border-radius:99px; font-weight:600; }
-.ctrl { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr); gap:8px; }
-.ctrl .lbl { font-size:11.5px; color:var(--fg3); margin:0 0 5px 2px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; }
 .chart { position:relative; }
 .chart svg { display:block; overflow:visible; }
 .grid { stroke:var(--line); stroke-width:1; }
@@ -232,7 +227,6 @@ nav.bar button.on { color:var(--fg); } nav.bar button.on .pill { color:var(--acc
   font:inherit; font-size:16px; font-variant-numeric:tabular-nums; transition:border-color .2s, box-shadow .2s; -webkit-appearance:none; appearance:none; }
 .inp:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 4px var(--accent-soft); }
 textarea.inp { height:auto; min-height:86px; padding:12px; resize:vertical; line-height:1.45; }
-.inrow { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; }
 .mini { border:1px solid var(--line); background:var(--surface); border-radius:12px; padding:0 12px; font-size:13px; font-weight:600; color:var(--fg2); display:inline-flex; align-items:center; gap:5px; }
 .lv { display:grid; grid-template-columns:44px minmax(0,1fr) auto; gap:10px; align-items:center; }
 .lv b { font-family:var(--display); font-size:18px; font-weight:500; }
@@ -260,7 +254,6 @@ textarea.inp { height:auto; min-height:86px; padding:12px; resize:vertical; line
 .out { display:flex; flex-direction:column; min-width:0; flex:1; }
 .out b { font-family:var(--display); font-size:19px; font-weight:500; line-height:1.15; }
 .out span { font-size:12px; color:var(--fg3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.opill { display:inline-flex; align-items:center; gap:5px; }
 .btn { border:0; border-radius:14px; height:50px; padding:0 22px; font-size:15.5px; font-weight:600; background:var(--accent); color:var(--accent-ink); display:inline-flex; align-items:center; justify-content:center; gap:8px; transition:transform .15s, opacity .2s; }
 .btn.sec { background:var(--sunk); color:var(--fg); }
 .btn:disabled { opacity:.6; }
@@ -330,14 +323,14 @@ body::after { content:""; position:fixed; inset:-25%; z-index:-1; pointer-events
 .legend span { display:inline-flex; align-items:center; gap:6px; }
 .lg { display:inline-block; width:14px; height:10px; border-radius:3px; }
 .lg.b1 { background:color-mix(in srgb,var(--accent) 16%,transparent); } .lg.b2 { background:color-mix(in srgb,var(--accent) 34%,transparent); } .lg.md { height:3px; background:var(--accent); } .lg.pt { height:2px; background:var(--fg3); }
-.appv { text-align:center; font-size:11.5px; color:var(--fg3); padding-top:4px; }
+.appv { text-align:center; font-size:12px; padding-top:4px; }
 #setup { position:fixed; inset:0; z-index:95; background:var(--bg); display:grid; place-items:center; overflow-y:auto;
   padding:max(24px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px)); }
 .setup-in { width:100%; max-width:420px; display:flex; flex-direction:column; gap:14px; }
 .setup-in h1 { font-family:var(--display); font-size:28px; font-weight:600; letter-spacing:-.035em; margin:6px 0 0; }
 .setup-in p { margin:0; color:var(--fg2); font-size:14.5px; line-height:1.5; }
 .setup-in .ferr:not(:empty) { display:flex; }
-.appv button { border:0; background:none; color:var(--accent); font:inherit; font-weight:600; padding:0 0 0 6px; }
+.appv button { border:0; background:none; color:var(--fg3); font:inherit; font-weight:600; padding:4px 8px; }
 .mc-note { font-size:12.5px; color:var(--fg3); margin:0; line-height:1.55; }
 #v-mc .warn { margin:0; }
 
@@ -417,8 +410,6 @@ const EM1 = '1° EMA';   // unico entry model: sempre scritto così, mai chiesto
 const MESI = ['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
 const MESI_F = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
 const GIORNI = ['domenica','lunedì','martedì','mercoledì','giovedì','venerdì','sabato'];
-const APP_V = '19.10 · 9';   // versione mostrata in fondo alla Home: serve a capire se il telefono o il PC hanno l'ultima
-const RM = false;   // animazioni sempre attive, anche se il sistema chiede di ridurle (es. Windows con «Effetti di animazione» spenti)
 const store = { get(k,d){ try { const v=localStorage.getItem('tj.'+k); return v===null?d:v; } catch(e){ return d; } }, set(k,v){ try { localStorage.setItem('tj.'+k,v); } catch(e){} } };
 let S = { touched:{}, tried:false, file: store.get('file','EOW'), type:'EOW', rows:[], loaded:false, edit:null, f:{}, filt:{}, cust:{}, mc:{}, mcLast:null, tab:'home', per: store.get('per','m'), data:{}, quiet:false,
           lo:'', lmore:60, sheet:null };
@@ -461,12 +452,10 @@ const I = {
   chart:'<path d="M4 4v16h16"/><path d="m7.5 14.5 3.5-4 3 2.5 5-6"/>',
   plus:'<path d="M12 5v14M5 12h14"/>', x:'<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>',
   filter:'<path d="M4 7h16M7 12h10M10 17h4"/>', chev:'<path d="m9.5 6 6 6-6 6"/>',
-  up:'<path d="M12 18.5v-13M6.5 11 12 5.5l5.5 5.5"/>', down:'<path d="M12 5.5v13M6.5 13l5.5 5.5 5.5-5.5"/>',
   trendUp:'<path d="m4 16 5.5-5.5 4 4L20 8"/><path d="M15 8h5v5"/>', trendDn:'<path d="m4 8 5.5 5.5 4-4L20 16"/><path d="M15 16h5v-5"/>',
   alert:'<path d="M12 4 2.8 19.5h18.4L12 4z"/><path d="M12 10v4.5M12 17.2v.1"/>', check:'<path d="m5 12.5 4.5 4.5L19 7.5"/>',
   clock:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>', target:'<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r=".8"/>',
-  bolt:'<path d="M13 3 5 13.5h6L10 21l8-10.5h-6L13 3z"/>',
-  dice:'<rect x="3.5" y="3.5" width="17" height="17" rx="4.5"/><path d="M8.5 8.5h.01M15.5 8.5h.01M12 12h.01M8.5 15.5h.01M15.5 15.5h.01" stroke-width="3"/>', save:'<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+  dice:'<rect x="3.5" y="3.5" width="17" height="17" rx="4.5"/><path d="M8.5 8.5h.01M15.5 8.5h.01M12 12h.01M8.5 15.5h.01M15.5 15.5h.01" stroke-width="3"/>',
 };
 const ic = (n, s=20, w=1.8) => '<svg class="ic" width="'+s+'" height="'+s+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="'+w+'" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+I[n]+'</svg>';
 function logo(s) { // tre candele in salita
@@ -493,7 +482,7 @@ function chips(key, opts, val, multi) {
 function animateNums(root) {
   root.querySelectorAll('[data-num]').forEach(el => {
     const to=+el.dataset.num, dec=+(el.dataset.dec||0), sg=el.dataset.sign==='1';
-    if (RM || !isFinite(to)) return;
+    if (!isFinite(to)) return;
     const t0=performance.now(), D=900;
     const step = t => { const p=Math.min(1,(t-t0)/D), e=1-Math.pow(1-p,3); el.textContent=fmtN(to*e,dec,sg); if (p<1) requestAnimationFrame(step); };
     requestAnimationFrame(step);
@@ -501,7 +490,7 @@ function animateNums(root) {
 }
 const words = t => String(t).split(' ').map((w,i)=>'<span class="wr" style="--i:'+i+'">'+esc(w)+'</span>').join(' ');
 function confetti() { // piccola festa per un trade vinto: ~90 coriandoli, 1,6 secondi, poi il canvas sparisce
-  if (RM) return; const dpr=Math.min(2, window.devicePixelRatio||1), c=document.createElement('canvas'); c.className='confetti'; document.body.appendChild(c);
+  const dpr=Math.min(2, window.devicePixelRatio||1), c=document.createElement('canvas'); c.className='confetti'; document.body.appendChild(c);
   const W=c.width=innerWidth*dpr, H=c.height=innerHeight*dpr, ctx=c.getContext('2d'), cs=getComputedStyle(document.documentElement);
   const cols=['--accent','--win','--glow2','--warn'].map(v=>cs.getPropertyValue(v).trim()||'#888');
   const P=Array.from({ length:90 }, ()=>({ x:W*(.3+Math.random()*.4), y:H*.42, vx:(Math.random()-.5)*16*dpr, vy:-(9+Math.random()*16)*dpr, w:(4+Math.random()*4)*dpr, h:(7+Math.random()*8)*dpr,
@@ -526,7 +515,13 @@ function norm(r) {
            lvn:r['Coming from LVN'], smt:r.SMT, clean: r['1m Clean STR']===true||r['1m Clean STR']==='TRUE', best, max, rr:num(r.RR), tp:r.TP,
            h:[1,2,3,4,5].map(k=>mins(r['Holding time '+k+'rr'])), hold:mins(r['Holding time']), day: d? L.days[(d.getDay()+6)%7] : '', raw:r };
 }
-const all = () => S.rows.map(norm).filter(t=>t.d).sort((x,y)=>(x.d-y.d)||(x.o-y.o));
+let allCache=null, allRows=null, allLen=-1, allRev=-1, rowsRev=0;
+const touchRows = () => { rowsRev++; };
+function all() {
+  if (allRows!==S.rows || allLen!==S.rows.length || allRev!==rowsRev) {
+    allCache=S.rows.map(norm).filter(t=>t.d).sort((x,y)=>(x.d-y.d)||(x.o-y.o)); allRows=S.rows; allLen=S.rows.length; allRev=rowsRev; }
+  return allCache;
+}
 // EOW: esito a un target fisso (default 2R) · Journal: RR reale del trade
 function model(T) {
   if (S.type==='EOW') { T=T||2; return { rOf:t=> t.best>=T ? T : -1, isWin:t=>t.best>=T, isLoss:t=>!(t.best>=T) }; }
@@ -537,11 +532,14 @@ function agg(ts, m) {
   ts.forEach(t=>{ const r=m.rOf(t); R+=r; if (r>0) gp+=r; else gl-=r; eq+=r; pk=Math.max(pk,eq); dd=Math.min(dd,eq-pk); });
   return { n, w, l, be:n-w-l, R, pf: gl>0 ? gp/gl : (gp>0 ? Infinity : NaN), exp: n ? R/n : NaN, dd, wr: (w+l) ? w/(w+l) : NaN, wrAll: n ? w/n : NaN };
 }
+// EOW = end of week: la «settimana» è quella scorsa, ormai chiusa · Journal: la settimana in corso
+const wkOff = () => S.type==='EOW' ? 1 : 0;
+const wkLbl = () => S.type==='EOW' ? 'Settimana scorsa' : 'Questa settimana';
 const dayMs = 864e5, addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate()+n);
 const pdIso = s => { const p=String(s||'').split('-').map(Number); return p.length===3 && p[0] ? new Date(p[0],p[1]-1,p[2]) : null; };
 function periodRange(per, back) { // back=1: periodo precedente
   const now=new Date(); let a,b;
-  if (per==='w') { const mon=addDays(now, -((now.getDay()+6)%7)); a=addDays(mon, -7*back); b=addDays(a, 7); }
+  if (per==='w') { const mon=addDays(now, -((now.getDay()+6)%7)); a=addDays(mon, -7*(back+wkOff())); b=addDays(a, 7); }
   else if (per==='c') { const f=pdIso(S.cust.from), t=pdIso(S.cust.to); if (!f || !t || t<f) return back ? null : [new Date(2000,0,1), new Date(2100,0,1)];
     const len=Math.round((t-f)/dayMs)+1; a=addDays(f, -len*back); b=addDays(a, len); }
   else if (per==='m') { a=new Date(now.getFullYear(), now.getMonth()-back, 1); b=new Date(now.getFullYear(), now.getMonth()-back+1, 1); }
@@ -627,13 +625,12 @@ function renderChrome() {
 function moveInd() { const i=TABS.findIndex(t=>t[0]===S.tab), el=$('navInd'); if (el) el.style.setProperty('--i', i); }
 let goTok=0;
 function go(tab) {
-  if (tab===S.tab) { window.scrollTo({ top:0, behavior: RM?'auto':'smooth' }); return; }
+  if (tab===S.tab) { window.scrollTo({ top:0, behavior:'smooth' }); return; }
   const from=TABS.findIndex(t=>t[0]===S.tab), to=TABS.findIndex(t=>t[0]===tab), dir = to>from ? 1 : -1, old=$('v-'+S.tab), tok=++goTok;
   S.tab=tab; [...$('nav').querySelectorAll('button')].forEach(b=>b.classList.toggle('on', b.dataset.tab===tab)); moveInd();
   $('fab').classList.toggle('hide', tab==='mc' || !!S.sheet);
   const show = () => { if (tok!==goTok) return; TABS.forEach(t=>$('v-'+t[0]).classList.remove('view-out'));
     TABS.forEach(t=>{ $('v-'+t[0]).hidden = t[0]!==tab; }); $('v-'+tab).dataset.dir=dir; window.scrollTo({ top:0 }); renderCurrent(); };
-  if (RM) return show();
   old.style.setProperty('--dir', dir); old.classList.add('view-out'); setTimeout(show, 150);
 }
 function renderCurrent(quiet) { S.quiet=!!quiet; ({ home:renderHome, list:renderList, stats:renderStats, mc:renderMC })[S.tab](); S.quiet=false; }
@@ -716,7 +713,7 @@ function renderFilters() {
   let h='<div class="fsec"><div class="field"><span class="flabel">Trading plan</span>'+seg('f-plan',[{v:'max2',l:'Max 2 trade al giorno'},{v:'',l:'Nessuno'}],F.plan||'')+
         '<span class="hint">Max 2 trade al giorno: dopo il primo trade in profitto la giornata si chiude.</span></div>'+
         (E?'<div class="field"><span class="flabel">Target (esito del trade)</span>'+seg('f-tgt',[1,2,3,4,5].map(k=>({v:k,l:k+'R'})),tgt())+'</div>':'')+'</div>';
-  h+='<div class="fsec"><div class="flabel">Periodo</div>'+chips('quick',[{v:'all',l:'Tutto'},{v:'w',l:'Questa settimana'},{v:'m',l:'Questo mese'},{v:'3m',l:'Ultimi 3 mesi'},{v:'y',l:'Quest\'anno'}],F.quick||'all')+
+  h+='<div class="fsec"><div class="flabel">Periodo</div>'+chips('quick',[{v:'all',l:'Tutto'},{v:'w',l:wkLbl()},{v:'m',l:'Questo mese'},{v:'3m',l:'Ultimi 3 mesi'},{v:'y',l:'Quest\'anno'}],F.quick||'all')+
         '<div class="g2"><div class="field"><label for="ff-from">Dal</label><input class="inp" id="ff-from" type="date" data-fk="from" value="'+(F.from||'')+'"></div><div class="field"><label for="ff-to">Al</label><input class="inp" id="ff-to" type="date" data-fk="to" value="'+(F.to||'')+'"></div></div></div>';
   h+='<div class="fsec"><div class="field"><span class="flabel">Asset</span>'+seg('f-asset',[{v:'',l:'Tutti'},'ES','NQ'],F.asset||'')+'</div>'+
      '<div class="field"><span class="flabel">Idea 5m · anche più di una</span>'+chips('f-idea',L.idea,F.idea||[],true)+'</div>'+
@@ -754,14 +751,14 @@ function renderHome() {
   const m=curModel(), ALL=filtered(m), rg=periodRange(S.per,0), ts=inRange(ALL,rg), prev=inRange(ALL,periodRange(S.per,1));
   const a=agg(ts,m), pa=agg(prev,m), ses=sessionInfo(), E=S.type==='EOW';
   const dd = d => d.getDate()+' '+MESI[d.getMonth()], cr = S.per==='c' ? periodRange('c',0) : null, cOk = cr && cr[0].getFullYear()>2000;
-  const perLbl = { w:'questa settimana', m: MESI_F[now.getMonth()]+' '+now.getFullYear(), '3m':'ultimi 3 mesi', y:String(now.getFullYear()), all:'da sempre',
+  const perLbl = { w:wkLbl().toLowerCase(), m: MESI_F[now.getMonth()]+' '+now.getFullYear(), '3m':'ultimi 3 mesi', y:String(now.getFullYear()), all:'da sempre',
                    c: cOk ? dd(cr[0])+' → '+dd(addDays(cr[1],-1)) : 'scegli le date' }[S.per];
-  const prevLbl = { w:'rispetto alla settimana scorsa', m:'rispetto a '+MESI_F[(now.getMonth()+11)%12], '3m':'rispetto ai 3 mesi prima', y:'rispetto al '+(now.getFullYear()-1),
+  const prevLbl = { w: S.type==='EOW' ? 'rispetto alla settimana prima' : 'rispetto alla settimana scorsa', m:'rispetto a '+MESI_F[(now.getMonth()+11)%12], '3m':'rispetto ai 3 mesi prima', y:'rispetto al '+(now.getFullYear()-1),
                     c: cOk ? 'rispetto ai '+Math.round((cr[1]-cr[0])/dayMs)+' giorni prima' : '' }[S.per];
   let html = '<div class="hello rise"><div><div class="eyebrow">'+GIORNI[now.getDay()]+' '+now.getDate()+' '+MESI_F[now.getMonth()]+'</div><h1>'+words(greeting())+'</h1></div>'+
     '<span class="sess'+(ses.open?' open':'')+'" id="sess"><i></i>'+ses.txt+'</span></div>';
   html += fbar(30);
-  html += '<div class="chips">'+[['w','Settimana'],['m','Mese'],['3m','3 mesi'],['y','Anno'],['all','Tutto'],['c','Personalizzato']]
+  html += '<div class="chips">'+[['w',wkLbl()],['m','Mese'],['3m','3 mesi'],['y','Anno'],['all','Tutto'],['c','Personalizzato']]
     .map(p=>'<button type="button" class="chip'+(S.per===p[0]?' on':'')+'" data-per="'+p[0]+'">'+p[1]+'</button>').join('')+'</div>';
   if (S.per==='c') html += '<div class="card"><div class="g2"><div class="field"><label for="hp-from">Dal</label><input class="inp" id="hp-from" type="date" data-hp="from" value="'+esc(S.cust.from||'')+'"></div>'+
     '<div class="field"><label for="hp-to">Al</label><input class="inp" id="hp-to" type="date" data-hp="to" value="'+esc(S.cust.to||'')+'"></div></div>'+
@@ -801,7 +798,7 @@ function renderHome() {
   if (mi.length>1) html += '<div class="card rise" style="--d:380ms"><div class="card-h"><div class="h2">Ultimi mesi</div><span class="sub">R per mese</span></div><div class="chart" id="c-mon"></div></div>';
   if (ALL.length) html += '<div class="card rise" style="--d:420ms"><div class="card-h"><div class="h2">Ultimi trade</div><button class="link" type="button" data-act="list">Tutti '+ic('chev',16,2)+'</button></div><div>'+
     ALL.slice(-5).reverse().map(t=>trow(t,m)).join('')+'</div></div>';
-  html += '<div class="appv">Versione '+APP_V+(viaScript()?'':' · <button type="button" data-act="setup">Accesso</button>')+'</div>';
+  if (!viaScript()) html += '<div class="appv"><button type="button" data-act="setup">Indirizzo e chiave di accesso</button></div>';
   enter(el, html, ()=>{ if ($('c-spark')) lineChart($('c-spark'), equityPts(ts,m), { axes:false, h:104 }); if ($('c-mon')) barChart($('c-mon'), mi, { h:150 }); });
 }
 const bandOf = t => (L.bands.find(b=>t.o>=b[1]&&t.o<b[2])||['altro'])[0];
@@ -936,19 +933,19 @@ function runMCClick() {
     S.mcLast={ key:mcKey(Rs), res }; b.disabled=false; b.innerHTML=ic('dice',18,2)+'Simula di nuovo'; drawMC(res); }, 40);
 }
 function simulate(Rs, p) {
-  const N=p.n, M=p.sims, K=Rs.length, W=N+1, eq=new Float64Array(M*W), fin=new Float64Array(M), ddP=new Float64Array(M), ddU=new Float64Array(M), stk=new Int32Array(M);
+  const N=p.n, M=p.sims, K=Rs.length, W=N+1, eq=new Float64Array(M*W), fin=new Float64Array(M), ddP=new Float64Array(M), stk=new Int32Array(M);
   let ruined=0, prof=0, ruinT=[];
   for (let s=0;s<M;s++) {
-    let e=p.cap, pk=e, mdd=0, mddp=0, st=0, mst=0, hit=false; eq[s*W]=e;
+    let e=p.cap, pk=e, mddp=0, st=0, mst=0, hit=false; eq[s*W]=e;
     for (let t=0;t<N;t++) {
       const r=Rs[(Math.random()*K)|0], risk = p.mode==='pct' ? Math.max(0,e)*p.risk/100 : p.risk;
       e += risk*r - p.comm; if (e>pk) pk=e;
-      const d=pk-e, dp = pk>0 ? d/pk : 1; if (d>mdd) mdd=d; if (dp>mddp) mddp=dp;
+      const dp = pk>0 ? (pk-e)/pk : 1; if (dp>mddp) mddp=dp;
       if (r<0) { st++; if (st>mst) mst=st; } else st=0;
       if (!hit && dp*100>=p.ruin) { hit=true; ruinT.push(t+1); }
       eq[s*W+t+1]=e;
     }
-    fin[s]=e; ddP[s]=mddp; ddU[s]=mdd; stk[s]=mst; if (hit) ruined++; if (e>p.cap) prof++;
+    fin[s]=e; ddP[s]=mddp; stk[s]=mst; if (hit) ruined++; if (e>p.cap) prof++;
   }
   const q=(arr,p)=>{ const a=Float64Array.from(arr).sort(); return a[Math.min(a.length-1, Math.max(0, Math.round(p*(a.length-1))))]; };
   // percentili della curva (al massimo ~160 punti per il grafico)
@@ -956,8 +953,8 @@ function simulate(Rs, p) {
   for (let t=0;t<=N;t+=step) { for (let s=0;s<M;s++) col[s]=eq[s*W+t]; col.sort(); const g=x=>col[Math.round(x*(M-1))];
     band.push({ t, p5:g(.05), p25:g(.25), p50:g(.5), p75:g(.75), p95:g(.95) }); if (t+step>N && t!==N) t=N-step; }
   const paths=[]; for (let k=0;k<Math.min(24,M);k++) { const s=Math.floor(k*M/Math.min(24,M)), pts=[]; for (let t=0;t<=N;t+=step) pts.push(eq[s*W+Math.min(t,N)]); if (pts.length<band.length) pts.push(eq[s*W+N]); paths.push(pts); }
-  return { p, band, paths, fin:Array.from(fin), q50:q(fin,.5), q5:q(fin,.05), q95:q(fin,.95), mean:fin.reduce((x,y)=>x+y,0)/M, prof:prof/M, ruin:ruined/M,
-    dd50:q(ddP,.5), dd95:q(ddP,.95), ddU50:q(ddU,.5), ddU95:q(ddU,.95), st50:q(stk,.5), st95:q(stk,.95), ruinT: ruinT.length ? q(ruinT,.5) : NaN, K:Rs.length,
+  return { p, band, paths, fin:Array.from(fin), q50:q(fin,.5), q5:q(fin,.05), q95:q(fin,.95), prof:prof/M, ruin:ruined/M,
+    dd50:q(ddP,.5), dd95:q(ddP,.95), st50:q(stk,.5), st95:q(stk,.95), ruinT: ruinT.length ? q(ruinT,.5) : NaN, K:Rs.length,
     expR: Rs.reduce((x,y)=>x+y,0)/Rs.length };
 }
 function drawMC(res, quiet) {
@@ -977,7 +974,7 @@ function drawMC(res, quiet) {
   h+='<p class="mc-note rise" style="--d:380ms">Ogni simulazione pesca a caso, con reinserimento, i risultati in R dei '+res.K+' trade filtrati'+(p.mode==='pct'?', rischiando il '+fmtN(p.risk,2)+'% del conto attuale (interesse composto)':', rischiando '+usd(p.risk)+' fissi')+'. È una stima basata sul passato, non una previsione.</p>';
   box.innerHTML=h; box.classList.toggle('quiet', !!quiet);
   fanChart($('c-fan'), res); histChart($('c-hist'), res);
-  if (!quiet) { animateNums(box); setTimeout(()=>box.scrollIntoView({ behavior: RM?'auto':'smooth', block:'start' }), 60); }
+  if (!quiet) { animateNums(box); setTimeout(()=>box.scrollIntoView({ behavior:'smooth', block:'start' }), 60); }
 }
 function fanChart(el, res) {
   const W=el.clientWidth||320, H=240, padL=44, padR=10, padT=12, padB=24, B=res.band, p=res.p, n=p.n;
@@ -1041,7 +1038,7 @@ function renderForm() {
   h+='<div class="fsec"><div class="fsec-h"><div class="h2">Esecuzione</div></div><div class="g2">'+fnum('sl','SL (punti)','es. 6,25')+fnum('dd','SL DD (punti)','0 se mai contro')+'</div>'+
     '<div class="g2">'+fnum('maxrr','Max Real RR','es. 2,4')+(E?'<div></div>':fnum('rr','RR del trade','es. 1,8 o −1'))+'</div>'+
     (E?'':'<div class="g2">'+fnum('holdH','Holding · ore','0')+fnum('holdM','Holding · minuti','25')+'</div>')+'</div>';
-  h+='<div class="fsec"><div class="fsec-h"><div class="h2">Anteprima</div><span class="opill" id="fx-out"></span></div><div class="ruler" id="fx-ruler"></div><div class="calc" id="fx-calc"></div><div class="warns" id="fx-warn"></div></div>';
+  h+='<div class="fsec"><div class="fsec-h"><div class="h2">Anteprima</div><span id="fx-out"></span></div><div class="ruler" id="fx-ruler"></div><div class="calc" id="fx-calc"></div><div class="warns" id="fx-warn"></div></div>';
   h+='<div class="fsec"><div class="fsec-h"><div class="h2">Contesto</div></div>'+
     fld('Idea',fspan('Idea 5m'),chips('Idea',L.idea,f.Idea))+
     fld('News',fspan('News'),seg('News',[{v:'No News Day',l:'Nessuna'},{v:'Orange News',l:'Orange'},{v:'Red News',l:'Red'}],f.News))+
@@ -1057,7 +1054,7 @@ function renderForm() {
     h+='<div class="fsec"><div class="fsec-h"><div class="h2">Uscita</div></div><div id="fx-tp"></div>'+fld('Notion',flbl('Notion','Link Notion (facoltativo)'),fin('Notion','url','https://…'))+'</div>';
   }
   $('sh-body').innerHTML=h; stagger(); S._k={}; refresh();
-  $('sh-foot').innerHTML='<div class="out" id="fx-sum"></div><button type="button" class="btn" id="fx-save" data-act="save">'+ic('save',18,2.2)+(S.edit?'Salva modifiche':'Salva')+'</button>';
+  $('sh-foot').innerHTML='<div class="out" id="fx-sum"></div><button type="button" class="btn" id="fx-save" data-act="save">'+ic('check',18,2.2)+(S.edit?'Salva modifiche':'Salva')+'</button>';
   refresh();
 }
 // holding dei livelli: i minuti si contano dalla candela dopo l'ingresso (15:40 → 15:44 = 3 min),
@@ -1180,7 +1177,7 @@ async function save() {
   if (errs.length) {
     S.tried=true; refresh();
     const first=$('sh-body').querySelector('.field.bad');
-    if (first) { first.scrollIntoView({ behavior: RM?'auto':'smooth', block:'center' }); first.classList.remove('shake'); void first.offsetWidth; first.classList.add('shake');
+    if (first) { first.scrollIntoView({ behavior:'smooth', block:'center' }); first.classList.remove('shake'); void first.offsetWidth; first.classList.add('shake');
       const inp=first.querySelector('input,textarea'); if (inp && !inp.value) setTimeout(()=>inp.focus({ preventScroll:true }), 350); }
     toast(errs.length===1 ? 'Sistema il campo in rosso: '+errs[0].m : errs.length+' campi da sistemare, sono segnati in rosso', true); return;
   }
@@ -1192,7 +1189,7 @@ async function save() {
   // la riga compare subito; il foglio viene aggiornato in background
   const file=S.file, edit=S.edit, form=S.f, prov=Object.assign({}, d, { _row: edit?edit.row:null, _pending:true, Data:fmtIt(d.Data) });
   const idx = edit ? S.rows.findIndex(r=>r._row===edit.row) : -1, prev = idx>=0 ? S.rows[idx] : null;
-  if (idx>=0) S.rows[idx]=prov; else S.rows.push(prov);
+  if (idx>=0) S.rows[idx]=prov; else S.rows.push(prov); touchRows();
   S.flash=prov; S.flashT=performance.now(); closeSheet(); S.edit=null; S.f={}; renderCurrent(true); setSync(true);
   if (c.out==='Win' && !edit) setTimeout(confetti, 260);
   try {
@@ -1200,10 +1197,10 @@ async function save() {
     const D=S.data[file];
     if (D) { const k=D.rows.findIndex(a=>a[0]===res.row[0]); if (k>=0) D.rows[k]=res.row; else D.rows.push(res.row); cacheSet(file,D); }
     if (S.file===file) { const i2=S.rows.indexOf(prov), obj=D?unpack(D.h,res.row):Object.assign({}, prov, { _row:res.row[0], _pending:false });
-      if (i2>=0) S.rows[i2]=obj; if (S.flash===prov) S.flash=obj; if (!S.sheet) renderCurrent(true); }
+      if (i2>=0) { S.rows[i2]=obj; touchRows(); } if (S.flash===prov) S.flash=obj; if (!S.sheet) renderCurrent(true); }
     toast(edit ? 'Modifiche salvate' : 'Trade salvato in '+file);
   } catch(e) {
-    const i2=S.rows.indexOf(prov); if (i2>=0) { if (prev) S.rows[i2]=prev; else S.rows.splice(i2,1); }
+    const i2=S.rows.indexOf(prov); if (i2>=0) { if (prev) S.rows[i2]=prev; else S.rows.splice(i2,1); touchRows(); }
     renderCurrent(true);
     if (S.file===file && !S.sheet) { S.sheet='form'; S.f=form; S.edit=edit; $('sh-title').textContent = edit?'Modifica trade':'Nuovo trade'; renderForm(); openSheet(); }
     toast('Non salvato: '+(e.message||e), true);
@@ -1261,7 +1258,7 @@ S.filt=loadFilt(); S.mc=loadMC();
 try { S.cust=JSON.parse(store.get('cust','{}'))||{}; } catch(e) { S.cust={}; }
 (function welcome() {
   const sp=$('splash'); let seen=false; try { seen=sessionStorage.getItem('tj.hi')==='1'; sessionStorage.setItem('tj.hi','1'); } catch(e) {}
-  if (seen || RM) { sp.remove(); return; }
+  if (seen) { sp.remove(); return; }
   sp.innerHTML='<div class="sp-in">'+logo(68)+'<h1>'+words(greeting())+'</h1><p>Preparo i tuoi trade…</p></div>';
   setTimeout(()=>{ sp.classList.add('out'); setTimeout(()=>sp.remove(), 600); }, 1150);
 })();
