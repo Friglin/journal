@@ -528,7 +528,7 @@ function norm(r) {
   return { row:r._row, a:r.Asset, d, ym: d? d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0') : '', o, out:r.Outcome, em:r.EM, idea:r['5m Idea'], news:r.News,
            lvn:r['Coming from LVN'], smt:r.SMT, clean: r['1m Clean STR']===true||r['1m Clean STR']==='TRUE', best, max, rr:num(r.RR), tp:r.TP,
            h:[1,2,3,4,5].map(k=>mins(r['Holding time '+k+'rr'])), hold:mins(r['Holding time']), day: d? L.days[(d.getDay()+6)%7] : '',
-           dir:r.Direzione, exe:r.Esecuzione, errs:splitL(r.Errori), cmt:r.Commento, raw:r };
+           dir:r.Direzione, exe:r.Esecuzione, errs:splitL(r.Errori), note:r.Note, raw:r };
 }
 let allCache=null, allRows=null, allLen=-1, allRev=-1, rowsRev=0;
 const touchRows = () => { rowsRev++; };
@@ -1121,10 +1121,10 @@ function openForm(row) {
     const r=S.rows.find(x=>x._row===row); if (!r) return; const E=S.type==='EOW', p=String(r.Data).split('/');
     S.f = { Asset:r.Asset, Data:p[2]+'-'+p[1]+'-'+p[0], Ora:String(r.Ora).slice(0,5).padStart(5,'0'), Idea:r['5m Idea'], News:r.News,
             LVN:r['Coming from LVN'], SMT:r.SMT, clean: r['1m Clean STR']===true||r['1m Clean STR']==='TRUE', dd:num(r['SL DD']), maxrr:num(r['Max Real RR']),
-            Dir:r.Direzione||'', Esecuzione:r.Esecuzione||'', Errori:splitL(r.Errori), Commento:r.Commento||'' };
-    if (E) { S.f.sl=num(r['SL Points']); S.f.PB=String(r['Candele PB']??''); S.f.L5=r['5m Link']; S.f.L1=r['1m Link']; S.f.Note=r.Note;
+            Dir:r.Direzione||'', Esecuzione:r.Esecuzione||'', Errori:splitL(r.Errori), L5:r['5m Link']||'', L1:r['1m Link']||'', Note:r.Note||'' };
+    if (E) { S.f.sl=num(r['SL Points']); S.f.PB=String(r['Candele PB']??'');
       const o=mins(r.Ora); for (let k=1;k<=5;k++){ const hm=mins(r['Holding time '+k+'rr']); if (isFinite(hm)&&isFinite(o)) S.f['t'+k]=hhmm(o+holdBack(hm)).padStart(5,'0'); } }
-    else { S.f.sl=num(r.SL); S.f.rr=num(r.RR); S.f.TP=r.TP; S.f.Notion=r['Notion Link']; const hm=mins(r['Holding time']); if (isFinite(hm)) { S.f.holdH=String(Math.floor(hm/60)); S.f.holdM=String(hm%60); } }
+    else { S.f.sl=num(r.SL); S.f.rr=num(r.RR); S.f.TP=r.TP; const hm=mins(r['Holding time']); if (isFinite(hm)) { S.f.holdH=String(Math.floor(hm/60)); S.f.holdM=String(hm%60); } }
     ['sl','dd','maxrr','rr'].forEach(k=>{ if (!isFinite(S.f[k])) S.f[k]=''; });
     S.edit = { row, check:{ Asset:r.Asset, Data:r.Data } };
   } else {
@@ -1141,6 +1141,9 @@ const fld = (k, lbl, inner) => '<div class="field" data-f="'+k+'">'+lbl+inner+fe
 const flbl = (k, t) => '<label for="fi-'+k+'">'+t+'</label>', fspan = t => '<span class="flabel">'+t+'</span>';
 const fnum = (k, lbl, ph) => fld(k, flbl(k,lbl), fin(k,'text',ph||'',"inputmode='decimal' autocomplete='off' enterkeyhint='next'"));
 const stagger = () => $('sh-body').querySelectorAll('.fsec').forEach((el,i)=>el.style.setProperty('--k', i));
+const linksNote = (f, ph) => fld('L5',flbl('L5','Screenshot 5m · link TradingView (facoltativo)'),fin('L5','url','https://www.tradingview.com/x/…'))+
+  fld('L1',flbl('L1','Screenshot 1m · link TradingView (facoltativo)'),fin('L1','url','https://www.tradingview.com/x/…'))+'<div class="thumbs" id="fx-th"></div>'+
+  '<div class="field"><label for="fi-Note">Note (facoltative)</label><textarea class="inp" id="fi-Note" data-k="Note" placeholder="'+esc(ph)+'">'+esc(f.Note||'')+'</textarea></div>';
 function renderForm() {
   const E=S.type==='EOW', f=S.f;
   let h='<div class="fsec"><div class="fsec-h"><div class="h2">Trade</div></div>'+fld('Asset','',seg('Asset',L.asset,f.Asset))+
@@ -1158,15 +1161,13 @@ function renderForm() {
   if (E) {
     h+='<div class="fsec"><div class="fsec-h"><div class="h2">Livelli raggiunti</div><span class="mut" style="font-size:12.5px">ora in cui li hai toccati</span></div><div id="fx-lv" style="display:flex;flex-direction:column;gap:12px"></div></div>';
     h+='<div class="fsec"><div class="fsec-h"><div class="h2">Dettagli</div></div>'+fld('PB',fspan('Candele di pullback'),chips('PB',L.pb,f.PB))+
-      fld('L5',flbl('L5','Screenshot 5m · link TradingView (facoltativo)'),fin('L5','url','https://www.tradingview.com/x/…'))+
-      fld('L1',flbl('L1','Screenshot 1m · link TradingView (facoltativo)'),fin('L1','url','https://www.tradingview.com/x/…'))+'<div class="thumbs" id="fx-th"></div>'+
-      '<div class="field"><label for="fi-Note">Note (facoltative)</label><textarea class="inp" id="fi-Note" data-k="Note" placeholder="Es. raggiunge 2,4R, torna a 1,5R, poi 4R">'+esc(f.Note||'')+'</textarea></div></div>';
+      linksNote(f, 'Es. raggiunge 2,4R, torna a 1,5R, poi 4R')+'</div>';
   } else {
     h+='<div class="fsec"><div class="fsec-h"><div class="h2">Uscita</div></div><div id="fx-tp"></div></div>';
     if (hasCol('Esecuzione')) h+='<div class="fsec"><div class="fsec-h"><div class="h2">Disciplina</div></div>'+fld('Esecuzione',fspan('Come hai eseguito il trade?'),seg('Esecuzione',L.exe,f.Esecuzione))+
       '<div id="fx-errs"'+(f.Esecuzione==='Errore'?'':' hidden')+'>'+fld('Errori',fspan('Errori · anche più di uno'),chips('Errori',L.errs,f.Errori||[],true))+'</div>'+
-      (hasCol('Commento')?'<div class="field"><label for="fi-Commento">Commento (facoltativo)</label><textarea class="inp" id="fi-Commento" data-k="Commento" placeholder="Es. entrato prima della chiusura della candela per FOMO">'+esc(f.Commento||'')+'</textarea></div>':'')+'</div>';
-    h+='<div class="fsec">'+fld('Notion',flbl('Notion','Link Notion (facoltativo)'),fin('Notion','url','https://…'))+'</div>';
+      '</div>';
+    h+='<div class="fsec"><div class="fsec-h"><div class="h2">Dettagli</div></div>'+linksNote(f, 'Es. Trade valido, poco volume però.')+'</div>';
   }
   $('sh-body').innerHTML=h; stagger(); S._k={}; refresh();
   $('sh-foot').innerHTML='<div class="out" id="fx-sum"></div><button type="button" class="btn" id="fx-save" data-act="save">'+ic('check',18,2.2)+(S.edit?'Salva modifiche':'Salva')+'</button>';
@@ -1227,13 +1228,12 @@ function validate(c) {
       if (empty(v)) { add('t'+k,'Inserisci l\'ora in cui hai toccato '+k+'R (oppure tocca Adesso).'); continue; }
       const t=mins(v); if (isFinite(prev) && t<prev) add('t'+k, k===1 ? 'È prima dell\'ora di ingresso ('+f.Ora+').' : 'È prima dell\'ora di '+(k-1)+'R.', true); prev=t; }
     if (!f.PB) add('PB','Scegli quante candele di pullback.');
-    ['L5','L1'].forEach(k=>{ if (!empty(f[k]) && !/tradingview\.com\/x\/[A-Za-z0-9]+/.test(f[k])) add(k,'Non è un link di TradingView: deve essere tipo https://www.tradingview.com/x/AbC123/.', true); });
   } else {
     if (c.rr>0 && !f.TP) add('TP','Scegli il TP che avevi impostato.');
     if (hasCol('Esecuzione')) { if (!f.Esecuzione) add('Esecuzione','Indica se il trade è valido o se hai commesso un errore.');
       else if (f.Esecuzione==='Errore' && !(f.Errori||[]).length) add('Errori','Scegli almeno un errore.'); }
-    if (!empty(f.Notion) && !/^https?:\/\/\S+$/i.test(String(f.Notion).trim())) add('Notion','Non è un link valido: deve iniziare con https://.', true);
   }
+  ['L5','L1'].forEach(k=>{ if (!empty(f[k]) && !/tradingview\.com\/x\/[A-Za-z0-9]+/.test(f[k])) add(k,'Non è un link di TradingView: deve essere tipo https://www.tradingview.com/x/AbC123/.', true); });
   return e;
 }
 function showErrors(errs) {
@@ -1270,8 +1270,8 @@ function refresh() {
   else if (sum) sum.innerHTML = c.out ? '<b class="'+oc+'">'+(E?(c.out==='Win'?'Win · 2R':'Loss'):(c.out+' · '+fmtN(c.rr,2,true)+' R'))+'</b><span>'+(isFinite(c.max)?'max '+fmtN(c.max,2)+' R':'')+(isFinite(c.sl)&&c.sl>0?' · SL '+fmtN(c.sl,2)+' pt':'')+'</span>'
                                  : '<b class="mut">Da completare</b><span>'+(E?'SL e Max Real RR':'SL, Max Real RR e RR')+'</span>';
   // sezioni che dipendono dai calcoli: ridisegnate solo quando cambia ciò che mostrano
-  if (E) { const key=String(isFinite(c.best)?c.best:-1); if (S._k.lv!==key) { S._k.lv=key; renderLevels(c); } else updateHolds(c);
-    const tk=(f.L5||'')+'|'+(f.L1||''); if (S._k.th!==tk) { S._k.th=tk; $('fx-th').innerHTML=['L5','L1'].map(k=>tvImg(f[k])).filter(Boolean).map(u=>'<img src="'+u+'" alt="Screenshot TradingView" loading="lazy">').join(''); } }
+  const tk=(f.L5||'')+'|'+(f.L1||''); if (S._k.th!==tk) { S._k.th=tk; $('fx-th').innerHTML=['L5','L1'].map(k=>tvImg(f[k])).filter(Boolean).map(u=>'<img src="'+u+'" alt="Screenshot TradingView" loading="lazy">').join(''); }
+  if (E) { const key=String(isFinite(c.best)?c.best:-1); if (S._k.lv!==key) { S._k.lv=key; renderLevels(c); } else updateHolds(c); }
   else { const key=String(c.rr>0); if (S._k.tp!==key) { S._k.tp=key; $('fx-tp').innerHTML = c.rr>0 ? fld('TP',fspan('TP · target scelto'),chips('TP',L.tp,f.TP)) : '<div class="mut" style="font-size:13px">Il TP si sceglie quando il trade è in profitto.</div>'; } }
   showErrors(errs);
 }
@@ -1303,9 +1303,10 @@ async function save() {
   const d = { 'Asset':f.Asset, 'Direzione':f.Dir||'', 'Data':f.Data, 'Ora':f.Ora, 'Outcome':c.out, 'EM':EM1, '5m Idea':f.Idea, 'News':f.News||'',
               'Coming from LVN':f.LVN||'', 'SMT':f.SMT||'', 'SL DD':isFinite(c.dd)?c.dd:'', '1m Clean STR':!!f.clean,
               'Best Real RR':c.bestLbl, 'Max Real RR':c.max };
-  if (E) { d['SL Points']=c.sl; for (let k=1;k<=5;k++) d['Holding time '+k+'rr']=c.h[k]||''; d['Candele PB']=f.PB||''; d['5m Link']=f.L5||''; d['1m Link']=f.L1||''; d['Note']=f.Note||''; }
-  else { d['SL']=c.sl; d['RR']=c.rr; d['TP']=c.rr>0?(f.TP||''):''; d['Holding time']=c.hold; d['Notion Link']=f.Notion||'';
-    if (hasCol('Esecuzione')) { d['Esecuzione']=f.Esecuzione||''; d['Errori']=f.Esecuzione==='Errore'?(f.Errori||[]).join(', '):''; d['Commento']=f.Commento||''; } }
+  if (E) { d['SL Points']=c.sl; for (let k=1;k<=5;k++) d['Holding time '+k+'rr']=c.h[k]||''; d['Candele PB']=f.PB||''; }
+  else { d['SL']=c.sl; d['RR']=c.rr; d['TP']=c.rr>0?(f.TP||''):''; d['Holding time']=c.hold;
+    if (hasCol('Esecuzione')) { d['Esecuzione']=f.Esecuzione||''; d['Errori']=f.Esecuzione==='Errore'?(f.Errori||[]).join(', '):''; } }
+  d['5m Link']=f.L5||''; d['1m Link']=f.L1||''; d['Note']=f.Note||'';
   // la riga compare subito; il foglio viene aggiornato in background
   const file=S.file, edit=S.edit, form=S.f, prov=Object.assign({}, d, { _row: edit?edit.row:null, _pending:true, Data:fmtIt(d.Data) });
   const idx = edit ? S.rows.findIndex(r=>r._row===edit.row) : -1, prev = idx>=0 ? S.rows[idx] : null;
