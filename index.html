@@ -460,7 +460,7 @@ nav.bar { background:color-mix(in srgb,var(--surface) 76%,transparent); -webkit-
 .scope { max-width:340px; }
 .brand { position:relative; } .brand.stale::after { content:''; position:absolute; left:22px; top:-2px; width:9px; height:9px; border-radius:50%; background:var(--warn); border:2px solid var(--bg); }
 .aifab.mini { transform:scale(.84); }
-@media (max-width:999px) { .aifab { width:48px; height:48px; border-radius:16px; bottom:calc(env(safe-area-inset-bottom,0px) + 81px); } }
+
 /* logo */
 .logo .bar { transform-box:fill-box; transform-origin:0 50%; }
 .sp-in .logo .bar { animation:barIn .7s cubic-bezier(.3,1.3,.5,1) both; } .sp-in .logo .b2 { animation-delay:.1s; } .sp-in .logo .b3 { animation-delay:.2s; }
@@ -475,6 +475,32 @@ nav.bar { background:color-mix(in srgb,var(--surface) 76%,transparent); -webkit-
   .card { padding:22px; }
   .kgrid { gap:14px; }
   .big { font-size:64px; }
+}
+
+/* ───── telefono: meno elementi in vista, proporzioni più calme ───── */
+.perseg .seg { border-radius:14px; } .perseg .seg::before { border-radius:11px; }
+.perseg .seg button { padding:9px 2px; font-size:13.5px; } .perseg .seg button .ic { margin:0 auto; vertical-align:-3px; }
+@media (max-width:999px) {
+  .top .wrap.filebar { display:none; }
+  .top .wrap { padding-block:10px; }
+  .brand { font-size:18.5px; gap:8px; } .brand .logo { width:28px; height:28px; }
+  .seg.file { width:150px; } .seg.file button { padding:7px 4px; font-size:13.5px; }
+  .view { gap:14px; padding-top:8px; }
+  .hello { gap:8px; padding-top:4px; } .hello h1 { font-size:29px; }
+  .stat-h h1 { font-size:30px; }
+  .sess { font-size:12px; padding:4px 10px 4px 8px; }
+  .fbar { flex-wrap:nowrap; overflow-x:auto; margin:0 -16px; padding:2px 16px; scrollbar-width:none; -webkit-mask:linear-gradient(90deg,#000 88%,transparent); mask:linear-gradient(90deg,#000 88%,transparent); }
+  .fbar::-webkit-scrollbar { display:none; } .fbar > * { flex:none; }
+  .fbtn { padding:7px 12px; font-size:13px; } .fchip { font-size:12px; padding:6px 8px 6px 11px; }
+  .perseg .seg button { font-size:12.5px; }
+  .scope { max-width:none; }
+  .card-h { flex-wrap:wrap; row-gap:2px; }
+  .hero { padding:16px 16px 0; border-radius:24px; } .big { font-size:52px; } .big small { font-size:19px; }
+  .spark { margin:4px -16px 0; height:92px; }
+  .card { padding:16px; border-radius:22px; } .kpi { padding:14px; border-radius:18px; } .kpi .v { font-size:26px; }
+  .h2 { font-size:18px; }
+  .fab { width:56px; height:56px; padding:0; gap:0; justify-content:center; border-radius:18px; } .fab span { display:none; }
+  .aifab { left:auto; right:max(20px,calc(env(safe-area-inset-right,0px) + 20px)); bottom:calc(env(safe-area-inset-bottom,0px) + 146px); width:48px; height:48px; border-radius:16px; }
 }
 </style>
 </head>
@@ -581,6 +607,7 @@ const I = {
   trendUp:'<path d="m4 16 5.5-5.5 4 4L20 8"/><path d="M15 8h5v5"/>', trendDn:'<path d="m4 8 5.5 5.5 4-4L20 16"/><path d="M15 16h5v-5"/>',
   alert:'<path d="M12 4 2.8 19.5h18.4L12 4z"/><path d="M12 10v4.5M12 17.2v.1"/>', check:'<path d="m5 12.5 4.5 4.5L19 7.5"/>',
   clock:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>', target:'<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r=".8"/>',
+  cal:'<rect x="4" y="5.5" width="16" height="14.5" rx="3"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/>',
   spark:'<path d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9L12 17.5l-1.9-5.1L5 10.5l5.1-1.9z"/><path d="M18.5 15.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/>',
   send:'<path d="M4.5 12h13M12.5 6l6 6-6 6"/>', trash:'<path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 12.5h9l1-12.5"/>',
   dice:'<rect x="3.5" y="3.5" width="17" height="17" rx="4.5"/><path d="M8.5 8.5h.01M15.5 8.5h.01M12 12h.01M8.5 15.5h.01M15.5 15.5h.01" stroke-width="3"/>',
@@ -925,8 +952,7 @@ function renderHome() {
   let html = '<div class="hello rise"><div>'+fileEb()+'<div class="eyebrow">'+GIORNI[now.getDay()]+' '+now.getDate()+' '+MESI_F[now.getMonth()]+'</div><h1>'+words(greeting())+'</h1></div>'+
     '<span class="sess'+(ses.open?' open':'')+'" id="sess"><i></i>'+ses.txt+'</span></div>';
   html += fbar(30);
-  html += '<div class="chips">'+[['w',wkLbl()],['m','Mese'],['3m','3 mesi'],['y','Anno'],['all','Tutto'],['c','Personalizzato']]
-    .map(p=>'<button type="button" class="chip'+(S.per===p[0]?' on':'')+'" data-per="'+p[0]+'">'+p[1]+'</button>').join('')+'</div>';
+  html += '<div class="perseg rise" style="--d:40ms">'+seg('per',[{v:'w',l:'Sett.'},{v:'m',l:'Mese'},{v:'3m',l:'3M'},{v:'y',l:'Anno'},{v:'all',l:'Tutto'},{v:'c',h:ic('cal',16,2),l:'Date'}],S.per)+'</div>';
   if (S.per==='c') html += '<div class="card"><div class="g2"><div class="field"><label for="hp-from">Dal</label><input class="inp" id="hp-from" type="date" data-hp="from" value="'+esc(S.cust.from||'')+'"></div>'+
     '<div class="field"><label for="hp-to">Al</label><input class="inp" id="hp-to" type="date" data-hp="to" value="'+esc(S.cust.to||'')+'"></div></div>'+
     (S.cust.from && S.cust.to && !cOk ? '<div class="ferr" style="display:flex;margin-top:8px">'+ic('alert',15,2)+'<span>La data finale è prima di quella iniziale.</span></div>' : '')+'</div>';
@@ -1125,14 +1151,14 @@ function coachCard(cd) {
     tips.push({ i:'check', c:d.R_errors<0?'neg':'', h:'Disciplina: '+pct(d.valid/tot)+' di trade validi', p:'Validi '+fR(d.valid?d.R_valid/d.valid:NaN)+' per trade, con errori '+fR(d.errors?d.R_errors/d.errors:NaN)+' ('+d.errors+' trade). '+(d.errors?'I più costosi: '+Object.entries(d.byError).sort((a,b)=>a[1].R-b[1].R).slice(0,2).map(([k,v])=>k+' '+v.n+'× ('+fmtR(v.R,1)+')').join(', ')+'.':'') }); }
   const body='<div class="tips">'+tips.map(t=>'<div class="tip-row"><div class="ins-ic'+(t.c==='neg'?' bad':'')+'">'+ic(t.i,18)+'</div><div><b class="'+t.c+'">'+esc(t.h)+'</b><span>'+esc(t.p)+'</span></div></div>').join('')+'</div>'+
     '<div id="ai-box">'+aiBox()+'</div>';
-  return card('Coach', cd.trade+' trade · '+cd.periodo, body, 240);
+  return card('Consigli', cd.trade+' trade · '+cd.periodo, body, 240);
 }
 // commento di Claude: le statistiche aggregate vanno allo script, che chiama l'API di Anthropic (serve ANTHROPIC_KEY nello script)
 const aiKey = cd => JSON.stringify(cd);
 function aiBox() {
   const cd=S._coach, saved=cd && aiCacheGet(aiKey(cd));
   if (saved) return '<div class="ai"><div class="ai-h">'+logo(20)+'<b>Analisi di Claude</b><button type="button" class="link" data-act="claude">Rifai</button></div><div class="md">'+md(saved)+'</div></div>';
-  return '<button type="button" class="btn sec ai-go" data-act="claude">'+logo(20)+'Chiedi a Claude un\'analisi di questo periodo</button>';
+  return '<button type="button" class="btn sec ai-go" data-act="claude">'+ic('spark',18,2)+'Analisi completa di Claude</button>';
 }
 function aiCacheGet(k) { try { const c=JSON.parse(localStorage.getItem('tj.ai')||'{}'); return c[k]; } catch(e) { return null; } }
 function aiCacheSet(k, v) { try { localStorage.setItem('tj.ai', JSON.stringify({ [k]:v })); } catch(e) {} }
@@ -1618,7 +1644,7 @@ document.addEventListener('click', e => {
   if (b.dataset.act==='more') { S.lmore+=60; renderList(); return; }
   if (b.classList.contains('trow')) { if (b.dataset.row) openForm(+b.dataset.row); return; }
   const sg=b.closest('[data-seg]');
-  if (b.dataset.per) { S.per=b.dataset.per; store.set('per',S.per); renderHome(); return; }
+  if (b.closest('[data-seg=per]')) { S.per=b.dataset.v; store.set('per',S.per); renderHome(); return; }
   if (sg && sg.dataset.seg.indexOf('mc-')===0) { const k=sg.dataset.seg==='mc-mode'?'mode':'sims'; S.mc[k]=b.dataset.v; saveMC(); if (k==='mode') renderCurrent(true); else setSeg(sg,b.dataset.v); return; }
   if (b.closest('[data-lf]')) { S[b.dataset.k]=b.dataset.v; S.lmore=60; renderList(); return; }
 });
