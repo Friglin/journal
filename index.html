@@ -458,6 +458,7 @@ nav.bar { background:color-mix(in srgb,var(--surface) 76%,transparent); -webkit-
 .coach-chat { background:color-mix(in srgb,var(--accent) 5%,var(--sunk)); }
 .aifab { border:0; background:linear-gradient(135deg,var(--accent),var(--glow2)); color:#fff; box-shadow:0 14px 28px -12px color-mix(in srgb,var(--accent) 85%,transparent); }
 .scope { max-width:340px; }
+.brand { position:relative; } .brand.stale::after { content:''; position:absolute; left:22px; top:-2px; width:9px; height:9px; border-radius:50%; background:var(--warn); border:2px solid var(--bg); }
 .aifab.mini { transform:scale(.84); }
 @media (max-width:999px) { .aifab { width:48px; height:48px; border-radius:16px; bottom:calc(env(safe-area-inset-bottom,0px) + 81px); } }
 /* logo */
@@ -562,8 +563,10 @@ function call(fn, ...args) {
   const url=store.get('api',''), key=store.get('key','');
   if (!url || !key) { showSetup(); return Promise.reject(new Error('Inserisci indirizzo e chiave di accesso')); }
   // corpo in text/plain: è una richiesta «semplice», niente controllo preventivo CORS
-  return fetch(url, { method:'POST', body: JSON.stringify({ key, fn, args }) })
+  const ctl = 'AbortController' in window ? new AbortController() : null, to = ctl && setTimeout(()=>ctl.abort(), fn==='chat'||fn==='coach' ? 90000 : 30000);
+  return fetch(url, { method:'POST', body: JSON.stringify({ key, fn, args }), signal: ctl ? ctl.signal : undefined })
     .catch(() => { throw new Error('NETWORK'); })
+    .finally(() => clearTimeout(to))
     .then(r => { if (!r.ok) throw new Error('Il server ha risposto '+r.status); return r.json(); })
     .then(d => { if (d.ok) return d.result; if (d.error==='CHIAVE_ERRATA') { showSetup('La chiave non è valida: controllala e riprova.'); throw new Error('Chiave non valida'); } throw new Error(d.error); });
 }
@@ -795,21 +798,35 @@ const only1 = r => !r.EM || r.EM===EM1;   // i trade con altri entry model non v
 function applyData(d) { S.type=d.type; S.rows=d.rows.map(a=>unpack(d.h,a)).filter(only1); S.loaded=true; }
 let syncN=0;
 function setSync(on) { syncN=Math.max(0,syncN+(on?1:-1)); $('brand').classList.toggle('sync', syncN>0); }
-function fetchFile(f) { setSync(true); return call('getTrades', f).then(d=>{ S.data[f]=d; cacheSet(f,d); return d; }).finally(()=>setSync(false)); }
+// Lettura del foglio: una sola richiesta per file alla volta, un secondo tentativo automatico se la prima non va,
+// e niente nuova lettura se i dati sono stati letti da meno di FRESH_MS (cambiare pagina o file è immediato).
+const FRESH_MS = 90000, inflight = {}, fetchedAt = {};
+function fetchFile(f) {
+  if (inflight[f]) return inflight[f];
+  setSync(true);
+  const once = () => call('getTrades', f);
+  inflight[f] = once().catch(e => { if (e.message==='Chiave non valida') throw e; return new Promise(r=>setTimeout(r,1500)).then(once); })
+    .then(d=>{ S.data[f]=d; cacheSet(f,d); fetchedAt[f]=Date.now(); return d; })
+    .finally(()=>{ delete inflight[f]; setSync(false); });
+  return inflight[f];
+}
+let warned=false;
 async function load() {
   const f=S.file, have = S.data[f] || cacheGet(f);
   if (have) { S.data[f]=have; applyData(have); renderCurrent(); } else { S.loaded=false; renderCurrent(); }
   const before = have ? JSON.stringify(have) : '';
+  if (have && Date.now()-(fetchedAt[f]||0) < FRESH_MS) return;   // appena letti: niente nuova richiesta
   try {
     const d = await fetchFile(f);
+    $('brand').classList.remove('stale');
     if (S.file===f && JSON.stringify(d)!==before) { applyData(d); if (S.sheet!=='form') renderCurrent(!!have); }
   } catch(e) {
-    if (have) toast('Mostro i dati salvati: il foglio non risponde', true);
+    if (have) { $('brand').classList.add('stale'); if (!warned) { warned=true; toast('Foglio lento a rispondere: uso i dati salvati e riprovo più tardi'); } setTimeout(()=>{ if (S.file===f) { fetchedAt[f]=0; fetchFile(f).then(d=>{ $('brand').classList.remove('stale'); if (JSON.stringify(d)!==before && S.file===f && S.sheet!=='form') { applyData(d); renderCurrent(true); } }).catch(()=>{}); } }, 20000); }
     else if (!viaScript() && e.message==='NETWORK') { $('v-'+S.tab).innerHTML = emptyState('Lo script non risponde', 'Apri l\'URL /exec nel browser: deve comparire {"ok":true,…}. Se chiede di accedere a Google o mostra un errore, il deployment non è «Chiunque» o non usa il Code.gs nuovo.')+'<button class="btn sec" type="button" data-act="setup">Controlla indirizzo e chiave</button>'; }
     else { toast('Non riesco a leggere il foglio: '+(e.message||e), true); $('v-'+S.tab).innerHTML = emptyState('Foglio non raggiungibile', 'Controlla gli ID in Code.gs e i permessi, poi ricarica la pagina.'); }
   }
   const o = f==='EOW' ? 'Journal' : 'EOW';   // precarica l'altro file, così il cambio è immediato
-  if (!S.data[o]) { S.data[o]=cacheGet(o); fetchFile(o).catch(()=>{}); }
+  if (!fetchedAt[o]) { if (!S.data[o]) S.data[o]=cacheGet(o); setTimeout(()=>fetchFile(o).catch(()=>{}), 1200); }   // dopo, per non rallentare il file aperto
 }
 const emptyState = (t, p, btn) => '<div class="card empty rise">'+logo(40)+'<div class="h2">'+t+'</div><p>'+p+'</p>'+(btn?'<button class="btn" type="button" data-act="new">'+ic('plus',18,2.2)+btn+'</button>':'')+'</div>';
 
@@ -1647,6 +1664,7 @@ $('setupForm').addEventListener('submit', async e => {
   catch(x) { if ($('setup').hidden) showSetup(); $('su-err').innerHTML=ic('alert',15,2)+'<span>'+esc(x.message==='Chiave non valida'?'La chiave non è valida: controllala e riprova.':x.message==='NETWORK'?'Lo script non risponde: apri l\'URL nel browser e controlla che il deployment sia «Chiunque» con il Code.gs nuovo.':'Non riesco a collegarmi: '+x.message)+'</span>'; }
   finally { b.disabled=false; b.textContent='Collega'; }
 });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState==='visible' && S.loaded && !S.sheet && Date.now()-(fetchedAt[S.file]||0) > FRESH_MS) load(); });
 renderChrome();
 if (!viaScript() && !(store.get('api','') && store.get('key',''))) showSetup(); else load();
 </script>
