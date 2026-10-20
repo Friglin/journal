@@ -1399,7 +1399,7 @@ function openForm(row) {
             Dir:r.Direzione||'', Esecuzione:r.Esecuzione||'', Errori:splitL(r.Errori), L5:r['5m Link']||'', L1:r['1m Link']||'', Note:r.Note||'' };
     if (E) { S.f.sl=num(r['SL Points']); S.f.PB=String(r['Candele PB']??''); S.f.CC2=/^s[iì]$/i.test(String(r['2° CC']||'').trim())?'Si':'No';
       const o=mins(r.Ora); for (let k=1;k<=5;k++){ const hm=mins(r['Holding time '+k+'rr']); if (isFinite(hm)&&isFinite(o)) S.f['t'+k]=hhmm(o+holdBack(hm)).padStart(5,'0'); } }
-    else { S.f.sl=num(r.SL); S.f.rr=num(r.RR); S.f.TP=r.TP; const hm=mins(r['Holding time']); if (isFinite(hm)) { S.f.holdH=String(Math.floor(hm/60)); S.f.holdM=String(hm%60); } }
+    else { S.f.sl=num(r.SL); S.f.rr=num(r.RR); S.f.TP=r.TP; const hm=mins(r['Holding time']), o=mins(r.Ora); if (isFinite(hm) && isFinite(o)) S.f.Uscita=hhmm(o+holdBack(hm)).padStart(5,'0'); }
     ['sl','dd','maxrr','rr'].forEach(k=>{ S.f[k] = isFinite(S.f[k]) ? String(S.f[k]).replace('.',',') : ''; });
     S.edit = { row, check:{ Asset:r.Asset, Data:r.Data, Ora:String(r.Ora).slice(0,5) } };
   } else {
@@ -1426,7 +1426,7 @@ function renderForm() {
     '<div class="g2">'+fld('Data',flbl('Data','Data'),fin('Data','date'))+fld('Ora',flbl('Ora','Ora di ingresso'),fin('Ora','time'))+'</div></div>';
   h+='<div class="fsec"><div class="fsec-h"><div class="h2">Esecuzione</div></div><div class="g2">'+fnum('sl','SL (punti)','es. 6,25')+fnum('dd','SL DD (punti)','0 se mai contro')+'</div>'+
     '<div class="g2">'+fnum('maxrr','Max Real RR','es. 2,4')+(E?'<div></div>':fnum('rr','RR del trade','es. 1,8 o −1'))+'</div>'+
-    (E?'':'<div class="g2">'+fnum('holdH','Holding · ore','0')+fnum('holdM','Holding · minuti','25')+'</div>')+'</div>';
+    (E?'':fld('Uscita',flbl('Uscita','Ora di uscita'),'<div class="lv">'+fin('Uscita','time')+'<button type="button" class="mini" data-now="Uscita">'+ic('clock',15,2)+'Adesso</button><div class="hold" id="hold-x"></div></div>'))+'</div>';
   h+='<div class="fsec"><div class="fsec-h"><div class="h2">Anteprima</div><span id="fx-out"></span></div><div class="ruler" id="fx-ruler"></div><div class="calc" id="fx-calc"></div><div class="warns" id="fx-warn"></div></div>';
   h+='<div class="fsec"><div class="fsec-h"><div class="h2">Contesto</div></div>'+
     fld('Idea',fspan('Idea 5m'),chips('Idea',L.idea,f.Idea))+
@@ -1463,7 +1463,7 @@ function compute() {
   else out = isFinite(rr) ? (rr>0?'Win':rr<0?'Loss':'BE') : '';
   const o=mins(f.Ora), h={};
   if (E) { for (let k=1;k<=5;k++){ const t=mins(f['t'+k]); if (k<=best && isFinite(t) && isFinite(o) && t>=o) h[k]=hhmm(holdMin(t-o)); } }
-  const hH=numS(f.holdH), hM=numS(f.holdM), hold = !E && Number.isInteger(hH) && Number.isInteger(hM) && hH>=0 && hM>=0 && hM<60 ? hH+':'+String(hM).padStart(2,'0') : '';
+  const ox=mins(f.Uscita), hold = !E && isFinite(o) && isFinite(ox) && ox>o ? hhmm(holdMin(ox-o)) : '';
   if (isFinite(o) && (o<930 || o>1110)) w.push('Ora fuori dalla sessione 15:30–18:30.');
   if (E && out==='Win' && isFinite(dd) && isFinite(sl) && dd>=sl) w.push('SL DD ≥ SL ma l\'esito è Win: controlla.');
   const dup = S.rows.find(r => r.Asset===f.Asset && r.Data===fmtIt(f.Data) && String(r.Ora).slice(0,5)===String(f.Ora||'').slice(0,5) && (!S.edit || r._row!==S.edit.row));
@@ -1487,11 +1487,8 @@ function validate(c) {
   if (!E) {
     numF('rr','l\'RR del trade',-5,'RR troppo basso: controlla.',50);
     if (!has('rr') && isFinite(c.rr) && isFinite(c.max) && c.rr>c.max+1e-9) add('rr','L\'RR non può superare il Max Real RR ('+fmtN(c.max,2)+').', true);
-    const intF = (k, what, max) => { const v=f[k]; if (empty(v)) return add(k, 'Inserisci '+what+'.');
-      if (!/^\s*\d+\s*$/.test(String(v))) return add(k, /[a-z]/i.test(v) ? 'Qui vanno solo numeri interi, senza lettere.' : 'Solo numeri interi, senza virgola.', true);
-      if (+v>max) add(k, 'Al massimo '+max+'.', true); };
-    intF('holdH','le ore (0 se meno di un\'ora)',23); intF('holdM','i minuti',59);
-    if (!has('holdH') && !has('holdM') && +f.holdH===0 && +f.holdM===0) add('holdM','L\'holding non può essere 0:00.', true);
+    if (empty(f.Uscita)) add('Uscita','Inserisci l\'ora di uscita (oppure tocca Adesso).');
+    else if (isFinite(mins(f.Ora)) && mins(f.Uscita)<=mins(f.Ora)) add('Uscita','L\'uscita deve essere dopo l\'ingresso ('+f.Ora+').', true);
   }
   if (!f.Idea) add('Idea','Scegli l\'idea 5m.');
   if (!f.News) add('News','Scegli il tipo di news del giorno.');
@@ -1548,7 +1545,7 @@ function refresh() {
   // sezioni che dipendono dai calcoli: ridisegnate solo quando cambia ciò che mostrano
   const tk=(f.L5||'')+'|'+(f.L1||''); if (S._k.th!==tk) { S._k.th=tk; $('fx-th').innerHTML=['L5','L1'].map(k=>tvImg(f[k])).filter(Boolean).map(u=>'<img src="'+u+'" alt="Screenshot TradingView" loading="lazy">').join(''); }
   if (E) { const key=String(isFinite(c.best)?c.best:-1); if (S._k.lv!==key) { S._k.lv=key; renderLevels(c); } else updateHolds(c); }
-  else { const key=String(c.rr>0); if (S._k.tp!==key) { S._k.tp=key; $('fx-tp').innerHTML = c.rr>0 ? fld('TP',fspan('TP · target scelto'),chips('TP',L.tp,f.TP)) : '<div class="mut" style="font-size:13px">Il TP si sceglie quando il trade è in profitto.</div>'; } }
+  else { updateHolds(c); const key=String(c.rr>0); if (S._k.tp!==key) { S._k.tp=key; $('fx-tp').innerHTML = c.rr>0 ? fld('TP',fspan('TP · target scelto'),chips('TP',L.tp,f.TP)) : '<div class="mut" style="font-size:13px">Il TP si sceglie quando il trade è in profitto.</div>'; } }
   showErrors(errs);
 }
 function renderLevels(c) {
@@ -1557,7 +1554,8 @@ function renderLevels(c) {
   let h=''; for (let k=1;k<=n;k++) h+=fld('t'+k,'','<div class="lv"><b>'+k+'R</b>'+fin('t'+k,'time')+'<button type="button" class="mini" data-now="t'+k+'">'+ic('clock',15,2)+'Adesso</button><div class="hold" id="hold-'+k+'">'+(c.h[k]?'dopo '+c.h[k]:'')+'</div></div>');
   $('fx-lv').innerHTML=h;
 }
-function updateHolds(c) { for (let k=1;k<=5;k++) { const e=$('hold-'+k); if (e) e.textContent = c.h[k] ? 'dopo '+c.h[k] : ''; } }
+function updateHolds(c) { const x=$('hold-x'); if (x) x.textContent = c.hold ? 'holding '+c.hold : '';
+  for (let k=1;k<=5;k++) { const e=$('hold-'+k); if (e) e.textContent = c.h[k] ? 'dopo '+c.h[k] : ''; } }
 function tvImg(u) { const m=/tradingview\.com\/x\/([A-Za-z0-9]+)/.exec(u||''); return m ? 'https://s3.tradingview.com/snapshots/'+m[1][0].toLowerCase()+'/'+m[1]+'.png' : null; }
 function formClick(b) {
   const sg=b.closest('[data-seg]'), ch=b.closest('[data-chips]');
