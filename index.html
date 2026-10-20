@@ -19,6 +19,7 @@
 /* Layout: app a una colonna per telefono – header con cambio file, viste Home / Trade / Analisi / Simula, scheda a comparsa per inserire */
 /* Palette: inchiostro blu notte e cobalto, verde/rosso solo per vinti e persi. Titoli e numeri in Sora, testo in Geist. */
 :root {
+  --seg-on:#FFFFFF;
   --bg:#F5F5F7; --surface:#FFFFFF; --sunk:#ECECEF; --line:rgba(0,0,0,.075); --fg:#1D1D1F; --fg2:#55555B; --fg3:#8A8A90;
   --accent:#0071E3; --accent-ink:#FFFFFF; --accent-soft:#E5F0FD; --glow2:#30B0FF;
   --win:#0E8F55; --win-soft:#DDF3E7; --loss:#E0352B; --loss-soft:#FCE4E2; --warn:#A35A00; --warn-soft:#FDF0D8;
@@ -28,12 +29,12 @@
   --sans:-apple-system,'SF Pro Text','Geist','Segoe UI Variable Text',system-ui,Roboto,sans-serif;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --bg:#000000; --surface:#141416; --sunk:#222226; --line:rgba(255,255,255,.085); --fg:#F5F5F7; --fg2:#A6A6AD; --fg3:#6E6E75;
+  --seg-on:#3A3A40; --bg:#000000; --surface:#141416; --sunk:#222226; --line:rgba(255,255,255,.085); --fg:#F5F5F7; --fg2:#A6A6AD; --fg3:#6E6E75;
   --accent:#2E9BFF; --accent-ink:#FFFFFF; --accent-soft:#0B2742; --glow2:#64D2FF;
   --win:#32D583; --win-soft:#0B2A1C; --loss:#FF6B61; --loss-soft:#3A1412; --warn:#FFB340; --warn-soft:#352407;
   --shadow:0 1px 2px rgba(0,0,0,.5), 0 20px 44px -22px rgba(0,0,0,.9); --scrim:rgba(0,0,0,.62); color-scheme:dark; } }
 :root[data-theme="dark"] {
-  --bg:#000000; --surface:#141416; --sunk:#222226; --line:rgba(255,255,255,.085); --fg:#F5F5F7; --fg2:#A6A6AD; --fg3:#6E6E75;
+  --seg-on:#3A3A40; --bg:#000000; --surface:#141416; --sunk:#222226; --line:rgba(255,255,255,.085); --fg:#F5F5F7; --fg2:#A6A6AD; --fg3:#6E6E75;
   --accent:#2E9BFF; --accent-ink:#FFFFFF; --accent-soft:#0B2742; --glow2:#64D2FF;
   --win:#32D583; --win-soft:#0B2A1C; --loss:#FF6B61; --loss-soft:#3A1412; --warn:#FFB340; --warn-soft:#352407;
   --shadow:0 1px 2px rgba(0,0,0,.5), 0 20px 44px -22px rgba(0,0,0,.9); --scrim:rgba(0,0,0,.62); color-scheme:dark; }
@@ -64,8 +65,8 @@ header.top.scrolled { border-bottom-color:var(--line); }
 
 /* segmented */
 .seg { position:relative; display:grid; grid-template-columns:repeat(var(--n),minmax(0,1fr)); background:var(--sunk); border-radius:12px; padding:3px; }
-.seg::before { content:""; position:absolute; top:3px; bottom:3px; left:3px; width:calc((100% - 6px) / var(--n)); border-radius:9px; background:var(--surface);
-  box-shadow:0 1px 2px rgba(0,0,0,.08), 0 2px 6px -2px rgba(0,0,0,.12); transform:translateX(calc(var(--i) * 100%)); transition:transform .38s cubic-bezier(.3,1.25,.45,1), opacity .2s; }
+.seg::before { content:""; position:absolute; top:3px; bottom:3px; left:3px; width:calc((100% - 6px) / var(--n)); border-radius:9px; background:var(--seg-on);
+  box-shadow:0 1px 2px rgba(0,0,0,.08), 0 3px 8px -2px rgba(0,0,0,.18); transform:translateX(calc(var(--i) * 100%)); transition:transform .38s cubic-bezier(.3,1.25,.45,1), opacity .2s; }
 .seg.none::before { opacity:0; }
 .seg button { position:relative; z-index:1; border:0; background:none; padding:9px 4px; border-radius:9px; font-size:14px; font-weight:500; color:var(--fg2); transition:color .25s; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .seg button.on { color:var(--fg); font-weight:600; }
@@ -101,7 +102,6 @@ main { padding-bottom:calc(150px + env(safe-area-inset-bottom,0px)); }
 .delta.up { background:var(--win-soft); color:var(--win); } .delta.down { background:var(--loss-soft); color:var(--loss); } .delta.flat { background:var(--sunk); color:var(--fg2); }
 .spark { position:relative; height:104px; margin:6px -18px 0; }
 .kgrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
-@media (min-width:600px) { .kgrid.k3 { grid-template-columns:repeat(3,minmax(0,1fr)); } }
 .kpi { background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:14px; display:flex; flex-direction:column; gap:4px; min-width:0; }
 .kpi .v { font-family:var(--display); font-size:29px; line-height:1.1; letter-spacing:-.02em; display:flex; align-items:center; gap:8px; }
 .kpi .v small { font-size:15px; color:var(--fg3); }
@@ -180,7 +180,7 @@ main { padding-bottom:calc(150px + env(safe-area-inset-bottom,0px)); }
 .tip { position:absolute; top:0; left:0; pointer-events:none; background:var(--fg); color:var(--bg); font-size:12px; line-height:1.3; padding:7px 10px; border-radius:10px; white-space:nowrap; opacity:0; transform:translate(-50%,-110%); transition:opacity .15s; z-index:2; }
 .tip.show { opacity:1; }
 .tip b { display:block; font-size:14px; font-family:var(--display); font-weight:500; }
-.bd { display:grid; grid-template-columns:minmax(0,1.25fr) minmax(0,1fr) 42px 58px; gap:10px; align-items:center; padding:9px 0; border-top:1px solid var(--line); font-size:13.5px; }
+.bd { display:grid; grid-template-columns:minmax(0,1.9fr) minmax(0,1fr) 40px 60px; gap:10px; align-items:center; padding:9px 0; border-top:1px solid var(--line); font-size:13.5px; }
 .bd.hd { border-top:0; padding:0 0 4px; font-size:11px; color:var(--fg3); text-transform:uppercase; letter-spacing:.06em; font-weight:600; }
 .bd-l { min-width:0; } .bd-l span { display:block; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .bd-l small { color:var(--fg3); font-size:11.5px; }
 .track { height:8px; border-radius:99px; background:var(--sunk); overflow:hidden; }
@@ -233,7 +233,7 @@ nav.bar button.on { color:var(--fg); } nav.bar button.on .pill { color:var(--acc
 .field { display:flex; flex-direction:column; gap:6px; min-width:0; }
 .field > label, .flabel { font-size:12.5px; color:var(--fg2); font-weight:500; }
 .g2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
-.inp { width:100%; min-width:0; height:46px; border:1px solid var(--line); background:var(--bg); color:var(--fg); border-radius:12px; padding:0 12px;
+.inp { width:100%; min-width:0; height:46px; border:1px solid var(--line); background:var(--sunk); color:var(--fg); border-radius:12px; padding:0 12px;
   font:inherit; font-size:16px; font-variant-numeric:tabular-nums; transition:border-color .2s, box-shadow .2s; -webkit-appearance:none; appearance:none; }
 .inp:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 4px var(--accent-soft); }
 textarea.inp { height:auto; min-height:86px; padding:12px; resize:vertical; line-height:1.45; }
@@ -262,7 +262,7 @@ textarea.inp { height:auto; min-height:86px; padding:12px; resize:vertical; line
 .thumbs { display:grid; gap:8px; }
 .thumbs img { width:100%; max-width:100%; border-radius:12px; border:1px solid var(--line); background:var(--sunk); }
 .out { display:flex; flex-direction:column; min-width:0; flex:1; }
-.out b { font-family:var(--display); font-size:19px; font-weight:500; line-height:1.15; }
+.out b { font-family:var(--display); font-size:18px; font-weight:500; line-height:1.15; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .out span { font-size:12px; color:var(--fg3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .btn { border:0; border-radius:14px; height:50px; padding:0 22px; font-size:15.5px; font-weight:600; background:var(--accent); color:var(--accent-ink); display:inline-flex; align-items:center; justify-content:center; gap:8px; transition:transform .15s, opacity .2s; }
 .btn.sec { background:var(--sunk); color:var(--fg); }
@@ -285,11 +285,7 @@ body::after { content:""; position:fixed; inset:-25%; z-index:-1; pointer-events
              radial-gradient(28% 26% at 88% 34%, color-mix(in srgb,var(--glow2) 14%,transparent), transparent 70%);
   animation:drift 26s ease-in-out infinite alternate; }
 @keyframes drift { to { transform:translate3d(4%,6%,0) rotate(6deg); } }
-/* logo: tre candele in salita */
 .logo { display:block; flex:none; filter:drop-shadow(0 4px 10px color-mix(in srgb,var(--accent) 35%,transparent)); }
-.logo .c { transform-box:fill-box; transform-origin:50% 100%; }
-.brand.sync .logo .c { animation:bob .9s ease-in-out infinite; } .brand.sync .logo .c2 { animation-delay:.15s; } .brand.sync .logo .c3 { animation-delay:.3s; }
-@keyframes bob { 50% { transform:scaleY(.55); } }
 .brand { font-weight:600; letter-spacing:-.03em; }
 /* benvenuto */
 #splash { position:fixed; inset:0; z-index:90; display:grid; place-items:center; background:var(--bg); transition:opacity .55s ease, visibility .55s; }
@@ -297,9 +293,7 @@ body::after { content:""; position:fixed; inset:-25%; z-index:-1; pointer-events
 .sp-in { display:flex; flex-direction:column; align-items:center; gap:14px; text-align:center; animation:spIn .8s cubic-bezier(.2,.8,.2,1) both; }
 .sp-in h1 { font-family:var(--display); font-size:32px; font-weight:600; letter-spacing:-.04em; margin:6px 0 0; }
 .sp-in p { margin:0; color:var(--fg2); font-size:15px; }
-.sp-in .logo .c { animation:candle .7s cubic-bezier(.3,1.4,.5,1) both; } .sp-in .logo .c2 { animation-delay:.12s; } .sp-in .logo .c3 { animation-delay:.24s; }
 @keyframes spIn { from { opacity:0; transform:translateY(16px) scale(.96); } }
-@keyframes candle { from { transform:scaleY(0); } }
 /* filtri condivisi */
 .fbar { display:flex; flex-wrap:wrap; gap:7px; align-items:center; }
 .fchip { display:inline-flex; align-items:center; gap:5px; border:0; background:var(--accent-soft); color:var(--accent); font-weight:600; font-size:12.5px; padding:7px 9px 7px 12px; border-radius:99px; animation:pop .35s cubic-bezier(.3,1.5,.5,1) both; }
@@ -394,8 +388,6 @@ header.top { border-top:3px solid var(--accent); transition:border-color .3s; }
 .chat-in textarea { flex:1; min-height:46px; max-height:140px; resize:none; }
 .chat-in .btn { height:46px; width:46px; padding:0; flex:none; }
 .sugg { display:flex; flex-wrap:wrap; gap:8px; }
-.typing { display:inline-flex; gap:4px; } .typing i { width:7px; height:7px; border-radius:50%; background:var(--fg3); animation:blink 1.2s infinite; } .typing i:nth-child(2){animation-delay:.2s} .typing i:nth-child(3){animation-delay:.4s}
-@keyframes blink { 0%,80%,100% { opacity:.25 } 40% { opacity:1 } }
 .coach-chat { background:var(--sunk); border-radius:20px; padding:14px; display:flex; flex-direction:column; gap:12px; }
 .btn.danger { background:var(--loss-soft); color:var(--loss); }
 .btn.danger.arm { background:var(--loss); color:#fff; }
@@ -403,7 +395,6 @@ header.top { border-top:3px solid var(--accent); transition:border-color .3s; }
 @media (min-width:1000px) {
   .wrap { max-width:1240px; padding-left:32px; padding-right:32px; }
   .kgrid { grid-template-columns:repeat(4,minmax(0,1fr)); }
-  .kgrid.k3 { grid-template-columns:repeat(6,minmax(0,1fr)); }
   nav.bar .in { max-width:640px; }
   .sheet { max-width:760px; }
   .sheet.side { overflow:hidden; left:auto; right:24px; top:96px; bottom:24px; width:460px; max-width:none; border-radius:24px; transform:translateX(110%); }
@@ -426,7 +417,6 @@ header.top::before { content:""; position:absolute; inset:0 0 auto; height:3px; 
 .top .wrap.filebar { padding-block:0 12px; }
 .filebar b { display:inline-flex; align-items:center; gap:6px; background:var(--accent); color:var(--accent-ink); font-size:11px; letter-spacing:.08em; padding:4px 10px; border-radius:99px; }
 .filebar i { display:none; }
-.fileeb { color:var(--accent); font-weight:700; margin-bottom:2px; }
 .view { gap:16px; padding-top:10px; }
 .stat-h { align-items:flex-end; }
 .stat-h h1, .hello h1 { font-family:var(--display); font-weight:700; letter-spacing:-.035em; }
@@ -459,7 +449,9 @@ nav.bar { background:color-mix(in srgb,var(--surface) 76%,transparent); -webkit-
 .aifab { border:0; background:linear-gradient(135deg,var(--accent),var(--glow2)); color:#fff; box-shadow:0 14px 28px -12px color-mix(in srgb,var(--accent) 85%,transparent); }
 .scope { max-width:340px; }
 .brand { position:relative; } .brand.stale::after { content:''; position:absolute; left:22px; top:-2px; width:9px; height:9px; border-radius:50%; background:var(--warn); border:2px solid var(--bg); }
-.aifab.mini { transform:scale(.84); }
+@media (max-width:480px) { .xs-hide { display:none; } }
+.aifab.away { opacity:0; transform:translateY(16px) scale(.8); pointer-events:none; }
+.chips.scrollx { flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; margin:0 -16px; padding:2px 16px; } .chips.scrollx::-webkit-scrollbar { display:none; }
 
 /* logo */
 .logo .bar { transform-box:fill-box; transform-origin:0 50%; }
@@ -776,7 +768,6 @@ function monthItems(ts, m, last) {
 
 // ───────────────────────── navigazione ─────────────────────────
 const TABS = [['home','Home','home'],['list','Trade','list'],['stats','Analisi','chart'],['coach','Coach','spark'],['mc','Simula','dice']];
-const fileEb = () => '';   // il file è già indicato nella barra fissa in alto
 const FILE_LBL = { EOW:['EOW','End of Week · backtest della settimana'], Journal:['JOURNAL','Trade reali eseguiti'] };
 function fileLook() { document.documentElement.dataset.file=S.file; const l=FILE_LBL[S.file]; $('filebar').innerHTML='<i></i><b>'+l[0]+'</b><span>'+l[1]+'</span>';
   const mt=document.querySelector('meta[name=theme-color]'); if (mt) mt.content = S.file==='EOW' ? '#0071E3' : '#C25E00'; }
@@ -906,7 +897,7 @@ function renderFilters() {
   let h='<div class="fsec"><div class="field"><span class="flabel">Trading plan</span>'+seg('f-plan',[{v:'max2',l:'Max 2 trade al giorno'},{v:'',l:'Nessuno'}],F.plan||'')+
         '<span class="hint">Max 2 trade al giorno: dopo il primo trade in profitto la giornata si chiude.</span></div>'+
         (E?'<div class="field"><span class="flabel">Target (esito del trade)</span>'+seg('f-tgt',[1,2,3,4,5].map(k=>({v:k,l:k+'R'})),tgt())+'</div>':'')+'</div>';
-  h+='<div class="fsec"><div class="flabel">Periodo</div>'+chips('quick',[{v:'all',l:'Tutto'},{v:'w',l:wkLbl()},{v:'m',l:'Questo mese'},{v:'3m',l:'Ultimi 3 mesi'},{v:'y',l:'Quest\'anno'}],F.quick||'all')+
+  h+='<div class="fsec"><div class="flabel">Periodo</div>'+chips('quick',[{v:'all',l:'Tutto'},{v:'w',l:wkLbl()},{v:'m',l:'Questo mese'},{v:'3m',l:'Ultimi 3 mesi'},{v:'y',l:'Quest\'anno'}],F.quick||'all').replace('class="chips"','class="chips scrollx"')+
         '<div class="g2"><div class="field"><label for="ff-from">Dal</label><input class="inp" id="ff-from" type="date" data-fk="from" value="'+(F.from||'')+'"></div><div class="field"><label for="ff-to">Al</label><input class="inp" id="ff-to" type="date" data-fk="to" value="'+(F.to||'')+'"></div></div></div>';
   h+='<div class="fsec"><div class="field"><span class="flabel">Asset</span>'+seg('f-asset',[{v:'',l:'Tutti'},'ES','NQ'],F.asset||'')+'</div>'+
      (hasCol('Direzione')?'<div class="field"><span class="flabel">Direzione</span>'+seg('f-dir',[{v:'',l:'Tutte'},...L.dir],F.dir||'')+'</div>':'')+
@@ -949,7 +940,7 @@ function renderHome() {
                    c: cOk ? dd(cr[0])+' → '+dd(addDays(cr[1],-1)) : 'scegli le date' }[S.per];
   const prevLbl = { w: S.type==='EOW' ? 'rispetto alla settimana prima' : 'rispetto alla settimana scorsa', m:'rispetto a '+MESI_F[(now.getMonth()+11)%12], '3m':'rispetto ai 3 mesi prima', y:'rispetto al '+(now.getFullYear()-1),
                     c: cOk ? 'rispetto ai '+Math.round((cr[1]-cr[0])/dayMs)+' giorni prima' : '' }[S.per];
-  let html = '<div class="hello rise"><div>'+fileEb()+'<div class="eyebrow">'+GIORNI[now.getDay()]+' '+now.getDate()+' '+MESI_F[now.getMonth()]+'</div><h1>'+words(greeting())+'</h1></div>'+
+  let html = '<div class="hello rise"><div><div class="eyebrow">'+GIORNI[now.getDay()]+' '+now.getDate()+' '+MESI_F[now.getMonth()]+'</div><h1>'+words(greeting())+'</h1></div>'+
     '<span class="sess'+(ses.open?' open':'')+'" id="sess"><i></i>'+ses.txt+'</span></div>';
   html += fbar(30);
   html += '<div class="perseg rise" style="--d:40ms">'+seg('per',[{v:'w',l:'Sett.'},{v:'m',l:'Mese'},{v:'3m',l:'3M'},{v:'y',l:'Anno'},{v:'all',l:'Tutto'},{v:'c',h:ic('cal',16,2),l:'Date'}],S.per)+'</div>';
@@ -982,8 +973,8 @@ function renderHome() {
   if (ts.length>=6) {
     const best=bestGroup(ts,m,t=>t.idea,L.idea,1), band=bestGroup(ts,m,t=>bandOf(t),L.bands.map(b=>b[0]),1), worst=bestGroup(ts,m,t=>bandOf(t),L.bands.map(b=>b[0]),-1);
     let ins='';
-    if (best) ins+=insRow('target','Setup migliore', best.k, best);
-    if (band) ins+=insRow('clock','Fascia oraria migliore', band.k, band);
+    if (best && best.a.R>0) ins+=insRow('target','Setup migliore', best.k, best);
+    if (band && band.a.R>0) ins+=insRow('clock','Fascia oraria migliore', band.k, band);
     if (worst && worst.a.R<0 && (!band || worst.k!==band.k)) ins+=insRow('alert','Fascia da rivedere', worst.k, worst, true);
     if (ins) html += '<div class="card rise" style="--d:340ms"><div class="card-h"><div class="h2">Cosa funziona</div><span class="sub">'+perLbl+'</span></div><div class="ins">'+ins+'</div></div>';
   }
@@ -1002,11 +993,11 @@ const insRow = (icn, lbl, k, b, bad) => '<div class="ins-row"><div class="ins-ic
 
 // ───────────────────────── TRADE ─────────────────────────
 const isFlash = t => t.raw===S.flash && performance.now()-S.flashT < 1800;
-function trow(t, m) {
+function trow(t, m, noDate) {
   const E=S.type==='EOW', w=m.isWin(t), l=m.isLoss(t), r=m.rOf(t);
   const res = t.raw._pending ? '<b class="mut">Salvo…</b><span>'+fmtR(r,E?0:2)+'</span>' : E ? '<b class="'+sgn(r)+'">'+fmtR(r,0)+'</b><span>max '+fmtN(t.max,1)+' R</span>' : '<b class="'+sgn(r)+'">'+fmtR(r,2)+'</b><span>'+esc(t.tp||t.out||'')+'</span>';
   return '<button type="button" class="trow'+(t.raw._pending?' pend':'')+(isFlash(t)?' new" style="animation-delay:-'+Math.round(performance.now()-S.flashT)+'ms':'')+'" data-row="'+(t.row||'')+'"><span class="badge '+(w?'w':l?'l':'')+'">'+esc(t.a)+'</span>'+
-    '<span style="min-width:0"><span class="t1">'+esc(String(t.raw.Ora).slice(0,5))+'<span>'+t.d.getDate()+' '+MESI[t.d.getMonth()]+'</span></span><span class="t2" style="display:block">'+esc([t.dir,t.idea,t.news].filter(Boolean).join(' · '))+'</span></span>'+
+    '<span style="min-width:0"><span class="t1">'+esc(String(t.raw.Ora).slice(0,5))+(noDate?'':'<span>'+t.d.getDate()+' '+MESI[t.d.getMonth()]+'</span>')+'</span><span class="t2" style="display:block">'+esc([t.dir,t.idea,t.news].filter(Boolean).join(' · '))+'</span></span>'+
     '<span class="tres">'+res+'</span>'+ic('chev',16,2)+'</button>';
 }
 function renderList() {
@@ -1015,12 +1006,12 @@ function renderList() {
   let ts=base.slice().reverse();
   if (S.lo) ts=ts.filter(t=> S.lo==='Win'?m.isWin(t): S.lo==='Loss'?m.isLoss(t): !m.isWin(t)&&!m.isLoss(t));
   const oo=[{v:'',l:'Tutti'},{v:'Win',l:'Vinti'},{v:'Loss',l:'Persi'}]; if (!E) oo.push({v:'BE',l:'Pareggio'});
-  let html='<div class="stat-h rise"><div>'+fileEb()+'<h1>'+words('Trade')+'</h1></div><span class="mut num">'+ts.length+' su '+S.rows.length+'</span></div>'+fbar(20);
+  let html='<div class="stat-h rise"><div><h1>'+words('Trade')+'</h1></div><span class="mut num">'+ts.length+' su '+S.rows.length+'</span></div>'+fbar(20);
   html+='<div class="toolbar rise" style="--d:40ms" data-lf="1">'+oo.map(o=>'<button type="button" class="chip'+(S.lo===o.v?' on':'')+'" data-k="lo" data-v="'+o.v+'">'+o.l+'</button>').join('')+'</div>';
   if (!ts.length) html+=emptyState('Nessun trade', S.rows.length?'Nessun trade con questi filtri.':'Il foglio '+S.file+' è vuoto: inserisci il primo trade.', S.rows.length?null:'Nuovo trade');
   const shown=ts.slice(0,S.lmore); let day='', grp=[], i=0;
   const flush=()=>{ if (!grp.length) return; const R=grp.reduce((s,t)=>s+m.rOf(t),0), d=grp[0].d;
-    html+='<div class="rise dayg" style="--d:'+Math.min(60+i*30,400)+'ms"><div class="dayh"><span>'+GIORNI[d.getDay()].replace(/^./,c=>c.toUpperCase())+' '+d.getDate()+' '+MESI_F[d.getMonth()]+(d.getFullYear()!==new Date().getFullYear()?' '+d.getFullYear():'')+'</span><span class="num '+sgn(R)+'">'+fmtR(R,E?0:2)+'</span></div><div class="dayc">'+grp.map(t=>trow(t,m)).join('')+'</div></div>'; grp=[]; i++; };
+    html+='<div class="rise dayg" style="--d:'+Math.min(60+i*30,400)+'ms"><div class="dayh"><span>'+GIORNI[d.getDay()].replace(/^./,c=>c.toUpperCase())+' '+d.getDate()+' '+MESI_F[d.getMonth()]+(d.getFullYear()!==new Date().getFullYear()?' '+d.getFullYear():'')+'</span><span class="num '+sgn(R)+'">'+fmtR(R,E?0:2)+'</span></div><div class="dayc">'+grp.map(t=>trow(t,m,true)).join('')+'</div></div>'; grp=[]; i++; };
   shown.forEach(t=>{ const k=t.d.toDateString(); if (k!==day) { flush(); day=k; } grp.push(t); }); flush();
   if (ts.length>S.lmore) html+='<button type="button" class="btn sec more" data-act="more">Mostra altri '+Math.min(60,ts.length-S.lmore)+'</button>';
   enter(el, html);
@@ -1048,7 +1039,7 @@ const kpi = (lbl, v, hint, d, cls) => '<div class="kpi rise" style="--d:'+(d||0)
 function renderStats() {
   const el=$('v-stats'); if (!S.loaded) { el.innerHTML=skeleton(); return; }
   const E=S.type==='EOW', T=tgt(), m=curModel(), ts=filtered(m);
-  let html='<div class="stat-h rise"><div>'+fileEb()+'<h1>'+words('Analisi')+'</h1></div><span class="mut num">'+ts.length+' trade</span></div>'+fbar(20);
+  let html='<div class="stat-h rise"><div><h1>'+words('Analisi')+'</h1></div><span class="mut num">'+ts.length+' trade</span></div>'+fbar(20);
   if (!ts.length) { enter(el, html+emptyState('Nessun trade', 'Nessun trade corrisponde ai filtri scelti. Allarga il periodo o togli qualche filtro.')); return; }
   const a=agg(ts,m), ringOff=94.25*(1-(a.wr||0));
   html+='<div class="kgrid">'+
@@ -1188,7 +1179,7 @@ function renderCoach() {
   const el=$('v-coach'); if (!S.loaded) { el.innerHTML=skeleton(); return; }
   S._coach=coachData();
   const allS=S.coachScope==='all', n=allS ? all().length : filtered().length;
-  let html='<div class="stat-h rise"><div>'+fileEb()+'<h1>'+words('Coach')+'</h1></div><span class="mut num">'+n+' trade</span></div>'+
+  let html='<div class="stat-h rise"><div><h1>'+words('Coach')+'</h1></div><span class="mut num">'+n+' trade</span></div>'+
     '<div class="rise scope" style="--d:20ms">'+seg('coach-scope',[{v:'all',l:'Tutti i trade'},{v:'filt',l:'Con i filtri'}],S.coachScope)+'</div>'+(allS ? '' : fbar(30));
   html+=coachCard(S._coach);
   html+='<div class="card rise" style="--d:300ms"><div class="card-h"><div class="h2">Chiedi al coach</div><span class="sub">vede tutti i trade e le note</span></div>'+
@@ -1302,7 +1293,7 @@ function mcErrors(p) { const e={};
 function renderMC() {
   const el=$('v-mc'); if (!S.loaded) { el.innerHTML=skeleton(); return; }
   const m=curModel(), ts=filtered(m), Rs=ts.map(m.rOf), a=agg(ts,m), P=S.mc, E=S.type==='EOW';
-  let html='<div class="stat-h rise"><div>'+fileEb()+'<h1>'+words('Simula')+'</h1></div><span class="mut num">Monte Carlo</span></div>'+fbar(20);
+  let html='<div class="stat-h rise"><div><h1>'+words('Simula')+'</h1></div><span class="mut num">Monte Carlo</span></div>'+fbar(20);
   html+='<div class="card mc-src rise" style="--d:40ms"><div class="mc-src-ic">'+logo(30)+'</div><div><b>'+ts.length+' trade di '+S.file+'</b><span>WR '+pct(a.wr)+' · expectancy '+fmtR(a.exp,2)+(E?' · esito a '+tgt()+'R':' · RR reale')+'</span></div></div>';
   if (ts.length<20) html+='<div class="warn rise">'+ic('alert',17,2)+'<span>'+(ts.length?'Solo '+ts.length+' trade: la simulazione sarà poco affidabile. Allarga i filtri se puoi.':'Nessun trade con questi filtri: togli qualche filtro per simulare.')+'</span></div>';
   const f=(k,lbl,ph,suf)=>'<div class="field" data-f="mc-'+k+'"><label for="mc-'+k+'">'+lbl+'</label><div class="inwrap">'+(suf==='$'?'<i>$</i>':'')+'<input class="inp" id="mc-'+k+'" data-mc="'+k+'" type="text" inputmode="decimal" autocomplete="off" value="'+esc(P[k])+'" placeholder="'+ph+'">'+(suf==='%'?'<i class="r">%</i>':'')+'</div><div class="ferr" id="err-mc-'+k+'"></div></div>';
@@ -1409,7 +1400,7 @@ function openForm(row) {
     if (E) { S.f.sl=num(r['SL Points']); S.f.PB=String(r['Candele PB']??''); S.f.CC2=/^s[iì]$/i.test(String(r['2° CC']||'').trim())?'Si':'No';
       const o=mins(r.Ora); for (let k=1;k<=5;k++){ const hm=mins(r['Holding time '+k+'rr']); if (isFinite(hm)&&isFinite(o)) S.f['t'+k]=hhmm(o+holdBack(hm)).padStart(5,'0'); } }
     else { S.f.sl=num(r.SL); S.f.rr=num(r.RR); S.f.TP=r.TP; const hm=mins(r['Holding time']); if (isFinite(hm)) { S.f.holdH=String(Math.floor(hm/60)); S.f.holdM=String(hm%60); } }
-    ['sl','dd','maxrr','rr'].forEach(k=>{ if (!isFinite(S.f[k])) S.f[k]=''; });
+    ['sl','dd','maxrr','rr'].forEach(k=>{ S.f[k] = isFinite(S.f[k]) ? String(S.f[k]).replace('.',',') : ''; });
     S.edit = { row, check:{ Asset:r.Asset, Data:r.Data, Ora:String(r.Ora).slice(0,5) } };
   } else {
     const last=all().slice(-1)[0];
@@ -1455,7 +1446,7 @@ function renderForm() {
     h+='<div class="fsec"><div class="fsec-h"><div class="h2">Dettagli</div></div>'+linksNote(f, 'Es. Trade valido, poco volume però.')+'</div>';
   }
   $('sh-body').innerHTML=h; stagger(); S._k={}; refresh();
-  $('sh-foot').innerHTML=(S.edit?'<button type="button" class="btn danger" id="fx-del" data-act="del" aria-label="Elimina trade">'+ic('trash',18,2)+'</button>':'')+'<div class="out" id="fx-sum"></div><button type="button" class="btn" id="fx-save" data-act="save">'+ic('check',18,2.2)+(S.edit?'Salva modifiche':'Salva')+'</button>';
+  $('sh-foot').innerHTML=(S.edit?'<button type="button" class="btn danger" id="fx-del" data-act="del" aria-label="Elimina trade">'+ic('trash',18,2)+'</button>':'')+'<div class="out" id="fx-sum"></div><button type="button" class="btn" id="fx-save" data-act="save">'+ic('check',18,2.2)+(S.edit?'Salva<span class="xs-hide"> modifiche</span>':'Salva')+'</button>';
   refresh();
 }
 // holding dei livelli: i minuti si contano dalla candela dopo l'ingresso (15:40 → 15:44 = 3 min),
@@ -1663,7 +1654,7 @@ $('scrim').addEventListener('click', closeSheet);
 document.addEventListener('keydown', e => { if (e.key==='Escape' && S.sheet) closeSheet(); });
 let lastY=0;
 window.addEventListener('scroll', () => { const y=window.scrollY; $('top').classList.toggle('scrolled', y>4);
-  if (Math.abs(y-lastY)>6) { const dn=y>lastY && y>120; $('fab').classList.toggle('mini', dn); $('aifab').classList.toggle('mini', dn); lastY=y; } }, { passive:true });
+  if (Math.abs(y-lastY)>6) { const dn=y>lastY && y>120; $('fab').classList.toggle('mini', dn); $('aifab').classList.toggle('away', dn); lastY=y; } }, { passive:true });
 let lastW=window.innerWidth, rT;
 window.addEventListener('resize', () => { clearTimeout(rT); rT=setTimeout(()=>{ if (Math.abs(window.innerWidth-lastW)>20) { lastW=window.innerWidth; if (!S.sheet) renderCurrent(); } }, 200); });
 setInterval(() => { const el=$('sess'); if (el) { const s=sessionInfo(); el.className='sess'+(s.open?' open':''); el.innerHTML='<i></i>'+s.txt; } }, 30000);
