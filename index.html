@@ -507,6 +507,9 @@ nav.bar { background:color-mix(in srgb,var(--surface) 76%,transparent); -webkit-
   .fab { width:56px; height:56px; padding:0; gap:0; justify-content:center; border-radius:18px; } .fab span { display:none; }
   .aifab { left:auto; right:max(20px,calc(env(safe-area-inset-right,0px) + 20px)); bottom:calc(env(safe-area-inset-bottom,0px) + 146px); width:48px; height:48px; border-radius:16px; }
 }
+/* pagine che non dipendono da EOW / Journal: niente selettore del file */
+:root[data-tab="home"] #fileSeg, :root[data-tab="news"] #fileSeg, :root[data-tab="set"] #fileSeg { visibility:hidden; }
+:root[data-tab="home"] .top .wrap.filebar, :root[data-tab="news"] .top .wrap.filebar, :root[data-tab="set"] .top .wrap.filebar { display:none; }
 /* ───── navigazione: barra laterale su PC, barra in basso con «Altro» sul telefono ───── */
 .side { display:none; }
 .ptitle { display:none; }
@@ -561,7 +564,7 @@ nav.bar { background:color-mix(in srgb,var(--surface) 76%,transparent); -webkit-
   :root.sbc .sb-i .sb-b { position:absolute; left:28px; top:5px; min-width:17px; height:17px; padding:0 4px; font-size:10px; margin:0; box-shadow:0 0 0 2px var(--surface); }
 }
 @media (max-width:999px) {
-  :root[data-tab="news"] #fileSeg, :root[data-tab="set"] #fileSeg { visibility:hidden; }
+  
 }
 .more { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
 .more button { display:flex; flex-direction:column; align-items:flex-start; gap:10px; padding:16px; border-radius:20px; border:1px solid var(--line); background:var(--surface); color:var(--fg); font:inherit; text-align:left; animation:rise .5s cubic-bezier(.2,.9,.3,1.2) both; animation-delay:calc(var(--k) * 40ms); }
@@ -665,6 +668,42 @@ nav.bar { background:color-mix(in srgb,var(--surface) 76%,transparent); -webkit-
 
 /* ───── Impostazioni ───── */
 .set .field { margin-bottom:12px; } .set textarea.inp { min-height:140px; resize:vertical; padding-top:10px; line-height:1.5; }
+
+/* ───── Panoramica ───── */
+.intro { position:relative; overflow:hidden; border-radius:24px; padding:18px 20px; background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 12%,var(--surface)),var(--surface) 70%); border:1px solid var(--line); box-shadow:var(--shadow); }
+.intro p { margin:0; font-size:15.5px; line-height:1.55; color:var(--fg); } .intro p b.warn { color:var(--warn); }
+.in-cd { display:flex; align-items:baseline; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:8px; font-size:12.5px; font-weight:600; color:var(--fg3); text-transform:uppercase; letter-spacing:.06em; }
+.in-cd b { font-size:22px; letter-spacing:-.03em; text-transform:none; color:var(--accent); font-variant-numeric:tabular-nums; }
+.recap .rc-g { display:grid; grid-template-columns:minmax(70px,.7fr) minmax(0,1fr) minmax(0,1fr); gap:0 14px; }
+.rc-h { font-size:12px; font-weight:650; color:var(--fg2); display:flex; align-items:center; gap:7px; padding-bottom:8px; }
+.rc-h i { width:8px; height:8px; border-radius:50%; } .rc-h.j i { background:#FF9F0A; } .rc-h.e i { background:#2E9BFF; }
+.rc-l { font-size:13px; color:var(--fg3); font-weight:600; padding:10px 0; border-top:1px solid var(--line); display:flex; align-items:center; }
+.rc-c { padding:10px 0; border-top:1px solid var(--line); min-width:0; } .rc-c b { display:block; font-size:19px; font-weight:700; letter-spacing:-.03em; } .rc-c span { font-size:12px; color:var(--fg3); }
+.rc-c .chart.sp { height:64px; } .rc-c.j .chart.sp { --accent:#FF9F0A; } .rc-c.e .chart.sp { --accent:#2E9BFF; }
+.rc-act { display:flex; gap:18px; flex-wrap:wrap; margin-top:10px; }
+.ds-g { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+.ds-g div { background:var(--sunk); border-radius:14px; padding:10px 12px; } .ds-g b { display:block; font-size:21px; font-weight:700; letter-spacing:-.03em; } .ds-g span { font-size:11.5px; color:var(--fg3); }
+.ds-p { display:flex; gap:8px; align-items:flex-start; margin:12px 0 0; font-size:13.5px; color:var(--fg2); } .ds-p .ic { color:var(--warn); flex:none; margin-top:2px; } .ds-p.ok .ic { color:var(--win); }
+.ftag { font-style:normal; font-size:10px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; padding:1px 6px; border-radius:6px; margin-left:6px; }
+.ftag.Journal { background:color-mix(in srgb,#FF9F0A 18%,transparent); color:#C25E00; } .ftag.EOW { background:color-mix(in srgb,#2E9BFF 16%,transparent); color:#0071E3; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .ftag.Journal { color:#FFB340; } :root:not([data-theme="light"]) .ftag.EOW { color:#64B5FF; } }
+:root[data-theme="dark"] .ftag.Journal { color:#FFB340; } :root[data-theme="dark"] .ftag.EOW { color:#64B5FF; }
+/* ───── sunto news ───── */
+.nh-i { position:relative; margin:12px 0 0; font-size:13.5px; color:var(--fg2); max-width:720px; }
+.nsum .h2 { display:flex; align-items:center; gap:8px; } .nsum .h2 .ic { color:var(--accent); }
+.ns-row { padding:12px 0; border-top:1px solid var(--line); } .ns-row:first-of-type { border-top:0; }
+.ns-h { display:flex; align-items:center; gap:8px; flex-wrap:wrap; } .ns-h b { font-size:15px; }
+.ns-w { font-size:12.5px; color:var(--accent); font-weight:600; margin:2px 0 4px; font-variant-numeric:tabular-nums; }
+.ns-row p { margin:0; font-size:13.5px; color:var(--fg2); line-height:1.5; }
+.ns-warn { display:flex; gap:8px; align-items:flex-start; padding:10px 12px; border-radius:12px; background:color-mix(in srgb,var(--warn) 12%,transparent); color:var(--fg); font-size:13.5px; margin:0 0 10px; } .ns-warn .ic { color:var(--warn); flex:none; margin-top:2px; }
+.ns-ai { margin-top:12px; padding:14px; border-radius:16px; background:color-mix(in srgb,var(--accent) 6%,var(--sunk)); font-size:14px; }
+.nsum .btn.sm { margin-top:12px; }
+a.nrow { color:inherit; text-decoration:none; } a.nrow:hover .nx b { color:var(--accent); }
+/* ───── regole comuni: accessibilità e prestazioni ───── */
+:focus-visible { outline:2.5px solid var(--accent); outline-offset:2px; border-radius:10px; }
+button:focus:not(:focus-visible) { outline:none; }
+.dayg, .nday { content-visibility:auto; contain-intrinsic-size:auto 260px; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; scroll-behavior:auto !important; } }
 </style>
 </head>
 <body>
@@ -764,7 +803,7 @@ function call(fn, ...args) {
   const url=store.get('api',''), key=store.get('key','');
   if (!url || !key) { showSetup(); return Promise.reject(new Error('Inserisci indirizzo e chiave di accesso')); }
   // corpo in text/plain: è una richiesta «semplice», niente controllo preventivo CORS
-  const ctl = 'AbortController' in window ? new AbortController() : null, to = ctl && setTimeout(()=>ctl.abort(), fn==='chat'||fn==='coach' ? 90000 : 30000);
+  const ctl = 'AbortController' in window ? new AbortController() : null, to = ctl && setTimeout(()=>ctl.abort(), fn==='chat'||fn==='coach'||fn==='news'||fn==='newsSunto' ? 90000 : 30000);
   return fetch(url, { method:'POST', body: JSON.stringify({ key, fn, args }), signal: ctl ? ctl.signal : undefined })
     .catch(() => { throw new Error('NETWORK'); })
     .finally(() => clearTimeout(to))
@@ -960,15 +999,15 @@ function monthItems(ts, m, last) {
 
 // ───────────────────────── navigazione ─────────────────────────
 // Pagine: barra laterale su PC (gruppi), barra in basso sul telefono (le pagine meno usate stanno in «Altro»)
-const NAV = [ { g:'Oggi' }, { id:'home', l:'Oggi', i:'home' }, { id:'news', l:'News', i:'news' },
+const NAV = [ { g:'Giornata' }, { id:'home', l:'Panoramica', i:'home' }, { id:'news', l:'News', i:'news' },
   { g:'Registro' }, { id:'list', f:'Journal', l:'Journal', i:'book' }, { id:'list', f:'EOW', l:'EOW', i:'list' },
   { g:'Performance' }, { id:'stats', l:'Analisi', i:'chart' }, { id:'cal', l:'Calendario', i:'cal' }, { id:'mc', l:'Simula', i:'dice' },
   { g:'Crescita' }, { id:'coach', l:'Coach', i:'spark' } ];
 const NAV_FOOT = [ { id:'set', l:'Impostazioni', i:'gear' } ];
-const BAR = [['home','Oggi','home'],['news','News','news'],['list','Trade','list'],['stats','Analisi','chart'],['more','Altro','grid']];
+const BAR = [['home','Home','home'],['news','News','news'],['list','Trade','list'],['stats','Analisi','chart'],['more','Altro','grid']];
 const VIEWS = ['home','news','list','stats','cal','mc','coach','set'];
-const PTITLE = { home:'Oggi', news:'News', list:'Trade', stats:'Analisi', cal:'Calendario', mc:'Simula', coach:'Coach', set:'Impostazioni' };
-const NOFILE = ['news','set'];   // pagine che non dipendono da EOW / Journal
+const PTITLE = { home:'Panoramica', news:'News', list:'Trade', stats:'Analisi', cal:'Calendario', mc:'Simula', coach:'Coach', set:'Impostazioni' };
+const NOFILE = ['home','news','set'];   // pagine che non dipendono da EOW / Journal
 const FILE_LBL = { EOW:['EOW','End of Week · backtest della settimana'], Journal:['JOURNAL','Trade reali eseguiti'] };
 const navKey = n => n.id+(n.f?':'+n.f:'');
 const curNavKey = () => S.tab==='list' ? 'list:'+S.file : S.tab;
@@ -976,7 +1015,7 @@ function fileLook() { document.documentElement.dataset.file=S.file; const l=FILE
   const mt=document.querySelector('meta[name=theme-color]'); if (mt) mt.content = S.file==='EOW' ? '#0071E3' : '#C25E00'; navState(); }
 function renderChrome() {
   $('brand').innerHTML = logo(26)+'<span>'+APP+'</span>';
-  let k=0; const item = n => '<button type="button" class="sb-i" data-nav="'+navKey(n)+'" data-tip="'+n.l+'" style="--k:'+(k++)+'">'+ic(n.i,20)+'<span>'+n.l+'</span>'+
+  let k=0; const item = n => '<button type="button" class="sb-i" data-nav="'+navKey(n)+'" data-tip="'+n.l+' · '+(k+1)+'" title="'+n.l+' (tasto '+(k+1)+')" style="--k:'+(k++)+'">'+ic(n.i,20)+'<span>'+n.l+'</span>'+
     (n.f?'<i class="fdot '+n.f+'"></i>':'')+'<em class="sb-b" id="nb-'+navKey(n).replace(':','-')+'"></em></button>';
   $('side').innerHTML = '<span class="sb-ind" id="sbInd"></span><div class="sb-brand">'+logo(30)+'<span>'+APP+'</span></div><div class="sb-nav">'+
     NAV.map(n=>n.g?'<div class="sb-g">'+n.g+'</div>':item(n)).join('')+'</div><div class="sb-foot">'+NAV_FOOT.map(item).join('')+
@@ -1076,7 +1115,7 @@ async function load() {
     else { toast('Non riesco a leggere il foglio: '+(e.message||e), true); $('v-'+S.tab).innerHTML = emptyState('Foglio non raggiungibile', 'Controlla gli ID in Code.gs e i permessi, poi ricarica la pagina.'); }
   }
   const o = f==='EOW' ? 'Journal' : 'EOW';   // precarica l'altro file, così il cambio è immediato
-  if (!fetchedAt[o]) { if (!S.data[o]) S.data[o]=cacheGet(o); setTimeout(()=>fetchFile(o).then(()=>{ if (S.tab==='home' && !S.sheet) renderCurrent(true); }).catch(()=>{}), 1200); }   // dopo, per non rallentare il file aperto
+  if (!fetchedAt[o]) { if (!S.data[o]) S.data[o]=cacheGet(o); setTimeout(()=>fetchFile(o).then(()=>{ if (S.tab==='home' && !S.sheet) renderCurrent(true); }).catch(()=>{}), S.tab==='home' ? 0 : 1200); }   // la Panoramica usa subito entrambi i file   // dopo, per non rallentare il file aperto
 }
 const emptyState = (t, p, btn) => '<div class="card empty rise">'+logo(40)+'<div class="h2">'+t+'</div><p>'+p+'</p>'+(btn?'<button class="btn" type="button" data-act="new">'+ic('plus',18,2.2)+btn+'</button>':'')+'</div>';
 
@@ -1161,63 +1200,75 @@ function sessionInfo() {
   return { open:false, txt: add===1 ? 'Sessione domani alle '+CFG.s0 : 'Prossima sessione '+GIORNI[(wd+add)%7]+' alle '+CFG.s0 };
 }
 const greeting = () => { const h=new Date().getHours(); return (h<5 ? 'Buonanotte' : h<13 ? 'Buongiorno' : h<18 ? 'Buon pomeriggio' : 'Buonasera')+', '+USER; };
+// ───────────────────────── PANORAMICA: tutto insieme (Journal + EOW + news) e introduzione alla giornata ─────────────────────────
 function renderHome() {
-  const el=$('v-home'); if (!S.loaded) { el.innerHTML=skeleton(); return; }
-  const now=new Date(), T=tgt();
-  const m=curModel(), ALL=filtered(m), rg=periodRange(S.per,0), ts=inRange(ALL,rg), prev=inRange(ALL,periodRange(S.per,1));
-  const a=agg(ts,m), pa=agg(prev,m), ses=sessionInfo(), E=S.type==='EOW';
-  const dd = d => d.getDate()+' '+MESI[d.getMonth()], cr = S.per==='c' ? periodRange('c',0) : null, cOk = cr && cr[0].getFullYear()>2000;
-  const perLbl = { w:wkLbl().toLowerCase(), m: MESI_F[now.getMonth()]+' '+now.getFullYear(), '3m':'ultimi 3 mesi', y:String(now.getFullYear()), all:'da sempre',
-                   c: cOk ? dd(cr[0])+' → '+dd(addDays(cr[1],-1)) : 'scegli le date' }[S.per];
-  const prevLbl = { w: S.type==='EOW' ? 'rispetto alla settimana prima' : 'rispetto alla settimana scorsa', m:'rispetto a '+MESI_F[(now.getMonth()+11)%12], '3m':'rispetto ai 3 mesi prima', y:'rispetto al '+(now.getFullYear()-1),
-                    c: cOk ? 'rispetto ai '+Math.round((cr[1]-cr[0])/dayMs)+' giorni prima' : '' }[S.per];
-  let html = '<div class="hello rise"><div><div class="eyebrow">'+GIORNI[now.getDay()]+' '+now.getDate()+' '+MESI_F[now.getMonth()]+'</div><h1>'+words(greeting())+'</h1></div>'+
+  const el=$('v-home'); loadNews().catch(()=>{});
+  const now=new Date(), ses=sessionInfo();
+  let h='<div class="hello rise"><div><div class="eyebrow">'+GIORNI[now.getDay()]+' '+now.getDate()+' '+MESI_F[now.getMonth()]+'</div><h1>'+words(greeting())+'</h1></div>'+
     '<span class="sess'+(ses.open?' open':'')+'" id="sess"><i></i>'+ses.txt+'</span></div>';
-  loadNews().catch(()=>{});
-  html += briefing();
-  html += '<div class="sect rise" style="--d:80ms">Performance · '+S.file+'</div>';
-  html += fbar(30);
-  html += '<div class="perseg rise" style="--d:40ms">'+seg('per',[{v:'w',l:'Sett.'},{v:'m',l:'Mese'},{v:'3m',l:'3M'},{v:'y',l:'Anno'},{v:'all',l:'Tutto'},{v:'c',h:ic('cal',16,2),l:'Date'}],S.per)+'</div>';
-  if (S.per==='c') html += '<div class="card"><div class="g2"><div class="field"><label for="hp-from">Dal</label><input class="inp" id="hp-from" type="date" data-hp="from" value="'+esc(S.cust.from||'')+'"></div>'+
-    '<div class="field"><label for="hp-to">Al</label><input class="inp" id="hp-to" type="date" data-hp="to" value="'+esc(S.cust.to||'')+'"></div></div>'+
-    (S.cust.from && S.cust.to && !cOk ? '<div class="ferr" style="display:flex;margin-top:8px">'+ic('alert',15,2)+'<span>La data finale è prima di quella iniziale.</span></div>' : '')+'</div>';
-  if (!ts.length) {
-    html += emptyState('Nessun trade nel periodo', 'Con questi filtri non ci sono trade di '+S.file+' per '+perLbl+'.', 'Aggiungi un trade');
-  } else {
-    let delta='';
-    if (prevLbl && prev.length) { const dv=a.R-pa.R; delta='<span class="delta '+(dv>0?'up':dv<0?'down':'flat')+'">'+ic(dv>=0?'trendUp':'trendDn',14,2.2)+fmtR(dv)+'</span><span>'+prevLbl+'</span>'; }
-    html += '<div class="hero rise" style="--d:80ms"><div class="hero-glow"></div><div class="hero-top"><div><div class="eyebrow">Risultato · '+perLbl+'</div>'+
-      '<div class="big '+sgn(a.R)+'">'+numEl(a.R,1,true)+'<small>R</small></div></div><span class="hero-n">'+a.n+' trade</span></div>'+
-      '<div class="hero-meta">'+(delta||'<span>'+(E?'esito a '+T+'R':'RR reale')+'</span>')+'</div>'+
-      '<div class="spark" id="c-spark"></div></div>';
-    const ringOff = 94.25*(1-(isFinite(a.wr)?a.wr:0));
-    html += '<div class="kgrid">'+
-      '<div class="kpi rise" style="--d:140ms"><div class="eyebrow">Win rate</div><div class="v"><svg class="ring" viewBox="0 0 36 36"><circle class="bgc" cx="18" cy="18" r="15"/><circle class="fgc" cx="18" cy="18" r="15" stroke-dasharray="94.25" stroke-dashoffset="'+ringOff+'"/></svg>'+numEl(a.wr*100,0)+'<small>%</small></div><div class="h">'+a.w+' vinti su '+(a.w+a.l)+(a.be?' · '+a.be+' BE':'')+'</div></div>'+
-      '<div class="kpi rise" style="--d:180ms"><div class="eyebrow">Profit factor</div><div class="v">'+(a.pf===Infinity?'∞':numEl(a.pf,2))+'</div><div class="h">'+(isFinite(a.pf)?'Guadagni '+fmtN(a.pf,1)+' R per ogni R perso':'Nessuna perdita nel periodo')+'</div></div>'+
-      '<div class="kpi rise" style="--d:220ms"><div class="eyebrow">Expectancy</div><div class="v '+sgn(a.exp)+'">'+numEl(a.exp,2,true)+'<small>R</small></div><div class="h">Resa media di ogni trade</div></div>'+
-      '<div class="kpi rise" style="--d:260ms"><div class="eyebrow">Max drawdown</div><div class="v">'+numEl(a.dd,1)+'<small>R</small></div><div class="h">Calo massimo dal picco</div></div></div>';
+  if (!rowsOf('Journal') && !rowsOf('EOW')) { enter(el, h+skeleton()); return; }
+  h+=dayIntro();
+  h+=briefing();
+  h+='<div class="sect rise" style="--d:120ms">Riepilogo</div>';
+  h+=recapCards();
+  enter(el, h, ()=>{ document.querySelectorAll('[data-spark]').forEach(x=>{ const k=x.dataset.spark, p=SPARK[k]; if (p && p.length>1) lineChart(x, p, { axes:false, h:64 }); }); });
+}
+// il racconto della giornata: piano, news, apertura di New York, storico
+function dayIntro() {
+  const now=Date.now(), rn=romeDate(now), t=iso(rn), wdN=rn.getDay(), weekend=wdN===0||wdN===6, cat=S.news&&!weekend?newsCat(t):'';
+  const ev=S.news?newsEvents().filter(e=>e.day===t && (e.imp==='High'||e.trump)):[], nx=ev.find(e=>!e.tbd && e.t>now-60000);
+  const nyo=nyOpenIt(t), parts=[];
+  if (weekend) parts.push('Mercati chiusi: è il momento della revisione della settimana (EOW).');
+  else {
+    if (cat) parts.push('Oggi è una giornata <b class="'+(cat==='Red News'?'neg':cat==='Orange News'?'warn':'pos')+'">'+cat+'</b>'+(ev.length?': '+ev.slice(0,3).map(e=>esc(newsIt(e.title))+' alle '+e.hm).join(', ')+'.':', nessuna news USD importante.'));
+    if (nyo && nyo!==CFG.s0) parts.push('<b>Attenzione:</b> per il cambio dell\'ora, oggi Wall Street apre alle <b>'+nyo+'</b> ora italiana.');
+    const X=expectations(L.days[(wdN+6)%7], cat);
+    if (X && X.wd.n>=3) parts.push('Nel backtest il '+GIORNI[wdN]+' rende in media <b class="'+sgn(X.wd.avg)+'">'+fmtR(X.wd.avg,2)+'</b> ('+X.wd.n+' giornate).');
   }
-  const last=ALL.slice(-10);
-  if (last.length) {
-    let st=0, kind=null; for (let i=ALL.length-1;i>=0;i--) { const k=m.isWin(ALL[i])?'w':m.isLoss(ALL[i])?'l':'b'; if (kind===null) kind=k; if (k!==kind) break; st++; }
-    const stTxt = kind==='w' ? st+(st===1?' trade vinto':' vinti di fila') : kind==='l' ? st+(st===1?' trade perso':' persi di fila') : st+' in pareggio';
-    html += '<div class="card rise" style="--d:300ms"><div class="card-h"><div class="h2">Ultimi '+last.length+' trade</div><span class="sub">'+stTxt+'</span></div><div class="dots">'+
-      last.map((t,i)=>'<i class="'+(m.isWin(t)?'w':m.isLoss(t)?'l':'b')+'" style="--d:'+(350+i*50)+'ms" title="'+esc(t.raw.Data+' '+t.a)+'"></i>').join('')+'</div></div>';
-  }
-  if (ts.length>=6) {
-    const best=bestGroup(ts,m,t=>t.idea,L.idea,1), band=bestGroup(ts,m,t=>bandOf(t),L.bands.map(b=>b[0]),1), worst=bestGroup(ts,m,t=>bandOf(t),L.bands.map(b=>b[0]),-1);
-    let ins='';
-    if (best && best.a.R>0) ins+=insRow('target','Setup migliore', best.k, best);
-    if (band && band.a.R>0) ins+=insRow('clock','Fascia oraria migliore', band.k, band);
-    if (worst && worst.a.R<0 && (!band || worst.k!==band.k)) ins+=insRow('alert','Fascia da rivedere', worst.k, worst, true);
-    if (ins) html += '<div class="card rise" style="--d:340ms"><div class="card-h"><div class="h2">Cosa funziona</div><span class="sub">'+perLbl+'</span></div><div class="ins">'+ins+'</div></div>';
-  }
-  const mi=monthItems(ALL,m,6);
-  if (mi.length>1) html += '<div class="card rise" style="--d:380ms"><div class="card-h"><div class="h2">Ultimi mesi</div><span class="sub">R per mese</span></div><div class="chart" id="c-mon"></div></div>';
-  if (ALL.length) html += '<div class="card rise" style="--d:420ms"><div class="card-h"><div class="h2">Ultimi trade</div><button class="link" type="button" data-act="list">Tutti '+ic('chev',16,2)+'</button></div><div>'+
-    ALL.slice(-5).reverse().map(t=>trow(t,m)).join('')+'</div></div>';
-  if (!viaScript()) html += '<div class="appv"><button type="button" data-act="setup">Indirizzo e chiave di accesso</button></div>';
-  enter(el, html, ()=>{ if ($('c-spark')) lineChart($('c-spark'), equityPts(ts,m), { axes:false, h:104 }); if ($('c-mon')) barChart($('c-mon'), mi, { h:150 }); });
+  return '<div class="intro rise" style="--d:30ms">'+(nx?'<div class="in-cd"><span>'+esc(newsIt(nx.title))+'</span><b data-cd="'+nx.t+'">'+cdTxt(nx.t-now)+'</b></div>':'')+'<p>'+parts.join(' ')+'</p></div>';
+}
+// orario italiano dell'apertura di New York (9:30 ET) in una data: cambia di un'ora nelle settimane del cambio d'ora
+function nyOpenIt(dIso) { const d=pdIso(dIso); for (let h=12; h<=17; h++) for (const m of [0,30]) { const u=Date.UTC(d.getFullYear(),d.getMonth(),d.getDate(),h,m), n=nyHM(u);
+  if (n.getHours()===9 && n.getMinutes()===30) { const r=romeDate(u); return p2(r.getHours())+':'+p2(r.getMinutes()); } } return ''; }
+const SPARK={};
+function recapCards() {
+  const J=rowsOf('Journal')||[], E=rowsOf('EOW')||[], F=FILT_DEF(), mE=model(2), mJ=model(), now=new Date();
+  mJ.rOf=t=>isFinite(t.rr)?t.rr:0; mJ.isWin=t=>t.out==='Win'; mJ.isLoss=t=>t.out==='Loss';
+  const Ef=plan(E.filter(t=>(!F.asset||t.a===F.asset) && (!F.idea.length||F.idea.includes(t.idea))), mE.rOf);
+  const mon=addDays(new Date(now.getFullYear(),now.getMonth(),now.getDate()), -((now.getDay()+6)%7));
+  const pers=[['Settimana',mon],['Mese',new Date(now.getFullYear(),now.getMonth(),1)],['Anno',new Date(now.getFullYear(),0,1)]];
+  const cell=(ts,m)=>{ const a=agg(ts,m); return a.n ? '<b class="'+sgn(a.R)+'">'+fmtR(a.R,1)+'</b><span>'+a.n+' trade · WR '+pct(a.wr)+'</span>' : '<b class="mut">–</b><span>nessun trade</span>'; };
+  const eq=(ts,m)=>{ let s=0; return ts.slice(-40).map(t=>({ y:(s+=m.rOf(t)), x:'', tip:t.d.getDate()+' '+MESI[t.d.getMonth()] })); };
+  SPARK.j=[{y:0}].concat(eq(J,mJ)); SPARK.e=[{y:0}].concat(eq(Ef,mE));
+  let h='<div class="card wide recap rise" style="--d:140ms"><div class="card-h"><div class="h2">Reale e backtest</div><span class="sub">Journal: tutti i trade reali · EOW: '+(F.asset||'tutti')+', idee del piano, max 2 al giorno, 2R</span></div>'+
+    '<div class="rc-g"><div class="rc-h"></div><div class="rc-h j"><i></i>Journal · reale</div><div class="rc-h e"><i></i>EOW · backtest</div>'+
+    pers.map(p=>'<div class="rc-l">'+p[0]+'</div><div class="rc-c j">'+cell(J.filter(t=>t.d>=p[1]),mJ)+'</div><div class="rc-c e">'+cell(Ef.filter(t=>t.d>=p[1]),mE)+'</div>').join('')+
+    '<div class="rc-l">Ultimi 40</div><div class="rc-c j"><div class="chart sp" data-spark="j"></div></div><div class="rc-c e"><div class="chart sp" data-spark="e"></div></div></div>'+
+    '<div class="rc-act"><button type="button" class="link" data-nav="list:Journal">Apri il Journal '+ic('chev',15,2)+'</button><button type="button" class="link" data-nav="list:EOW">Apri l\'EOW '+ic('chev',15,2)+'</button><button type="button" class="link" data-nav="stats">Analisi '+ic('chev',15,2)+'</button></div></div>';
+  // disciplina (Journal) e ultimi trade di entrambi
+  const jm=J.filter(t=>t.d>=pers[1][1]), er=jm.filter(t=>t.exe==='Errore'), val=jm.filter(t=>t.exe==='Trade valido'), cnt={};
+  er.forEach(t=>t.errs.forEach(x=>cnt[x]=(cnt[x]||0)+1)); const top=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0];
+  let st=0; for (let i=J.length-1;i>=0 && J[i].exe!=='Errore';i--) if (J[i].exe==='Trade valido') st++;
+  const erR=er.reduce((s,t)=>s+(isFinite(t.rr)?t.rr:0),0);
+  h+='<div class="card disc rise" style="--d:170ms"><div class="card-h"><div class="h2">Disciplina</div><span class="sub">Journal · '+MESI_F[now.getMonth()]+'</span></div>'+
+    (jm.length ? '<div class="ds-g"><div><b>'+pct(val.length/((val.length+er.length)||1))+'</b><span>trade validi</span></div><div><b class="'+(er.length?'neg':'')+'">'+er.length+'</b><span>errori</span></div><div><b class="pos">'+st+'</b><span>validi di fila</span></div></div>'+
+      (er.length?'<p class="ds-p">'+ic('alert',15,2)+'<span>I trade con errori di questo mese hanno fatto <b class="'+sgn(erR)+'">'+fmtR(erR,2)+'</b>'+(top?'; il più frequente è <b>'+esc(top[0])+'</b> ('+top[1]+')':'')+'.</span></p>':'<p class="ds-p ok">'+ic('check',15,2.2)+'<span>Nessun errore questo mese: continua così.</span></p>')
+      : '<p class="mut">Nessun trade reale questo mese.</p>')+'</div>';
+  const last=[...J.slice(-6).map(t=>({t,f:'Journal'})), ...E.slice(-6).map(t=>({t,f:'EOW'}))].sort((a,b)=>(b.t.d-a.t.d)||(b.t.o-a.t.o)).slice(0,6);
+  if (last.length) h+='<div class="card rise" style="--d:200ms"><div class="card-h"><div class="h2">Ultimi trade</div><span class="sub">Journal ed EOW</span></div>'+last.map(x=>mrow(x.t,x.f)).join('')+'</div>';
+  return h;
+}
+// riga di trade per la Panoramica: indica il file e apre il trade giusto
+function mrow(t, f) {
+  const E=f==='EOW', r=E?(t.best>=2?2:-1):(isFinite(t.rr)?t.rr:0), w=E?t.best>=2:t.out==='Win', l=E?!(t.best>=2):t.out==='Loss';
+  return '<button type="button" class="trow" data-open="'+f+':'+t.row+'"><span class="badge '+(w?'w':l?'l':'')+'">'+esc(t.a)+'</span><span style="min-width:0"><span class="t1">'+esc(String(t.raw.Ora).slice(0,5))+'<span>'+t.d.getDate()+' '+MESI[t.d.getMonth()]+'</span><em class="ftag '+f+'">'+(E?'EOW':'Journal')+'</em></span>'+
+    '<span class="t2" style="display:block">'+esc([t.dir,t.idea].filter(Boolean).join(' · '))+'</span></span><span class="tres"><b class="'+sgn(r)+'">'+fmtR(r,E?0:2)+'</b><span>'+(E?'max '+fmtN(t.max,1)+' R':esc(t.tp||t.out||''))+'</span></span>'+ic('chev',16,2)+'</button>';
+}
+function openNewPick() {
+  S.sheet='newpick'; $('sh-sub').textContent='Nuovo trade'; $('sh-title').innerHTML=words('Dove lo registri?');
+  $('sh-body').innerHTML='<div class="more">'+[['Journal','book','Trade reale','Un trade eseguito sul conto'],['EOW','list','Backtest (EOW)','Un setup rivisto a fine settimana']].map((x,k)=>
+    '<button type="button" data-newf="'+x[0]+'" style="--k:'+k+'">'+ic(x[1],24,1.8)+'<b>'+x[2]+'</b><span>'+x[3]+'</span></button>').join('')+'</div>';
+  $('sh-foot').innerHTML=''; openSheet();
 }
 const bandOf = t => (L.bands.find(b=>t.o>=b[1]&&t.o<b[2])||['altro'])[0];
 function bestGroup(ts, m, keyFn, keys, dir) {
@@ -1228,15 +1279,19 @@ const insRow = (icn, lbl, k, b, bad) => '<div class="ins-row"><div class="ins-ic
 // ───────────────────────── NEWS (calendario economico USD, fonte ForexFactory) ─────────────────────────
 const NEWS_TTL = 15*60000;
 S.news = (()=>{ try { return JSON.parse(localStorage.getItem('tj.news')||'null'); } catch(e) { return null; } })();
-let newsP=null, newsErr='', newsTry=0;
+S.nsAI = {};
+let newsP=null, newsErr='', newsTry=0, newsRetry=null;
 function loadNews(force) {
   if (newsP) return newsP;
   if (!force && S.news && Date.now()-S.news.got < NEWS_TTL) return Promise.resolve(S.news);
-  if (!force && Date.now()-newsTry < 60000) return Promise.reject(new Error(newsErr||'attendi'));   // dopo un errore riprova al massimo una volta al minuto
+  if (!force && Date.now()-newsTry < 60000) return Promise.reject(new Error(newsErr||'attendi'));   // dopo un errore: al massimo un tentativo al minuto
   newsTry=Date.now();
-  newsP = call('news').then(d=>{ d.got=Date.now(); S.news=d; newsErr=''; try { localStorage.setItem('tj.news', JSON.stringify(d)); } catch(e) {} return d; })
-    .catch(e=>{ newsErr = /Funzione sconosciuta/.test(e.message||'') ? 'OLD' : (e.message||String(e)); throw e; })
-    .finally(()=>{ newsP=null; if (S.tab==='news' || S.tab==='home') renderCurrent(true); });
+  newsP = call('news').then(d=>{ d.got=Date.now(); S.news=d; newsErr=''; try { localStorage.setItem('tj.news', JSON.stringify(d)); } catch(e) {} newsBadge(); return d; })
+    .catch(e=>{ newsErr = /Funzione sconosciuta/.test(e.message||'') ? 'OLD' : (e.message||String(e));
+      // un errore al primo caricamento capita (script appena svegliato, ForexFactory lento): un secondo tentativo da solo
+      if (newsErr!=='OLD' && !newsRetry) newsRetry=setTimeout(()=>{ newsRetry=null; newsTry=0; loadNews().catch(()=>{}); }, 5000);
+      throw e; })
+    .finally(()=>{ newsP=null; if ((S.tab==='news' || S.tab==='home') && !S.sheet) renderCurrent(true); });
   return newsP;
 }
 const romeDate = t => new Date(new Date(t).toLocaleString('en-US',{ timeZone:'Europe/Rome' }));
@@ -1261,13 +1316,32 @@ const NEWS_IT = [
   [/^Prelim Nonfarm Productivity/i,'Produttività (preliminare)'], [/^Trade Balance/i,'Bilancia commerciale'], [/^Industrial Production/i,'Produzione industriale'],
 ];
 const newsIt = t => { const m=NEWS_IT.find(x=>x[0].test(t)); return m ? m[1] : t; };
+// cosa può comportare ogni tipo di news per ES e NQ (spiegazione generale: la direzione non è mai scontata)
+const NEWS_IMPL = [
+  [/FOMC Statement|Federal Funds Rate|FOMC Press|FOMC Economic Projections/i,'fomc','Decisione Fed (FOMC)','È l\'evento più importante: decisione sui tassi, comunicato e conferenza stampa. La volatilità esplode all\'uscita e durante la conferenza; nelle ore prima il mercato è spesso compresso e indeciso.'],
+  [/FOMC Meeting Minutes/i,'min','Verbali FOMC','Raccontano la discussione dell\'ultima riunione Fed: possono spostare le attese sui tassi, di solito con movimenti più contenuti della decisione.'],
+  [/Fed Chair|FOMC Member/i,'fed','Discorsi della Fed','Le parole dei banchieri centrali spostano le attese sui tassi. La durata non è annunciata: un movimento può partire in qualsiasi momento del discorso.'],
+  [/Trump/i,'trump','Trump','Dichiarazioni su dazi, Fed o geopolitica possono muovere ES e NQ all\'improvviso. Contenuto e durata non si conoscono in anticipo: tieni aperta la diretta.'],
+  [/CPI|PCE|PPI/i,'infl','Inflazione','È il dato che più sposta le attese sui tassi. Inflazione sopra le attese di solito pesa sugli indici (soprattutto NQ, sensibile ai tassi); sotto le attese di solito li aiuta.'],
+  [/Non-Farm|Unemployment Rate|Average Hourly/i,'nfp','Lavoro (NFP)','Il dato più volatile del mese. La reazione non è lineare: numeri molto forti possono far scendere gli indici (meno tagli dei tassi), numeri molto deboli fanno temere un rallentamento.'],
+  [/ADP|JOLTS|Unemployment Claims|Productivity/i,'job','Mercato del lavoro','Anticipa il quadro dell\'occupazione. Impatto di solito medio; una sorpresa grande può dare la direzione alla giornata.'],
+  [/GDP/i,'gdp','PIL','Misura la crescita: conta di più la prima stima. Sorprese forti cambiano il sentiment, ma spesso il mercato le aveva già anticipate.'],
+  [/Retail Sales/i,'ret','Consumi','Le vendite al dettaglio misurano la forza del consumatore americano: sorprese ampie muovono indici e rendimenti.'],
+  [/ISM|PMI/i,'ism','Sondaggi sulle aziende (ISM/PMI)','Danno il polso di manifattura e servizi; la componente prezzi conta per l\'inflazione. L\'ISM esce alle 16:00 italiane, dentro la sessione.'],
+  [/UoM|Consumer Confidence|Consumer Sentiment/i,'conf','Fiducia dei consumatori','Impatto di solito moderato; le aspettative d\'inflazione del Michigan sono la parte che il mercato guarda di più.'],
+  [/Bond Auction/i,'bond','Aste di titoli di Stato','Un\'asta debole fa salire i rendimenti, cosa che di solito pesa su NQ.'],
+  [/Bank Holiday/i,'hol','Festività','Mercati USA chiusi o con orari ridotti: liquidità bassa, movimenti poco affidabili.'],
+];
+const implOf = t => NEWS_IMPL.find(x=>x[0].test(t));
 const IMP = { High:['hi','Alto'], Medium:['md','Medio'], Low:['lo','Basso'], Holiday:['ho','Festività'] };
+const LBL_IT = { 'All Day':'Tutto il giorno', 'Tentative':'Da definire' };
 function newsEvents() {
-  return ((S.news && S.news.ev) || []).map(e=>{ const r=romeDate(e.t), ny=nyHM(e.t), tbd=ny.getHours()===0 && ny.getMinutes()===0;
-    return Object.assign({}, e, { r, day:iso(r), hm: tbd ? (e.imp==='Holiday'?'Tutto il giorno':'Da definire') : p2(r.getHours())+':'+p2(r.getMinutes()), mm:r.getHours()*60+r.getMinutes(),
+  return ((S.news && S.news.ev) || []).map(e=>{ const r=romeDate(e.t), ny=nyHM(e.t), tbd = !!e.lbl || (ny.getHours()===0 && ny.getMinutes()===0 && !e.url);
+    return Object.assign({}, e, { r, day:iso(r), hm: tbd ? (LBL_IT[e.lbl] || e.lbl || (e.imp==='Holiday'?'Tutto il giorno':'Da definire')) : p2(r.getHours())+':'+p2(r.getMinutes()), mm:r.getHours()*60+r.getMinutes(),
       tbd, trump:/trump/i.test(e.title), imp2:(IMP[e.imp]||['lo',e.imp||''])[0], impL:(IMP[e.imp]||['',e.imp||''])[1] }); });
 }
 const inSess = e => !e.tbd && e.mm>=SESS[0]-15 && e.mm<=SESS[1];   // dentro la sessione (o nei 15 minuti prima dell'apertura)
+const when = e => e.tbd ? 'orario da definire' : e.mm<SESS[0]-15 ? 'prima della sessione' : e.mm<=SESS[1] ? 'in sessione' : 'dopo la sessione';
 const ffDay = d => 'https://www.forexfactory.com/calendar?day='+['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'][d.getMonth()]+d.getDate()+'.'+d.getFullYear();
 const TRUMP_LINKS = [['Diretta Casa Bianca','https://www.youtube.com/@WhiteHouse/streams'],['Titoli in tempo reale','https://www.financialjuice.com/home']];
 function cdTxt(ms) { const a=Math.abs(ms), s=Math.floor(a/1000)%60, m=Math.floor(a/60000)%60, h=Math.floor(a/3600000), d=Math.floor(h/24);
@@ -1275,6 +1349,7 @@ function cdTxt(ms) { const a=Math.abs(ms), s=Math.floor(a/1000)%60, m=Math.floor
   if (d>=1) return 'tra '+d+(d===1?' giorno':' giorni'); if (h) return 'tra '+h+' h '+p2(m)+' min'; return 'tra '+m+':'+p2(s); }
 const dayLbl = (dIso) => { const t=todayIso(), d=pdIso(dIso); if (dIso===t) return 'Oggi'; if (dIso===iso(addDays(pdIso(t),1))) return 'Domani'; if (dIso===iso(addDays(pdIso(t),-1))) return 'Ieri';
   return GIORNI[d.getDay()].replace(/^./,c=>c.toUpperCase())+' '+d.getDate()+' '+MESI_F[d.getMonth()]; };
+const dayShort = dIso => { const d=pdIso(dIso); return dIso===todayIso() ? 'oggi' : GIORNI[d.getDay()].slice(0,3)+' '+d.getDate(); };
 const weekOf = dIso => { const d=pdIso(dIso); return iso(addDays(d, -((d.getDay()+6)%7))); };
 // categoria di news della giornata, come nella colonna News del foglio
 function newsCat(dIso) { if (!S.news) return ''; const ev=newsEvents().filter(e=>e.day===dIso && e.cur==='USD');
@@ -1292,43 +1367,79 @@ function trumpCard(ev) {
 function nrow(e, now, nextT) {
   const past = !e.tbd && e.t<now-60000, nx = e.t===nextT;
   const vals = [['Prev.',e.fc],['Prec.',e.pv],['Reale',e.ac]].filter(v=>v[1]).map(v=>'<span'+(v[0]==='Reale'?' class="ac"':'')+'><em>'+v[0]+'</em>'+esc(v[1])+'</span>').join('');
-  return '<div class="nrow '+e.imp2+(past?' past':'')+(nx?' next':'')+(e.trump?' tr':'')+'"><div class="nt"><b>'+e.hm+'</b>'+(e.tbd||past?'':'<span data-cd="'+e.t+'">'+cdTxt(e.t-now)+'</span>')+'</div>'+
+  const tag = e.url ? 'a href="'+esc(e.url)+'" target="_blank" rel="noopener"' : 'div';
+  return '<'+tag+' class="nrow '+e.imp2+(past?' past':'')+(nx?' next':'')+(e.trump?' tr':'')+'"><div class="nt"><b>'+e.hm+'</b>'+(e.tbd||past?'':'<span data-cd="'+e.t+'">'+cdTxt(e.t-now)+'</span>')+'</div>'+
     '<span class="nimp '+e.imp2+'" title="Impatto '+esc(e.impL.toLowerCase())+'"><i></i><i></i><i></i></span>'+
     '<div class="nx"><b>'+esc(newsIt(e.title))+(nx?'<em class="tag">Prossima</em>':'')+(inSess(e)&&!past?'<em class="tag s">In sessione</em>':'')+'</b><span>'+esc(e.title)+' · '+e.cur+'</span></div>'+
-    (vals?'<div class="nv">'+vals+'</div>':'')+'</div>';
+    (vals?'<div class="nv">'+vals+'</div>':'')+'</'+tag.split(' ')[0]+'>';
 }
 function newsHero(ev, now) {
   const nx=ev.find(e=>!e.tbd && e.t>now-60000 && (e.imp==='High' || e.trump));
   if (!nx) return '<div class="hero nhero rise"><div class="hero-glow"></div><div class="eyebrow">Prossima news ad alto impatto</div><div class="nh-t">Nessuna in calendario</div><p class="mut">Non ci sono altre news USD ad alto impatto nelle settimane disponibili.</p></div>';
+  const im=implOf(nx.title);
   return '<div class="hero nhero rise"><div class="hero-glow"></div><div class="eyebrow">Prossima news ad alto impatto</div>'+
-    '<div class="nh-t">'+esc(newsIt(nx.title))+'</div><div class="nh-m"><span class="nimp hi"><i></i><i></i><i></i></span>'+dayLbl(nx.day)+' alle '+nx.hm+(inSess(nx)?'<em class="tag s">In sessione</em>':'')+'</div>'+
-    '<div class="nh-cd" data-cd="'+nx.t+'">'+cdTxt(nx.t-now)+'</div><div class="mut" style="font-size:12.5px">'+esc(nx.title)+(nx.fc?' · previsione '+esc(nx.fc):'')+(nx.pv?' · precedente '+esc(nx.pv):'')+'</div></div>';
+    '<div class="nh-t">'+esc(newsIt(nx.title))+'</div><div class="nh-m"><span class="nimp hi"><i></i><i></i><i></i></span>'+dayLbl(nx.day)+' alle '+nx.hm+' · '+when(nx)+(inSess(nx)?'<em class="tag s">In sessione</em>':'')+'</div>'+
+    '<div class="nh-cd" data-cd="'+nx.t+'">'+cdTxt(nx.t-now)+'</div><div class="mut" style="font-size:12.5px">'+esc(nx.title)+(nx.fc?' · previsione '+esc(nx.fc):'')+(nx.pv?' · precedente '+esc(nx.pv):'')+'</div>'+
+    (im?'<p class="nh-i">'+esc(im[3])+'</p>':'')+'</div>';
+}
+// sunto del periodo: le news importanti raggruppate per tipo, quando escono rispetto alla sessione e cosa possono comportare
+function newsSummary(ev, per) {
+  const lab={ d:'oggi', w:'questa settimana', n:'la prossima settimana' }[per], key=ev.filter(e=>e.imp==='High'||e.trump);
+  const nyW=[...new Set(ev.map(e=>e.day))].map(d=>[d,nyOpenIt(d)]).filter(x=>x[1] && x[1]!==CFG.s0);
+  let h='<div class="card wide nsum rise" style="--d:110ms"><div class="card-h"><div class="h2">'+ic('spark',18,2)+' Cosa può comportare '+lab+'</div><span class="sub">'+key.length+' news ad alto impatto</span></div>';
+  if (nyW.length) h+='<p class="ns-warn">'+ic('alert',15,2)+'<span>Cambio dell\'ora: '+[...new Set(nyW.map(x=>x[1]))].map(o=>'Wall Street apre alle <b>'+o+'</b>')+' ora italiana '+(nyW.length>1?'('+nyW.map(x=>dayShort(x[0])).join(', ')+')':dayShort(nyW[0][0]))+'. Anche le news delle 14:30 escono un\'ora prima.</span></p>';
+  if (!key.length) h+='<p class="mut">Nessuna news USD ad alto impatto: giornate guidate dal flusso normale del mercato.</p>';
+  const groups={}; key.forEach(e=>{ const im=implOf(e.title)||[null,'x'+e.title,newsIt(e.title),'News ad alto impatto secondo ForexFactory.']; (groups[im[1]]=groups[im[1]]||{ im, ev:[] }).ev.push(e); });
+  Object.values(groups).sort((a,b)=>a.ev[0].t-b.ev[0].t).forEach(g=>{ const ins=g.ev.some(inSess);
+    h+='<div class="ns-row"><div class="ns-h"><b>'+esc(g.im[2])+'</b>'+(ins?'<em class="tag s">In sessione</em>':'')+'</div><div class="ns-w">'+
+      [...new Set(g.ev.map(e=>(per==='d'?'':dayShort(e.day)+' ')+e.hm+' · '+when(e)))].slice(0,4).join(' · ')+'</div><p>'+esc(g.im[3])+'</p></div>'; });
+  const k=per+'|'+key.map(e=>e.t+e.title+e.ac).join(','), ai=S.nsAI[k];
+  if (key.length) h+= ai===1 ? '<div class="ns-ai"><span class="thinking">'+ic('spark',16,2)+'Claude sta leggendo il calendario…</span></div>'
+    : ai ? '<div class="ns-ai md">'+md(ai)+'<p class="mut" style="font-size:12px;margin:6px 0 0">Scritto da Claude con i dati di ForexFactory: non è una previsione.</p></div>'
+    : '<button type="button" class="btn sec sm" data-act="nsai" data-k="'+esc(k)+'" data-per="'+per+'">'+ic('spark',16,2)+'Approfondisci con Claude</button>';
+  return h+'</div>';
+}
+function askNewsAI(b) {
+  const k=b.dataset.k, per=b.dataset.per, now=Date.now(), t=todayIso(), wk=weekOf(t), nwk=iso(addDays(pdIso(wk),7));
+  const ev=newsEvents().filter(e=>(e.imp==='High'||e.imp==='Medium'||e.trump) && (per==='d'?e.day===t:per==='n'?weekOf(e.day)===nwk:weekOf(e.day)===wk));
+  const items=ev.map(e=>dayLbl(e.day)+' '+e.hm+' · '+e.impL+' · '+e.title+' · '+[e.fc,e.pv,e.ac].map(x=>x||'–').join(' / '));
+  S.nsAI[k]=1; renderCurrent(true);
+  call('newsSunto', { d:'oggi ('+dayLbl(t)+')', w:'questa settimana', n:'la prossima settimana' }[per], items)
+    .then(txt=>{ S.nsAI[k]=txt; }).catch(e=>{ delete S.nsAI[k]; toast(/NO_CLAUDE_KEY/.test(e.message||'')?'Claude non è collegato allo script':/Funzione sconosciuta/.test(e.message||'')?'Aggiorna Code.gs per usare Claude sulle news':'Claude non ha risposto: '+(e.message||e), true); })
+    .finally(()=>{ if (S.tab==='news') renderCurrent(true); });
 }
 function renderNews() {
   const el=$('v-news'); loadNews().catch(()=>{});
   let h='<div class="stat-h rise"><div><div class="eyebrow">Calendario economico · USD · ora italiana</div><h1>'+words('News')+'</h1></div>'+
-    '<button type="button" class="btn sec sm" data-act="newsref">'+ic('refresh',16,2)+'Aggiorna</button></div>';
+    '<button type="button" class="btn sec sm" data-act="newsref"'+(newsP?' disabled':'')+'>'+(newsP?'<span class="spin"></span>Aggiorno…':ic('refresh',16,2)+'Aggiorna')+'</button></div>';
   if (!S.news) {
     h += newsErr==='OLD' ? emptyState('Aggiorna lo script', 'Per le news serve il nuovo Code.gs: sostituiscilo nel progetto Apps Script e fai un nuovo deployment (Gestisci deployment → modifica → Nuova versione).')
-       : newsErr ? emptyState('News non disponibili', esc(newsErr)+'. Riprova tra qualche minuto.') : skeleton();
+       : newsErr && !newsRetry && !newsP ? emptyState('News non disponibili', esc(newsErr)+'. Tocca Aggiorna per riprovare.') : skeleton();
     enter(el,h); return;
   }
-  const now=Date.now(), all=newsEvents(), lvl=S.newsLvl||CFG.newsImp, per=S.newsPer||'w', t=todayIso(), wk=weekOf(t), nwk=iso(addDays(pdIso(wk),7));
+  const now=Date.now(), all=newsEvents(), lvl=S.newsLvl||CFG.newsImp, per=S.newsPer||'d', t=todayIso(), wk=weekOf(t), nwk=iso(addDays(pdIso(wk),7));
   const keep = e => e.trump || e.imp==='Holiday' || e.imp==='High' || (lvl!=='high' && e.imp==='Medium') || lvl==='all';
   const inPer = e => per==='d' ? e.day===t : per==='n' ? weekOf(e.day)===nwk : weekOf(e.day)===wk;
-  const ev=all.filter(e=>keep(e) && inPer(e)), nextT=(all.find(e=>!e.tbd && e.t>now-60000 && keep(e))||{}).t;
+  const pev=all.filter(inPer), ev=pev.filter(keep), nextT=(all.find(e=>!e.tbd && e.t>now-60000 && keep(e))||{}).t;
+  const nextOk = !S.news.weeks || S.news.weeks.next==='ok' || all.some(e=>weekOf(e.day)===nwk);
   h += newsHero(all, now);
   h += trumpCard(all.filter(e=>e.trump && (e.tbd || e.t>now-4*3600000)).slice(0,4));
-  h += '<div class="nfil rise" style="--d:120ms">'+seg('news-per',[{v:'d',l:'Oggi'},{v:'w',l:'Settimana'},{v:'n',l:'Prossima'}],per)+seg('news-lvl',[{v:'high',l:'Alto'},{v:'med',l:'Alto + medio'},{v:'all',l:'Tutti'}],lvl)+'</div>';
-  const days=[...new Set(ev.map(e=>e.day))];
-  if (!days.length) h += emptyState(per==='n'?'Prossima settimana non ancora pubblicata':'Nessuna news', per==='n' ? 'ForexFactory pubblica il calendario della settimana successiva verso il fine settimana.' : 'Nessun evento USD con questo livello di impatto nel periodo scelto.');
-  days.forEach((d,i)=>{ const g=ev.filter(e=>e.day===d), hi=g.filter(e=>e.imp==='High').length;
-    h += '<div class="card wide nday rise'+(d===t?' today':'')+'" style="--d:'+(150+i*40)+'ms"><div class="card-h"><div class="h2">'+dayLbl(d)+'</div><span class="sub">'+(hi?hi+' ad alto impatto':'nessuna ad alto impatto')+' · '+newsCat(d)+'</span></div>'+g.map(e=>nrow(e,now,nextT)).join('')+'</div>'; });
-  h += '<p class="nsrc rise">'+ic('clock',14,2)+'Fonte: calendario ForexFactory, aggiornato '+(S.news.at?'alle '+p2(romeDate(S.news.at).getHours())+':'+p2(romeDate(S.news.at).getMinutes()):'')+
-    (S.news.stale?' · <b>ForexFactory non risponde: sto mostrando l\'ultimo calendario salvato</b>':'')+'. Orari, impatto e valori sono quelli di ForexFactory. La fine dei discorsi non viene mai annunciata: per quella serve la diretta.</p>';
+  h += '<div class="nfil rise" style="--d:100ms">'+seg('news-per',[{v:'d',l:'Oggi'},{v:'w',l:'Settimana'},{v:'n',h:'Prossima<span class="xs-hide"> settimana</span>'}],per)+seg('news-lvl',[{v:'high',l:'Alto'},{v:'med',l:'Alto + medio'},{v:'all',l:'Tutti'}],lvl)+'</div>';
+  if (per==='n' && !nextOk) h += '<div class="card wide rise">'+'<div class="h2" style="margin-bottom:6px">Settimana prossima non ricevuta</div><p class="mut" style="margin:0 0 12px">ForexFactory non ha risposto alla richiesta della settimana prossima (a volte blocca le richieste automatiche). Riprovo al prossimo aggiornamento; intanto puoi vederla sul sito.</p>'+
+    '<a class="lnk" href="https://www.forexfactory.com/calendar?week=next" target="_blank" rel="noopener">'+ic('ext',14,2)+'Settimana prossima su ForexFactory</a></div>';
+  else {
+    h += newsSummary(pev, per);
+    const days=[...new Set(ev.map(e=>e.day))];
+    if (!days.length) h += emptyState('Nessuna news', 'Nessun evento USD con questo livello di impatto nel periodo scelto.');
+    days.forEach((d,i)=>{ const g=ev.filter(e=>e.day===d), hi=g.filter(e=>e.imp==='High').length;
+      h += '<div class="card wide nday rise'+(d===t?' today':'')+'" style="--d:'+(150+i*40)+'ms"><div class="card-h"><div class="h2">'+dayLbl(d)+'</div><span class="sub">'+(hi?hi+' ad alto impatto':'nessuna ad alto impatto')+' · '+newsCat(d)+'</span></div>'+g.map(e=>nrow(e,now,nextT)).join('')+'</div>'; });
+  }
+  const at=S.news.at?romeDate(S.news.at):null;
+  h += '<p class="nsrc rise">'+ic('clock',14,2)+'<span>Fonte: calendario ForexFactory'+(at?', aggiornato alle '+p2(at.getHours())+':'+p2(at.getMinutes()):'')+
+    (S.news.stale?' · <b>ForexFactory non risponde: sto mostrando l\'ultimo calendario salvato</b>':'')+'. Orari, impatto e valori sono quelli di ForexFactory; tocca una news per aprirla sul sito. La fine dei discorsi non viene mai annunciata.</span></p>';
   enter(el,h);
 }
-setInterval(()=>{ const now=Date.now(); document.querySelectorAll('[data-cd]').forEach(x=>{ x.textContent=cdTxt(+x.dataset.cd-now); }); }, 1000);
+setInterval(()=>{ if (document.hidden) return; const now=Date.now(); document.querySelectorAll('[data-cd]').forEach(x=>{ const v=cdTxt(+x.dataset.cd-now); if (x.textContent!==v) x.textContent=v; }); }, 1000);
 
 // ───────────────────────── OGGI: riepilogo della giornata ─────────────────────────
 const normCache={};
@@ -1384,10 +1495,6 @@ function briefing() {
   if (!weekend && CFG.check.length) { const ck=chkGet(), done=CFG.check.filter((_,i)=>ck.includes(i)).length, tot=CFG.check.length;
     h2+='<div class="card bchk'+(done===tot?' ok':'')+'"><div class="card-h"><div class="eyebrow">'+ic('check',15,2.2)+' Prima di aprire il grafico</div><span class="sub" id="chk-n">'+done+'/'+tot+'</span></div>'+
       '<div class="chk-bar"><i style="width:'+(100*done/tot)+'%"></i></div>'+CFG.check.map((c,i)=>'<button type="button" class="chk'+(ck.includes(i)?' on':'')+'" data-chk="'+i+'"><span class="box">'+ic('check',14,2.6)+'</span>'+esc(c)+'</button>').join('')+'</div>'; }
-  // settimana reale
-  if (J) { const mon=addDays(pdIso(t), -((pdIso(t).getDay()+6)%7)), wk=J.filter(x=>x.d>=mon), R=wk.reduce((s,x)=>s+(isFinite(x.rr)?x.rr:0),0), er=wk.filter(x=>x.exe==='Errore').length;
-    h2+='<div class="card bweek"><div class="eyebrow">'+ic('book',15,2)+' Questa settimana · Journal</div><div class="bw-g"><div><b class="'+sgn(R)+'">'+fmtR(R,2)+'</b><span>risultato</span></div><div><b>'+wk.length+'</b><span>trade</span></div><div><b class="'+(er?'neg':'')+'">'+er+'</b><span>errori</span></div>'+
-      (CFG.risk && isFinite(num(CFG.risk)) ? '<div><b class="'+sgn(R)+'">'+(R<0?'−':'')+'$'+Math.round(Math.abs(R*num(CFG.risk))).toLocaleString('it-IT')+'</b><span>in dollari</span></div>' : '')+'</div></div>'; }
   return h+'</div><div class="bcol">'+h2+'</div></div>';
 }
 
@@ -2124,7 +2231,10 @@ document.addEventListener('click', e => {
     if (sgc && sgc.dataset.seg.indexOf('news-')===0) { S[sgc.dataset.seg==='news-per'?'newsPer':'newsLvl']=b.dataset.v; renderCurrent(true); return; }
     const chc=b.closest('[data-chips="cfg-idea"]');
     if (chc) { b.classList.toggle('on'); CFG.exIdea=L.idea.filter(i=>!chc.querySelector('[data-v="'+i+'"]').classList.contains('on')); saveCfg(); return; } }
-  if (b.id==='fab' || b.dataset.act==='new') { openForm(); return; }
+  if (b.id==='fab' || b.dataset.act==='new') { if (NOFILE.includes(S.tab)) openNewPick(); else openForm(); return; }
+  if (b.dataset.newf) { switchFile(b.dataset.newf); openForm(); return; }
+  if (b.dataset.open) { const [f,row]=b.dataset.open.split(':'); switchFile(f); openForm(+row); return; }
+  if (b.dataset.act==='nsai') { askNewsAI(b); return; }
   if (b.id==='sh-close' || b.dataset.act==='close') { closeSheet(); return; }
   if (b.closest('[data-seg=coach-scope]')) { S.coachScope=b.dataset.v; try { sessionStorage.setItem('tj.cscope', S.coachScope); } catch(e) {} renderCoach(); return; }
   if (b.dataset.q) { sendChat(b.dataset.q); return; }
@@ -2163,6 +2273,14 @@ document.addEventListener('input', e => { const k=e.target.dataset && e.target.d
   const b=$('mc-run'); if (b && !b.disabled) b.innerHTML=ic('dice',18,2)+'Avvia simulazione'; });
 $('sh-body').addEventListener('focusout', e => { const k=e.target.dataset.k; if (k && S.sheet==='form' && !S.touched[k]) { S.touched[k]=true; refresh(); } });
 $('scrim').addEventListener('click', closeSheet);
+// scorciatoie (PC): 1–9 pagine della barra laterale, N nuovo trade, F filtri
+document.addEventListener('keydown', e => {
+  if (e.metaKey || e.ctrlKey || e.altKey || S.sheet || ($('lb') && $('lb').classList.contains('on')) || /INPUT|TEXTAREA|SELECT/.test((document.activeElement||{}).tagName||'')) return;
+  const items=[...NAV.filter(n=>!n.g), ...NAV_FOOT];
+  if (/^[1-9]$/.test(e.key) && items[+e.key-1]) { e.preventDefault(); navTo(navKey(items[+e.key-1])); }
+  else if (e.key==='n' || e.key==='N') { e.preventDefault(); $('fab').click(); }
+  else if ((e.key==='f' || e.key==='F') && !NOFILE.includes(S.tab)) { e.preventDefault(); openFilters(); }
+});
 document.addEventListener('keydown', e => { const lb=$('lb'), on=lb && lb.classList.contains('on');
   if (on) { if (e.key==='Escape') lbClose(); else if (e.key==='ArrowRight') lbShow(LB.i+1); else if (e.key==='ArrowLeft') lbShow(LB.i-1); return; }
   if (e.key==='Escape' && S.sheet) closeSheet(); });
