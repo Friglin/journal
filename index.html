@@ -704,6 +704,95 @@ a.nrow { color:inherit; text-decoration:none; } a.nrow:hover .nx b { color:var(-
 button:focus:not(:focus-visible) { outline:none; }
 .dayg, .nday { content-visibility:auto; contain-intrinsic-size:auto 260px; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; scroll-behavior:auto !important; } }
+
+/* ═════════════ Regole da app (taste-skill · app screens) ═════════════
+   Superfici piatte; colore sui dati, non sulla cornice; titoli da app (24–32px); etichette in frase normale;
+   movimento solo come risposta (tocco, hover, cambio pagina, pannelli), niente entrate in scena. */
+:root { --ease-out:cubic-bezier(.22,1,.36,1); --ease-io:cubic-bezier(.76,0,.24,1); --t-press:140ms; --t-hover:180ms; --t-ui:240ms; --active:#EAEAED; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --active:#26262B; } }
+:root[data-theme="dark"] { --active:#26262B; }
+/* niente sfumature, vetro, bagliori; ombre solo su ciò che galleggia */
+body::after, .side::before, .hero-glow, .bplan::after, .sb-ind::after { display:none !important; }
+header.top, .side, nav.bar { background:var(--bg) !important; -webkit-backdrop-filter:none !important; backdrop-filter:none !important; }
+nav.bar { background:var(--surface) !important; border-top:1px solid var(--line); }
+header.top::before { display:none; } header.top { border-top:0; }
+.side { background:var(--bg) !important; }
+.card, .kpi, .hero, .dayc, .intro, .mc-cta { box-shadow:none !important; }
+.intro { background:var(--surface) !important; }
+.sb-ind { background:var(--active) !important; box-shadow:none !important; transition:transform var(--t-ui) var(--ease-io), opacity var(--t-hover) ease !important; }
+.sb-i.on { color:var(--fg) !important; font-weight:600; } .sb-i.on .ic { color:var(--accent); animation:none !important; }
+.sb-i:hover .ic { transform:none; }
+.aifab { background:var(--fg) !important; color:var(--bg) !important; box-shadow:0 8px 20px rgba(0,0,0,.18) !important; }
+.nh-cd { background:none !important; -webkit-text-fill-color:currentColor; color:var(--fg) !important; font-size:32px !important; }
+.chk-bar i { background:var(--accent) !important; } .bchk.ok .chk-bar i { background:var(--win) !important; }
+.logo > rect:first-of-type { fill:var(--accent); }
+.filebar b { background:none !important; color:var(--fg2) !important; padding:0 !important; letter-spacing:0 !important; font-size:12.5px !important; }
+.filebar b::before { content:""; width:8px; height:8px; border-radius:50%; background:var(--accent); }
+.filebar { font-size:12.5px; }
+/* titoli e cifre da app */
+.stat-h h1, .hello h1 { font-size:28px !important; line-height:1.15 !important; letter-spacing:-.02em !important; font-weight:650 !important; }
+.big { font-size:40px !important; } .kpi .v { font-size:26px !important; } .bp-t { font-size:22px !important; } .nh-t { font-size:22px !important; } .be-big b { font-size:28px !important; }
+.h2 { font-size:17px !important; font-weight:650 !important; margin:0; }
+/* etichette in frase normale: niente maiuscoletto spaziato */
+.eyebrow, .sb-g, .cw, .sect, .nv em, .tag, .ftag, .in-cd, .rc-h, .ncat { text-transform:none !important; letter-spacing:0 !important; }
+.eyebrow { font-size:12.5px !important; font-weight:550 !important; }
+.sb-g { font-size:12px !important; font-weight:550 !important; }
+.sect { font-size:14px !important; color:var(--fg2) !important; font-weight:650 !important; margin:14px 0 -4px !important; }
+.tag { font-size:11px !important; padding:2px 7px !important; } .in-cd { font-size:13px !important; }
+/* icone senza riquadri colorati; niente anello decorativo */
+.be-ic, .ins-ic, .mc-ic { background:none !important; color:var(--fg3) !important; }
+.kpi .ring { display:none !important; }
+.num, .kpi .v, .big, .tres b, .kstrip b, .bl-t b, .rc-lead b, .ds-lead b, td { font-variant-numeric:tabular-nums; }
+/* movimento: risposta ai gesti, non entrate */
+.rise, .sb-i, .dots i, .more button, .cd, .wr, .chart .line, .chart .area, .chart .endpt, .bar { animation:none !important; opacity:1; }
+.view-in, .view-in.slide { animation:viewFade var(--t-ui) var(--ease-out) both !important; }
+@keyframes viewFade { from { opacity:0; transform:translateY(6px); } }
+.view-out { animation:viewGone 110ms ease both !important; } @keyframes viewGone { to { opacity:0; } }
+.sess.open i, .live i { animation:none !important; }
+.btn, .chip, .fchip, .fbtn, .seg button, .trow, .sb-i, .lnk, .link, .chk, .icon-btn, .fab, .aifab, nav.bar button { transition:transform var(--t-press) var(--ease-out), background-color var(--t-hover) ease, color var(--t-hover) ease, border-color var(--t-hover) ease, opacity var(--t-hover) ease; }
+.btn:active, .chip:active, .fchip:active, .fbtn:active, .trow:active, .lnk:active, .fab:active, .aifab:active, .sb-i:active, .icon-btn:active, .chk:active { transform:scale(.97); }
+.seg::before { transition:transform var(--t-ui) var(--ease-io) !important; }
+@media (hover:hover) { .card:hover, .kpi:hover, .cd:hover:not(:disabled):not(.wk) { transform:none !important; box-shadow:none !important; } .trow:hover { background:color-mix(in srgb,var(--fg) 3%,transparent); } }
+.chk .box { transition:background-color var(--t-hover) ease, border-color var(--t-hover) ease !important; } .chk.on .box { transform:none !important; }
+/* Panoramica: riepilogo per file, disciplina */
+.recap .rc-top { display:flex; justify-content:space-between; align-items:flex-start; gap:12px 20px; flex-wrap:wrap; margin-bottom:16px; }
+.recap .rc-top .sub { margin:3px 0 0; }
+.rc-ctl { display:flex; gap:8px; flex-wrap:wrap; } .rc-ctl .seg { min-width:170px; } .rc-ctl .seg:last-child { min-width:250px; }
+.rc-lead, .ds-lead { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+.rc-lead b, .ds-lead b { font-size:34px; font-weight:700; letter-spacing:-.03em; line-height:1.1; } .rc-lead span, .ds-lead span { color:var(--fg3); font-size:13.5px; }
+.kstrip { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); border:1px solid var(--line); border-radius:14px; margin:14px 0 18px; }
+.kstrip.k3 { grid-template-columns:repeat(3,minmax(0,1fr)); }
+.kstrip > div { padding:12px 14px; border-left:1px solid var(--line); min-width:0; } .kstrip > div:first-child { border-left:0; }
+.kstrip span { display:block; font-size:12.5px; color:var(--fg3); } .kstrip b { display:block; font-size:20px; font-weight:650; letter-spacing:-.02em; margin:3px 0 1px; } .kstrip em { font-style:normal; font-size:12px; color:var(--fg3); }
+.rc-body { display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr); gap:28px; align-items:start; }
+.rc-chart .chart { min-height:170px; }
+.rc-sub { font-size:13px; font-weight:650; color:var(--fg2); margin-bottom:4px; }
+.bl { padding:8px 0; border-top:1px solid var(--line); } .bl:first-of-type { border-top:0; }
+.bl-t { display:flex; justify-content:space-between; gap:10px; font-size:14px; } .bl-t span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.bl-b { height:3px; background:var(--sunk); border-radius:2px; margin:6px 0 4px; overflow:hidden; } .bl-b i { display:block; height:100%; background:var(--fg2); border-radius:2px; } .bl-b i.n { background:var(--loss); }
+.bl em { font-style:normal; font-size:12px; color:var(--fg3); }
+.rc-act { margin-top:14px; display:flex; gap:20px; flex-wrap:wrap; }
+.pgrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; align-items:start; }
+.ds-bar { height:8px; border-radius:99px; background:color-mix(in srgb,var(--loss) 25%,var(--sunk)); overflow:hidden; margin-top:12px; } .ds-bar i { display:block; height:100%; background:var(--win); border-radius:99px; }
+.ds-ends { display:flex; justify-content:space-between; font-size:12px; color:var(--fg3); margin-top:5px; }
+.ds-plan { display:flex; gap:9px; align-items:flex-start; font-size:13.5px; line-height:1.45; padding:11px 13px; border-radius:12px; background:var(--sunk); } .ds-plan .ic { flex:none; margin-top:1px; } .ds-plan.bad .ic { color:var(--loss); } .ds-plan.ok .ic { color:var(--win); }
+.empty-row { padding:16px; border:1px dashed var(--line); border-radius:12px; color:var(--fg3); font-size:14px; text-align:center; }
+.nfil .seg { flex:0 1 320px; min-width:0; }
+@media (max-width:999px) { .pgrid { grid-template-columns:minmax(0,1fr); gap:14px; } .rc-body { grid-template-columns:minmax(0,1fr); gap:16px; } .stat-h h1, .hello h1 { font-size:24px !important; } }
+@media (max-width:640px) {
+  .kstrip { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .kstrip > div { border-left:0; border-top:1px solid var(--line); } .kstrip > div:nth-child(-n+2) { border-top:0; } .kstrip > div:nth-child(even) { border-left:1px solid var(--line); }
+  .kstrip > div:last-child:nth-child(odd) { grid-column:1 / -1; }
+  .kstrip.k3 { grid-template-columns:repeat(3,minmax(0,1fr)); } .kstrip.k3 > div { border-top:0; border-left:1px solid var(--line); } .kstrip.k3 > div:first-child { border-left:0; } .kstrip.k3 > div:last-child { grid-column:auto; }
+  .kstrip.k3 b { font-size:17px; }
+  .rc-ctl, .rc-ctl .seg { width:100%; min-width:0 !important; }
+  .rc-lead b, .ds-lead b { font-size:28px; }
+}
+
+th, .bd.hd { text-transform:none !important; letter-spacing:0 !important; font-size:12px !important; font-weight:550 !important; }
+.mc-cta { background:var(--surface) !important; color:var(--fg) !important; border:1px solid var(--line) !important; }
+.mc-cta .mc-ic, .mc-cta .ic { color:var(--accent) !important; } .mc-cta span span { color:var(--fg3) !important; }
+.trump { background:var(--surface) !important; }
 </style>
 </head>
 <body>
@@ -863,6 +952,7 @@ function chips(key, opts, val, multi) {
     return '<button type="button" class="chip'+(on?' on':'')+'" data-v="'+esc(v)+'">'+esc(o.l ?? (v||'Tutti'))+'</button>'; }).join('')+'</div>';
 }
 function animateNums(root) {
+  return;   // le cifre compaiono subito al loro valore: niente conteggi animati
   root.querySelectorAll('[data-num]').forEach(el => {
     const to=+el.dataset.num, dec=+(el.dataset.dec||0), sg=el.dataset.sign==='1';
     if (!isFinite(to)) return;
@@ -1102,6 +1192,7 @@ function fetchFile(f) {
 let warned=false;
 async function load() {
   const f=S.file, have = S.data[f] || cacheGet(f);
+  if (S.tab==='home') { const o=f==='EOW'?'Journal':'EOW'; if (!S.data[o]) S.data[o]=cacheGet(o); if (!fetchedAt[o] || Date.now()-fetchedAt[o]>FRESH_MS) fetchFile(o).then(()=>{ if (S.tab==='home' && !S.sheet) renderCurrent(true); }).catch(()=>{}); }
   if (have) { S.data[f]=have; applyData(have); renderCurrent(); } else { S.loaded=false; renderCurrent(); }
   const before = have ? JSON.stringify(have) : '';
   if (have && Date.now()-(fetchedAt[f]||0) < FRESH_MS) return;   // appena letti: niente nuova richiesta
@@ -1209,9 +1300,9 @@ function renderHome() {
   if (!rowsOf('Journal') && !rowsOf('EOW')) { enter(el, h+skeleton()); return; }
   h+=dayIntro();
   h+=briefing();
-  h+='<div class="sect rise" style="--d:120ms">Riepilogo</div>';
   h+=recapCards();
-  enter(el, h, ()=>{ document.querySelectorAll('[data-spark]').forEach(x=>{ const k=x.dataset.spark, p=SPARK[k]; if (p && p.length>1) lineChart(x, p, { axes:false, h:64 }); }); });
+  h+='<div class="pgrid">'+discCard()+lastCard()+'</div>';
+  enter(el, h, ()=>{ document.querySelectorAll('[data-spark]').forEach(x=>{ const p=SPARK[x.dataset.spark]; if (p && p.length>1) lineChart(x, p, { h: innerWidth<640 ? 170 : 210 }); }); });
 }
 // il racconto della giornata: piano, news, apertura di New York, storico
 function dayIntro() {
@@ -1231,32 +1322,57 @@ function dayIntro() {
 function nyOpenIt(dIso) { const d=pdIso(dIso); for (let h=12; h<=17; h++) for (const m of [0,30]) { const u=Date.UTC(d.getFullYear(),d.getMonth(),d.getDate(),h,m), n=nyHM(u);
   if (n.getHours()===9 && n.getMinutes()===30) { const r=romeDate(u); return p2(r.getHours())+':'+p2(r.getMinutes()); } } return ''; }
 const SPARK={};
+const FHUE = { Journal:'#E8870E', EOW:'#1F7AE0' };   // il colore di ogni file, solo sui suoi dati
+const jModel = () => ({ rOf:t=>isFinite(t.rr)?t.rr:0, isWin:t=>t.out==='Win', isLoss:t=>t.out==='Loss' });
+// Riepilogo: un file alla volta (Journal o EOW), periodo a scelta
 function recapCards() {
-  const J=rowsOf('Journal')||[], E=rowsOf('EOW')||[], F=FILT_DEF(), mE=model(2), mJ=model(), now=new Date();
-  mJ.rOf=t=>isFinite(t.rr)?t.rr:0; mJ.isWin=t=>t.out==='Win'; mJ.isLoss=t=>t.out==='Loss';
-  const Ef=plan(E.filter(t=>(!F.asset||t.a===F.asset) && (!F.idea.length||F.idea.includes(t.idea))), mE.rOf);
-  const mon=addDays(new Date(now.getFullYear(),now.getMonth(),now.getDate()), -((now.getDay()+6)%7));
-  const pers=[['Settimana',mon],['Mese',new Date(now.getFullYear(),now.getMonth(),1)],['Anno',new Date(now.getFullYear(),0,1)]];
-  const cell=(ts,m)=>{ const a=agg(ts,m); return a.n ? '<b class="'+sgn(a.R)+'">'+fmtR(a.R,1)+'</b><span>'+a.n+' trade · WR '+pct(a.wr)+'</span>' : '<b class="mut">–</b><span>nessun trade</span>'; };
-  const eq=(ts,m)=>{ let s=0; return ts.slice(-40).map(t=>({ y:(s+=m.rOf(t)), x:'', tip:t.d.getDate()+' '+MESI[t.d.getMonth()] })); };
-  SPARK.j=[{y:0}].concat(eq(J,mJ)); SPARK.e=[{y:0}].concat(eq(Ef,mE));
-  let h='<div class="card wide recap rise" style="--d:140ms"><div class="card-h"><div class="h2">Reale e backtest</div><span class="sub">Journal: tutti i trade reali · EOW: '+(F.asset||'tutti')+', idee del piano, max 2 al giorno, 2R</span></div>'+
-    '<div class="rc-g"><div class="rc-h"></div><div class="rc-h j"><i></i>Journal · reale</div><div class="rc-h e"><i></i>EOW · backtest</div>'+
-    pers.map(p=>'<div class="rc-l">'+p[0]+'</div><div class="rc-c j">'+cell(J.filter(t=>t.d>=p[1]),mJ)+'</div><div class="rc-c e">'+cell(Ef.filter(t=>t.d>=p[1]),mE)+'</div>').join('')+
-    '<div class="rc-l">Ultimi 40</div><div class="rc-c j"><div class="chart sp" data-spark="j"></div></div><div class="rc-c e"><div class="chart sp" data-spark="e"></div></div></div>'+
-    '<div class="rc-act"><button type="button" class="link" data-nav="list:Journal">Apri il Journal '+ic('chev',15,2)+'</button><button type="button" class="link" data-nav="list:EOW">Apri l\'EOW '+ic('chev',15,2)+'</button><button type="button" class="link" data-nav="stats">Analisi '+ic('chev',15,2)+'</button></div></div>';
-  // disciplina (Journal) e ultimi trade di entrambi
-  const jm=J.filter(t=>t.d>=pers[1][1]), er=jm.filter(t=>t.exe==='Errore'), val=jm.filter(t=>t.exe==='Trade valido'), cnt={};
-  er.forEach(t=>t.errs.forEach(x=>cnt[x]=(cnt[x]||0)+1)); const top=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0];
-  let st=0; for (let i=J.length-1;i>=0 && J[i].exe!=='Errore';i--) if (J[i].exe==='Trade valido') st++;
-  const erR=er.reduce((s,t)=>s+(isFinite(t.rr)?t.rr:0),0);
-  h+='<div class="card disc rise" style="--d:170ms"><div class="card-h"><div class="h2">Disciplina</div><span class="sub">Journal · '+MESI_F[now.getMonth()]+'</span></div>'+
-    (jm.length ? '<div class="ds-g"><div><b>'+pct(val.length/((val.length+er.length)||1))+'</b><span>trade validi</span></div><div><b class="'+(er.length?'neg':'')+'">'+er.length+'</b><span>errori</span></div><div><b class="pos">'+st+'</b><span>validi di fila</span></div></div>'+
-      (er.length?'<p class="ds-p">'+ic('alert',15,2)+'<span>I trade con errori di questo mese hanno fatto <b class="'+sgn(erR)+'">'+fmtR(erR,2)+'</b>'+(top?'; il più frequente è <b>'+esc(top[0])+'</b> ('+top[1]+')':'')+'.</span></p>':'<p class="ds-p ok">'+ic('check',15,2.2)+'<span>Nessun errore questo mese: continua così.</span></p>')
-      : '<p class="mut">Nessun trade reale questo mese.</p>')+'</div>';
-  const last=[...J.slice(-6).map(t=>({t,f:'Journal'})), ...E.slice(-6).map(t=>({t,f:'EOW'}))].sort((a,b)=>(b.t.d-a.t.d)||(b.t.o-a.t.o)).slice(0,6);
-  if (last.length) h+='<div class="card rise" style="--d:200ms"><div class="card-h"><div class="h2">Ultimi trade</div><span class="sub">Journal ed EOW</span></div>'+last.map(x=>mrow(x.t,x.f)).join('')+'</div>';
+  const f=S.recapF||store.get('recapF','Journal'), per=S.recapP||'m', E=f==='EOW', F=FILT_DEF(), m=E?model(2):jModel(), now=new Date();
+  const rows=rowsOf(f)||[], base=E ? plan(rows.filter(t=>(!F.asset||t.a===F.asset) && (!F.idea.length||F.idea.includes(t.idea))), m.rOf) : rows;
+  const start={ w:addDays(new Date(now.getFullYear(),now.getMonth(),now.getDate()), -((now.getDay()+6)%7)), m:new Date(now.getFullYear(),now.getMonth(),1), y:new Date(now.getFullYear(),0,1), all:null }[per];
+  const ts=base.filter(t=>!start||t.d>=start), a=agg(ts,m), perL={ w:'questa settimana', m:MESI_F[now.getMonth()], y:'quest\'anno', all:'da sempre' }[per];
+  let h='<div class="card wide recap"><div class="rc-top"><div><h2 class="h2">Riepilogo</h2><p class="sub">'+(E?'EOW · '+(F.asset||'tutti gli asset')+', idee del piano, max 2 al giorno, esito a 2R':'Journal · tutti i trade reali, RR reale')+'</p></div>'+
+    '<div class="rc-ctl">'+seg('rc-file',[{v:'Journal',l:'Journal'},{v:'EOW',l:'EOW'}],f,'sm')+seg('rc-per',[{v:'w',l:'Sett.'},{v:'m',l:'Mese'},{v:'y',l:'Anno'},{v:'all',l:'Tutto'}],per,'sm')+'</div></div>';
+  if (!ts.length) { h+='<div class="empty-row">Nessun trade '+(E?'nel backtest':'reale')+' '+perL+'.</div></div>'; return h; }
+  const hs=ts.map(t=>t.hold).filter(isFinite), mx=ts.filter(t=>isFinite(t.max));
+  h+='<div class="rc-lead"><b class="'+sgn(a.R)+' num">'+fmtR(a.R,E?0:2)+'</b><span>'+perL+' · '+a.n+' trade</span></div>'+
+    '<div class="kstrip num"><div><span>Win rate</span><b>'+pct(a.wr)+'</b><em>'+a.w+' su '+(a.w+a.l)+'</em></div><div><span>Profit factor</span><b>'+(a.pf===Infinity?'∞':fmtN(a.pf,2))+'</b><em>R vinti per R perso</em></div>'+
+    '<div><span>Expectancy</span><b class="'+sgn(a.exp)+'">'+fmtN(a.exp,2,true)+' R</b><em>per trade</em></div><div><span>Max drawdown</span><b>'+fmtN(a.dd,1)+' R</b><em>dal picco</em></div>'+
+    (E?'<div><span>Max RR medio</span><b>'+(mx.length?fmtN(mx.reduce((s,t)=>s+t.max,0)/mx.length,2):'–')+'</b><em>escursione favorevole</em></div>':'<div><span>Holding medio</span><b>'+(hs.length?hhmm(hs.reduce((x,y)=>x+y,0)/hs.length):'–')+'</b><em>durata del trade</em></div>')+'</div>';
+  // curva e idee
+  let eq=0; SPARK.rc=[{ y:0, x:'', tip:'Inizio' }].concat(ts.map((t,i)=>({ y:(eq+=m.rOf(t)), x:t.d.getDate()+' '+MESI[t.d.getMonth()], tip:'Trade '+(i+1)+' · '+t.d.getDate()+' '+MESI[t.d.getMonth()]+' · '+(t.idea||'') })));
+  const ideas=L.idea.map(k=>{ const g=ts.filter(t=>t.idea===k); return g.length ? { k, a:agg(g,m) } : null; }).filter(Boolean).sort((x,y)=>y.a.R-x.a.R), top=Math.max(...ideas.map(x=>Math.abs(x.a.R)),1);
+  h+='<div class="rc-body"><div class="rc-chart"><div class="chart" data-spark="rc" style="--accent:'+FHUE[f]+'"></div></div><div class="rc-ideas"><div class="rc-sub">Per idea</div>'+
+    ideas.map(x=>'<div class="bl"><div class="bl-t"><span>'+esc(x.k)+'</span><b class="'+sgn(x.a.R)+' num">'+fmtR(x.a.R,E?0:1)+'</b></div><div class="bl-b"><i class="'+(x.a.R<0?'n':'')+'" style="width:'+(100*Math.abs(x.a.R)/top).toFixed(1)+'%"></i></div><em>'+x.a.n+' trade · WR '+pct(x.a.wr)+'</em></div>').join('')+'</div></div>'+
+    '<div class="rc-act"><button type="button" class="link" data-nav="list:'+f+'">Apri '+(E?'l\'EOW':'il Journal')+ic('chev',15,2)+'</button><button type="button" class="link" data-nav="stats">Analisi completa'+ic('chev',15,2)+'</button></div></div>';
   return h;
+}
+// Disciplina: quanto segui le regole nel conto reale (Journal)
+function discCard() {
+  const J=rowsOf('Journal')||[], now=new Date(), m0=new Date(now.getFullYear(),now.getMonth(),1), p0=new Date(now.getFullYear(),now.getMonth()-1,1);
+  const jm=J.filter(t=>t.d>=m0), jp=J.filter(t=>t.d>=p0 && t.d<m0);
+  const R=a=>a.reduce((s,t)=>s+(isFinite(t.rr)?t.rr:0),0), vOf=a=>a.filter(t=>t.exe==='Trade valido'), eOf=a=>a.filter(t=>t.exe==='Errore');
+  const val=vOf(jm), er=eOf(jm), share=a=>{ const v=vOf(a).length, e=eOf(a).length; return v+e ? v/(v+e) : NaN; };
+  let h='<div class="card disc"><div class="card-h"><h2 class="h2">Disciplina</h2><span class="sub">Journal · '+MESI_F[now.getMonth()]+'</span></div>';
+  if (!jm.length) return h+'<div class="empty-row">Nessun trade reale questo mese.</div></div>';
+  // giornate fuori piano: più di 2 trade, oppure un trade dopo un TP
+  const days={}; jm.forEach(t=>{ const k=iso(t.d); (days[k]=days[k]||[]).push(t); });
+  const off=Object.entries(days).filter(([k,g])=>g.length>2 || g.some((t,i)=>i>0 && g.slice(0,i).some(x=>x.out==='Win'||x.rr>0)));
+  let st=0; for (let i=J.length-1;i>=0 && J[i].exe!=='Errore';i--) if (J[i].exe==='Trade valido') st++;
+  const sh=share(jm), shp=share(jp), cnt={};
+  er.forEach(t=>(t.errs.length?t.errs:['Non specificato']).forEach(x=>{ (cnt[x]=cnt[x]||{ n:0, R:0 }); cnt[x].n++; cnt[x].R+=isFinite(t.rr)?t.rr:0; }));
+  const errs=Object.entries(cnt).sort((a,b)=>b[1].n-a[1].n), mxn=Math.max(1,...errs.map(x=>x[1].n));
+  h+='<div class="ds-lead"><b class="num">'+pct(sh)+'</b><span>trade validi'+(isFinite(shp)?' · '+MESI_F[p0.getMonth()]+' '+pct(shp):'')+'</span></div>'+
+    '<div class="ds-bar"><i style="width:'+(isFinite(sh)?100*sh:0)+'%"></i></div><div class="ds-ends"><span>'+val.length+' validi</span><span>'+er.length+' con errori</span></div>'+
+    '<div class="kstrip num k3"><div><span>Trade validi</span><b class="'+sgn(R(val))+'">'+fmtN(R(val),2,true)+' R</b><em>'+val.length+' trade</em></div><div><span>Con errori</span><b class="'+sgn(R(er))+'">'+fmtN(R(er),2,true)+' R</b><em>'+er.length+' trade</em></div>'+
+    '<div><span>Validi di fila</span><b>'+st+'</b><em>dall\'ultimo errore</em></div></div>'+
+    '<div class="ds-plan '+(off.length?'bad':'ok')+'">'+ic(off.length?'alert':'check',15,2.2)+'<span>'+(off.length?'<b>'+off.length+(off.length===1?' giornata':' giornate')+' fuori piano</b> (più di 2 trade o un trade dopo il TP): '+off.map(([k])=>dayShort(k)).join(', ')+'.':'Piano rispettato tutti i giorni: mai più di 2 trade, stop dopo il TP.')+'</span></div>';
+  if (errs.length) h+='<div class="rc-sub" style="margin-top:14px">Errori del mese</div>'+errs.map(([k,v])=>'<div class="bl"><div class="bl-t"><span>'+esc(k)+'</span><b class="num">'+v.n+'</b></div><div class="bl-b"><i class="n" style="width:'+(100*v.n/mxn)+'%"></i></div><em>'+fmtN(v.R,2,true)+' R su quei trade</em></div>').join('');
+  return h+'</div>';
+}
+function lastCard() {
+  const J=rowsOf('Journal')||[], E=rowsOf('EOW')||[];
+  const last=[...J.slice(-6).map(t=>({t,f:'Journal'})), ...E.slice(-6).map(t=>({t,f:'EOW'}))].sort((a,b)=>(b.t.d-a.t.d)||(b.t.o-a.t.o)).slice(0,6);
+  return last.length ? '<div class="card last"><div class="card-h"><h2 class="h2">Ultimi trade</h2><span class="sub">Journal ed EOW</span></div>'+last.map(x=>mrow(x.t,x.f)).join('')+'</div>' : '';
 }
 // riga di trade per la Panoramica: indica il file e apre il trade giusto
 function mrow(t, f) {
@@ -1417,23 +1533,21 @@ function renderNews() {
        : newsErr && !newsRetry && !newsP ? emptyState('News non disponibili', esc(newsErr)+'. Tocca Aggiorna per riprovare.') : skeleton();
     enter(el,h); return;
   }
-  const now=Date.now(), all=newsEvents(), lvl=S.newsLvl||CFG.newsImp, per=S.newsPer||'d', t=todayIso(), wk=weekOf(t), nwk=iso(addDays(pdIso(wk),7));
-  const keep = e => e.trump || e.imp==='Holiday' || e.imp==='High' || (lvl!=='high' && e.imp==='Medium') || lvl==='all';
-  const inPer = e => per==='d' ? e.day===t : per==='n' ? weekOf(e.day)===nwk : weekOf(e.day)===wk;
-  const pev=all.filter(inPer), ev=pev.filter(keep), nextT=(all.find(e=>!e.tbd && e.t>now-60000 && keep(e))||{}).t;
+  const now=Date.now(), all=newsEvents(), lvl=(S.newsLvl||CFG.newsImp)==='high'?'high':'med', per='w', t=todayIso(), wk=weekOf(t), nwk=iso(addDays(pdIso(wk),7));
+  const keep = e => e.trump || e.imp==='Holiday' || e.imp==='High' || (lvl!=='high' && e.imp==='Medium');
+  const inPer = e => weekOf(e.day)===wk || weekOf(e.day)===nwk;
+  const pev=all.filter(e=>weekOf(e.day)===wk), ev=all.filter(inPer).filter(keep), nextT=(all.find(e=>!e.tbd && e.t>now-60000 && keep(e))||{}).t;
   const nextOk = !S.news.weeks || S.news.weeks.next==='ok' || all.some(e=>weekOf(e.day)===nwk);
   h += newsHero(all, now);
   h += trumpCard(all.filter(e=>e.trump && (e.tbd || e.t>now-4*3600000)).slice(0,4));
-  h += '<div class="nfil rise" style="--d:100ms">'+seg('news-per',[{v:'d',l:'Oggi'},{v:'w',l:'Settimana'},{v:'n',h:'Prossima<span class="xs-hide"> settimana</span>'}],per)+seg('news-lvl',[{v:'high',l:'Alto'},{v:'med',l:'Alto + medio'},{v:'all',l:'Tutti'}],lvl)+'</div>';
-  if (per==='n' && !nextOk) h += '<div class="card wide rise">'+'<div class="h2" style="margin-bottom:6px">Settimana prossima non ricevuta</div><p class="mut" style="margin:0 0 12px">ForexFactory non ha risposto alla richiesta della settimana prossima (a volte blocca le richieste automatiche). Riprovo al prossimo aggiornamento; intanto puoi vederla sul sito.</p>'+
-    '<a class="lnk" href="https://www.forexfactory.com/calendar?week=next" target="_blank" rel="noopener">'+ic('ext',14,2)+'Settimana prossima su ForexFactory</a></div>';
-  else {
-    h += newsSummary(pev, per);
-    const days=[...new Set(ev.map(e=>e.day))];
-    if (!days.length) h += emptyState('Nessuna news', 'Nessun evento USD con questo livello di impatto nel periodo scelto.');
-    days.forEach((d,i)=>{ const g=ev.filter(e=>e.day===d), hi=g.filter(e=>e.imp==='High').length;
-      h += '<div class="card wide nday rise'+(d===t?' today':'')+'" style="--d:'+(150+i*40)+'ms"><div class="card-h"><div class="h2">'+dayLbl(d)+'</div><span class="sub">'+(hi?hi+' ad alto impatto':'nessuna ad alto impatto')+' · '+newsCat(d)+'</span></div>'+g.map(e=>nrow(e,now,nextT)).join('')+'</div>'; });
-  }
+  h += '<div class="nfil">'+seg('news-lvl',[{v:'high',l:'Impatto alto'},{v:'med',l:'Alto + medio'}],lvl,'sm')+'</div>';
+  h += newsSummary(pev, 'w');
+  const days=[...new Set(ev.map(e=>e.day))];
+  if (!days.length) h += '<div class="card wide"><div class="empty-row">Nessuna news USD con questo impatto questa settimana.</div></div>';
+  let nxt=false;
+  days.forEach(d=>{ const g=ev.filter(e=>e.day===d), hi=g.filter(e=>e.imp==='High').length;
+    if (!nxt && weekOf(d)===nwk) { nxt=true; h += '<h2 class="sect">Settimana prossima</h2>'; }
+    h += '<div class="card wide nday'+(d===t?' today':'')+'"><div class="card-h"><h3 class="h2">'+dayLbl(d)+'</h3><span class="sub">'+(hi?hi+' ad alto impatto':'nessuna ad alto impatto')+' · '+newsCat(d)+'</span></div>'+g.map(e=>nrow(e,now,nextT)).join('')+'</div>'; });
   const at=S.news.at?romeDate(S.news.at):null;
   h += '<p class="nsrc rise">'+ic('clock',14,2)+'<span>Fonte: calendario ForexFactory'+(at?', aggiornato alle '+p2(at.getHours())+':'+p2(at.getMinutes()):'')+
     (S.news.stale?' · <b>ForexFactory non risponde: sto mostrando l\'ultimo calendario salvato</b>':'')+'. Orari, impatto e valori sono quelli di ForexFactory; tocca una news per aprirla sul sito. La fine dei discorsi non viene mai annunciata.</span></p>';
@@ -1541,7 +1655,7 @@ function renderSet() {
      '<div class="field"><span class="flabel">Piano</span>'+seg('cfg-plan',[{v:'max2',l:'Max 2 al giorno'},{v:'',l:'Nessuno'}],C.plan)+'</div></div>'+
      '<div class="field"><span class="flabel">Idee da includere</span>'+chips('cfg-idea',L.idea,L.idea.filter(i=>!C.exIdea.includes(i)),true)+'</div>'+
      '<button type="button" class="btn sec sm" data-act="cfgapply">Applica subito ai filtri</button>',100);
-  h+=sec('News','',' <div class="field"><span class="flabel">Impatto mostrato all\'apertura della pagina News</span>'+seg('cfg-newsImp',[{v:'high',l:'Alto'},{v:'med',l:'Alto + medio'},{v:'all',l:'Tutti'}],C.newsImp)+'</div>',130);
+  h+=sec('News','',' <div class="field"><span class="flabel">Impatto mostrato all\'apertura della pagina News</span>'+seg('cfg-newsImp',[{v:'high',l:'Alto'},{v:'med',l:'Alto + medio'}],C.newsImp==='high'?'high':'med')+'</div>',130);
   h+=sec('Checklist pre-sessione','una voce per riga',fld2('','<textarea class="inp" rows="6" data-cfg="check">'+esc(C.check.join('\n'))+'</textarea>','Compare nella pagina Oggi e si azzera ogni giorno.'),160);
   h+=sec('Collegamento','',(viaScript()?'<p class="mut">L\'app gira dentro Apps Script: nessun indirizzo da impostare.</p>':
      '<p class="mut" style="margin:0 0 12px">Collegata a <b>…'+esc(store.get('api','').slice(-24))+'</b></p><button type="button" class="btn sec sm" data-act="setup">Cambia indirizzo e chiave</button>')+
@@ -2228,6 +2342,7 @@ document.addEventListener('click', e => {
   if (b.dataset.act==='cacheclear') { Object.keys(localStorage).filter(k=>/^tj\.(data\.|news)/.test(k)).forEach(k=>localStorage.removeItem(k)); toast('Dati salvati cancellati: ricarico'); setTimeout(()=>location.reload(), 900); return; }
   { const sgc=b.closest('[data-seg]');
     if (sgc && sgc.dataset.seg.indexOf('cfg-')===0) { const k=sgc.dataset.seg.slice(4); CFG[k]=b.dataset.v; setSeg(sgc,b.dataset.v); cfgChanged(k); return; }
+    if (sgc && (sgc.dataset.seg==='rc-file' || sgc.dataset.seg==='rc-per')) { if (sgc.dataset.seg==='rc-file') { S.recapF=b.dataset.v; store.set('recapF', b.dataset.v); } else S.recapP=b.dataset.v; renderCurrent(true); return; }
     if (sgc && sgc.dataset.seg.indexOf('news-')===0) { S[sgc.dataset.seg==='news-per'?'newsPer':'newsLvl']=b.dataset.v; renderCurrent(true); return; }
     const chc=b.closest('[data-chips="cfg-idea"]');
     if (chc) { b.classList.toggle('on'); CFG.exIdea=L.idea.filter(i=>!chc.querySelector('[data-v="'+i+'"]').classList.contains('on')); saveCfg(); return; } }
