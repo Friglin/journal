@@ -793,6 +793,26 @@ th, .bd.hd { text-transform:none !important; letter-spacing:0 !important; font-s
 .mc-cta { background:var(--surface) !important; color:var(--fg) !important; border:1px solid var(--line) !important; }
 .mc-cta .mc-ic, .mc-cta .ic { color:var(--accent) !important; } .mc-cta span span { color:var(--fg3) !important; }
 .trump { background:var(--surface) !important; }
+
+.bp-tr { display:flex; flex-direction:column; gap:6px; margin-top:12px; }
+.bp-tr span { display:flex; align-items:center; gap:8px; font-size:13.5px; padding:8px 10px; border-radius:10px; background:var(--sunk); }
+.bp-tr span b { margin-left:auto; } .bp-tr .w b { color:var(--win); } .bp-tr .l b { color:var(--loss); }
+.bp-lim { margin-top:12px; font-size:12.5px; color:var(--fg3); }
+.rules { display:flex; flex-direction:column; margin-top:14px; }
+.rule { display:flex; gap:10px; align-items:flex-start; padding:11px 0; border-top:1px solid var(--line); } .rule:first-child { border-top:0; }
+.rule .ic { flex:none; margin-top:2px; } .rule.ok .ic { color:var(--win); } .rule.ko .ic { color:var(--loss); }
+.rule b { display:block; font-size:14.5px; font-weight:600; } .rule span { font-size:12.5px; color:var(--fg3); }
+.ds-note { margin:10px 0 0; font-size:13.5px; color:var(--fg2); line-height:1.5; }
+.ds-cost { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); border:1px solid var(--line); border-radius:14px; margin-top:14px; }
+.ds-cost > div { padding:12px 14px; } .ds-cost > div + div { border-left:1px solid var(--line); }
+.ds-cost span { display:block; font-size:12.5px; color:var(--fg3); } .ds-cost b { display:block; font-size:20px; font-weight:650; margin:2px 0; } .ds-cost em { font-style:normal; font-size:12px; color:var(--fg3); }
+.ds-errs { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
+.echip { font-size:12.5px; padding:5px 10px; border-radius:99px; background:color-mix(in srgb,var(--loss) 10%,var(--sunk)); color:var(--fg); } .echip b { color:var(--loss); margin-left:2px; }
+.fjrow { display:grid; grid-template-columns:72px minmax(0,1fr); gap:12px; padding:9px 4px; border-top:1px solid var(--line); color:inherit; text-decoration:none; border-radius:8px; transition:background-color var(--t-hover) ease; }
+.fjrow:hover { background:color-mix(in srgb,var(--fg) 3%,transparent); }
+.fj-t { font-size:13px; font-weight:600; font-variant-numeric:tabular-nums; } .fj-t em { display:block; font-style:normal; font-size:11.5px; color:var(--fg3); font-weight:500; }
+.fj-x { font-size:14px; line-height:1.4; } .fjrow.key .fj-x { font-weight:600; } .fjrow.tr .fj-x { color:var(--loss); }
+.nsrc a { color:var(--accent); }
 </style>
 </head>
 <body>
@@ -892,7 +912,7 @@ function call(fn, ...args) {
   const url=store.get('api',''), key=store.get('key','');
   if (!url || !key) { showSetup(); return Promise.reject(new Error('Inserisci indirizzo e chiave di accesso')); }
   // corpo in text/plain: è una richiesta «semplice», niente controllo preventivo CORS
-  const ctl = 'AbortController' in window ? new AbortController() : null, to = ctl && setTimeout(()=>ctl.abort(), fn==='chat'||fn==='coach'||fn==='news'||fn==='newsSunto' ? 90000 : 30000);
+  const ctl = 'AbortController' in window ? new AbortController() : null, to = ctl && setTimeout(()=>ctl.abort(), fn==='chat'||fn==='coach'||fn==='news'||fn==='newsSunto'||fn==='fjNews' ? 90000 : 30000);
   return fetch(url, { method:'POST', body: JSON.stringify({ key, fn, args }), signal: ctl ? ctl.signal : undefined })
     .catch(() => { throw new Error('NETWORK'); })
     .finally(() => clearTimeout(to))
@@ -1001,6 +1021,8 @@ function model(T) {
   if (S.type==='EOW') { T=T||2; return { rOf:t=> t.best>=T ? T : -1, isWin:t=>t.best>=T, isLoss:t=>!(t.best>=T) }; }
   return { rOf:t=> isFinite(t.rr)?t.rr:0, isWin:t=>t.out==='Win', isLoss:t=>t.out==='Loss' };
 }
+// modelli fissi per file, da usare quando si guarda un file diverso da quello aperto
+const eModel = (T=2) => ({ rOf:t=> t.best>=T ? T : -1, isWin:t=>t.best>=T, isLoss:t=>!(t.best>=T) });
 function agg(ts, m) {
   const n=ts.length, w=ts.filter(m.isWin).length, l=ts.filter(m.isLoss).length; let R=0,gp=0,gl=0,eq=0,pk=0,dd=0;
   ts.forEach(t=>{ const r=m.rOf(t); R+=r; if (r>0) gp+=r; else gl-=r; eq+=r; pk=Math.max(pk,eq); dd=Math.min(dd,eq-pk); });
@@ -1291,9 +1313,35 @@ function sessionInfo() {
   return { open:false, txt: add===1 ? 'Sessione domani alle '+CFG.s0 : 'Prossima sessione '+GIORNI[(wd+add)%7]+' alle '+CFG.s0 };
 }
 const greeting = () => { const h=new Date().getHours(); return (h<5 ? 'Buonanotte' : h<13 ? 'Buongiorno' : h<18 ? 'Buon pomeriggio' : 'Buonasera')+', '+USER; };
+// ───────────────────────── FINANCIALJUICE: titoli in tempo (quasi) reale ─────────────────────────
+S.fj=null; let fjP=null, fjErr='', fjTry=0;
+function loadFJ(force) {
+  if (fjP) return fjP;
+  if (!force && S.fj && Date.now()-S.fj.got < 110000) return Promise.resolve(S.fj);
+  if (!force && Date.now()-fjTry < 60000 && fjErr) return Promise.reject(new Error(fjErr));
+  fjTry=Date.now();
+  fjP = call('fjNews').then(d=>{ d.got=Date.now(); S.fj=d; fjErr=''; return d; })
+    .catch(e=>{ fjErr = /Funzione sconosciuta/.test(e.message||'') ? 'OLD' : (e.message||String(e)); throw e; })
+    .finally(()=>{ fjP=null; if (S.tab==='news' && !S.sheet) renderCurrent(true); });
+  return fjP;
+}
+setInterval(()=>{ if (S.tab==='news' && !document.hidden) loadFJ().catch(()=>{}); }, 120000);
+const FJ_KEY = /trump|fed|powell|fomc|cpi|ppi|pce|payroll|nfp|tariff|dazi|rate cut|rate hike|recession|gdp|treasury|yields?|s&p|nasdaq|white house/i;
+const agoTxt = t => { const m=Math.max(0,Math.round((Date.now()-t)/60000)); if (m<1) return 'adesso'; if (m<60) return m+' min fa'; const h=Math.floor(m/60); if (h<24) return h+' h fa'; return romeDate(t).getDate()+' '+MESI[romeDate(t).getMonth()]; };
+const fjRow = it => '<a class="fjrow'+(FJ_KEY.test(it.title)?' key':'')+(/trump/i.test(it.title)?' tr':'')+'" href="'+esc(it.link||'https://www.financialjuice.com/home')+'" target="_blank" rel="noopener"><span class="fj-t">'+p2(romeDate(it.t).getHours())+':'+p2(romeDate(it.t).getMinutes())+'<em>'+agoTxt(it.t)+'</em></span><span class="fj-x">'+esc(it.title)+'</span></a>';
+function fjCard() {
+  loadFJ().catch(()=>{});
+  let h='<div class="card wide fj"><div class="card-h"><h2 class="h2">Titoli dal mercato</h2><span class="sub">FinancialJuice · si aggiorna ogni 2 minuti</span></div>';
+  if (!S.fj) return h+(fjErr==='OLD'?'<div class="empty-row">Aggiorna Code.gs per vedere i titoli di FinancialJuice.</div>':fjErr?'<div class="empty-row">FinancialJuice non ha risposto. Riprovo tra poco.</div>':'<div class="empty-row">Carico i titoli…</div>')+'</div>';
+  const it=S.fj.items||[], key=it.filter(x=>FJ_KEY.test(x.title)).slice(0,6);
+  if (key.length) h+='<div class="rc-sub">Da non perdere</div>'+key.map(fjRow).join('')+'<div class="rc-sub" style="margin-top:14px">Altri titoli</div>';
+  h+=it.filter(x=>!key.includes(x)).slice(0,12).map(fjRow).join('');
+  return h+'<p class="nsrc" style="margin:10px 0 0">'+ic('clock',14,2)+'<span>Feed pubblico di FinancialJuice: i titoli arrivano con qualche minuto di ritardo; il tempo reale vero (e l\'audio) è nel loro abbonamento. <a href="https://www.financialjuice.com/home" target="_blank" rel="noopener">Apri FinancialJuice</a></span></p></div>';
+}
+
 // ───────────────────────── PANORAMICA: tutto insieme (Journal + EOW + news) e introduzione alla giornata ─────────────────────────
 function renderHome() {
-  const el=$('v-home'); loadNews().catch(()=>{});
+  const el=$('v-home'); loadNews().catch(()=>{}); loadFJ().catch(()=>{});
   const now=new Date(), ses=sessionInfo();
   let h='<div class="hello rise"><div><div class="eyebrow">'+GIORNI[now.getDay()]+' '+now.getDate()+' '+MESI_F[now.getMonth()]+'</div><h1>'+words(greeting())+'</h1></div>'+
     '<span class="sess'+(ses.open?' open':'')+'" id="sess"><i></i>'+ses.txt+'</span></div>';
@@ -1326,7 +1374,7 @@ const FHUE = { Journal:'#E8870E', EOW:'#1F7AE0' };   // il colore di ogni file, 
 const jModel = () => ({ rOf:t=>isFinite(t.rr)?t.rr:0, isWin:t=>t.out==='Win', isLoss:t=>t.out==='Loss' });
 // Riepilogo: un file alla volta (Journal o EOW), periodo a scelta
 function recapCards() {
-  const f=S.recapF||store.get('recapF','Journal'), per=S.recapP||'m', E=f==='EOW', F=FILT_DEF(), m=E?model(2):jModel(), now=new Date();
+  const f=S.recapF||store.get('recapF','Journal'), per=S.recapP||'m', E=f==='EOW', F=FILT_DEF(), m=E?eModel(2):jModel(), now=new Date();
   const rows=rowsOf(f)||[], base=E ? plan(rows.filter(t=>(!F.asset||t.a===F.asset) && (!F.idea.length||F.idea.includes(t.idea))), m.rOf) : rows;
   const start={ w:addDays(new Date(now.getFullYear(),now.getMonth(),now.getDate()), -((now.getDay()+6)%7)), m:new Date(now.getFullYear(),now.getMonth(),1), y:new Date(now.getFullYear(),0,1), all:null }[per];
   const ts=base.filter(t=>!start||t.d>=start), a=agg(ts,m), perL={ w:'questa settimana', m:MESI_F[now.getMonth()], y:'quest\'anno', all:'da sempre' }[per];
@@ -1346,27 +1394,32 @@ function recapCards() {
     '<div class="rc-act"><button type="button" class="link" data-nav="list:'+f+'">Apri '+(E?'l\'EOW':'il Journal')+ic('chev',15,2)+'</button><button type="button" class="link" data-nav="stats">Analisi completa'+ic('chev',15,2)+'</button></div></div>';
   return h;
 }
-// Disciplina: quanto segui le regole nel conto reale (Journal)
+// Disciplina: le regole del piano, una per riga, con quante volte le hai rispettate questo mese
 function discCard() {
-  const J=rowsOf('Journal')||[], now=new Date(), m0=new Date(now.getFullYear(),now.getMonth(),1), p0=new Date(now.getFullYear(),now.getMonth()-1,1);
-  const jm=J.filter(t=>t.d>=m0), jp=J.filter(t=>t.d>=p0 && t.d<m0);
-  const R=a=>a.reduce((s,t)=>s+(isFinite(t.rr)?t.rr:0),0), vOf=a=>a.filter(t=>t.exe==='Trade valido'), eOf=a=>a.filter(t=>t.exe==='Errore');
-  const val=vOf(jm), er=eOf(jm), share=a=>{ const v=vOf(a).length, e=eOf(a).length; return v+e ? v/(v+e) : NaN; };
+  const J=rowsOf('Journal')||[], now=new Date(), m0=new Date(now.getFullYear(),now.getMonth(),1), jm=J.filter(t=>t.d>=m0);
   let h='<div class="card disc"><div class="card-h"><h2 class="h2">Disciplina</h2><span class="sub">Journal · '+MESI_F[now.getMonth()]+'</span></div>';
   if (!jm.length) return h+'<div class="empty-row">Nessun trade reale questo mese.</div></div>';
-  // giornate fuori piano: più di 2 trade, oppure un trade dopo un TP
-  const days={}; jm.forEach(t=>{ const k=iso(t.d); (days[k]=days[k]||[]).push(t); });
-  const off=Object.entries(days).filter(([k,g])=>g.length>2 || g.some((t,i)=>i>0 && g.slice(0,i).some(x=>x.out==='Win'||x.rr>0)));
-  let st=0; for (let i=J.length-1;i>=0 && J[i].exe!=='Errore';i--) if (J[i].exe==='Trade valido') st++;
-  const sh=share(jm), shp=share(jp), cnt={};
-  er.forEach(t=>(t.errs.length?t.errs:['Non specificato']).forEach(x=>{ (cnt[x]=cnt[x]||{ n:0, R:0 }); cnt[x].n++; cnt[x].R+=isFinite(t.rr)?t.rr:0; }));
-  const errs=Object.entries(cnt).sort((a,b)=>b[1].n-a[1].n), mxn=Math.max(1,...errs.map(x=>x[1].n));
-  h+='<div class="ds-lead"><b class="num">'+pct(sh)+'</b><span>trade validi'+(isFinite(shp)?' · '+MESI_F[p0.getMonth()]+' '+pct(shp):'')+'</span></div>'+
-    '<div class="ds-bar"><i style="width:'+(isFinite(sh)?100*sh:0)+'%"></i></div><div class="ds-ends"><span>'+val.length+' validi</span><span>'+er.length+' con errori</span></div>'+
-    '<div class="kstrip num k3"><div><span>Trade validi</span><b class="'+sgn(R(val))+'">'+fmtN(R(val),2,true)+' R</b><em>'+val.length+' trade</em></div><div><span>Con errori</span><b class="'+sgn(R(er))+'">'+fmtN(R(er),2,true)+' R</b><em>'+er.length+' trade</em></div>'+
-    '<div><span>Validi di fila</span><b>'+st+'</b><em>dall\'ultimo errore</em></div></div>'+
-    '<div class="ds-plan '+(off.length?'bad':'ok')+'">'+ic(off.length?'alert':'check',15,2.2)+'<span>'+(off.length?'<b>'+off.length+(off.length===1?' giornata':' giornate')+' fuori piano</b> (più di 2 trade o un trade dopo il TP): '+off.map(([k])=>dayShort(k)).join(', ')+'.':'Piano rispettato tutti i giorni: mai più di 2 trade, stop dopo il TP.')+'</span></div>';
-  if (errs.length) h+='<div class="rc-sub" style="margin-top:14px">Errori del mese</div>'+errs.map(([k,v])=>'<div class="bl"><div class="bl-t"><span>'+esc(k)+'</span><b class="num">'+v.n+'</b></div><div class="bl-b"><i class="n" style="width:'+(100*v.n/mxn)+'%"></i></div><em>'+fmtN(v.R,2,true)+' R su quei trade</em></div>').join('');
+  const rr=t=>isFinite(t.rr)?t.rr:0, lim=num(CFG.lossR), days={};
+  jm.forEach(t=>{ const k=iso(t.d); (days[k]=days[k]||[]).push(t); });
+  const D=Object.entries(days).map(([k,g])=>{ const afterTP=g.some((t,i)=>i>0 && g.slice(0,i).some(x=>x.out==='Win'||rr(x)>0)), R=g.reduce((s,t)=>s+rr(t),0);
+    const errs=g.filter(t=>t.exe==='Errore');
+    return { k, n:g.length, max2:g.length<=2, tp:!afterTP, loss:!(isFinite(lim)&&lim>0) || R>-lim-1e-9, valid:!errs.length, hadWin:g.some(x=>x.out==='Win'||rr(x)>0) }; });
+  D.forEach(d=>{ d.ok = d.max2 && d.tp && d.loss && d.valid; });
+  const okN=D.filter(d=>d.ok).length; let run=0; for (let i=D.length-1;i>=0 && D[i].ok;i--) run++;
+  const rule=(lbl,ok,tot,bad,hint)=>{ const all=ok===tot; return '<div class="rule '+(all?'ok':'ko')+'">'+ic(all?'check':'alert',16,2.2)+'<div><b>'+lbl+'</b><span>'+(tot?ok+' su '+tot+' '+hint:'nessun caso questo mese')+(bad.length?' · non rispettata: '+bad.map(dayShort).join(', '):'')+'</span></div></div>'; };
+  const tr=jm.filter(t=>t.exe), val=tr.filter(t=>t.exe==='Trade valido'), er=tr.filter(t=>t.exe==='Errore');
+  h+='<div class="ds-lead"><b class="num">'+okN+' su '+D.length+'</b><span>giornate in regola</span></div><div class="ds-bar"><i style="width:'+(100*okN/D.length)+'%"></i></div>'+
+    '<p class="ds-note">'+(okN===D.length?'Ogni giornata di trading di questo mese ha rispettato tutte le regole.':'Una giornata è in regola quando rispetta tutte le regole qui sotto.')+(run>1?' Sei a <b>'+run+' giornate in regola di fila</b>.':'')+'</p>'+
+    '<div class="rules">'+
+    rule('Solo trade validi', D.filter(d=>d.valid).length, D.length, D.filter(d=>!d.valid).map(d=>d.k), 'giornate senza errori')+
+    rule('Massimo 2 trade al giorno', D.filter(d=>d.max2).length, D.length, D.filter(d=>!d.max2).map(d=>d.k), 'giornate')+
+    rule('Stop dopo il TP', D.filter(d=>d.hadWin && d.tp).length, D.filter(d=>d.hadWin).length, D.filter(d=>d.hadWin && !d.tp).map(d=>d.k), 'giornate con un TP')+
+    (isFinite(lim)&&lim>0 ? rule('Perdita massima −'+fmtN(lim,1)+' R al giorno', D.filter(d=>d.loss).length, D.length, D.filter(d=>!d.loss).map(d=>d.k), 'giornate') : '')+'</div>';
+  if (val.length && er.length) { const av=a=>a.reduce((s,t)=>s+rr(t),0)/a.length, dv=av(val)-av(er);
+    h+='<div class="ds-cost"><div><span>Trade valido</span><b class="'+sgn(av(val))+' num">'+fmtN(av(val),2,true)+' R</b><em>in media · '+val.length+' trade</em></div><div><span>Trade con errori</span><b class="'+sgn(av(er))+' num">'+fmtN(av(er),2,true)+' R</b><em>in media · '+er.length+' trade</em></div></div>'+
+      '<p class="ds-note">'+(dv>0?'Ogni errore ti costa in media <b>'+fmtN(dv,2)+' R</b> rispetto a un trade fatto bene.':'Questo mese i trade con errori sono andati bene lo stesso: è fortuna, non un motivo per ripeterli.')+'</p>'; }
+  if (er.length) { const cnt={}; er.forEach(t=>(t.errs.length?t.errs:['Non specificato']).forEach(x=>cnt[x]=(cnt[x]||0)+1));
+    h+='<div class="ds-errs">'+Object.entries(cnt).sort((a,b)=>b[1]-a[1]).map(([k,n])=>'<span class="echip">'+esc(k)+' <b>'+n+'</b></span>').join('')+'</div>'; }
   return h+'</div>';
 }
 function lastCard() {
@@ -1471,14 +1524,17 @@ const weekOf = dIso => { const d=pdIso(dIso); return iso(addDays(d, -((d.getDay(
 function newsCat(dIso) { if (!S.news) return ''; const ev=newsEvents().filter(e=>e.day===dIso && e.cur==='USD');
   return ev.some(e=>e.imp==='High') ? 'Red News' : ev.some(e=>e.imp==='Medium') ? 'Orange News' : 'No News Day'; }
 function trumpCard(ev) {
-  if (!ev.length) return '';
+  const fjT = S.fj ? (S.fj.items||[]).filter(x=>/trump/i.test(x.title) && Date.now()-x.t < 36*3600000).slice(0,6) : [];
+  if (!ev.length && !fjT.length) return '';
   const now=Date.now();
   return '<div class="card wide trump rise" style="--d:90ms"><div class="card-h"><div class="h2">'+ic('mic',19,2)+' Trump</div><span class="sub">orari ufficiali di ForexFactory</span></div>'+
     ev.map(e=>{ const st = e.tbd ? 'Orario da definire' : now<e.t ? 'Inizia alle '+e.hm+' · <b data-cd="'+e.t+'">'+cdTxt(e.t-now)+'</b>' :
         now-e.t < 4*3600000 ? '<b class="live"><i></i>Iniziato alle '+e.hm+'</b> · la fine non viene annunciata: segui la diretta' : 'Iniziato alle '+e.hm;
       return '<div class="tr-row"><div><b>'+esc(newsIt(e.title))+'</b><span>'+dayLbl(e.day)+' · '+st+'</span></div><div class="tr-l">'+
         TRUMP_LINKS.map(l=>'<a class="lnk" href="'+l[1]+'" target="_blank" rel="noopener">'+ic('ext',14,2)+l[0]+'</a>').join('')+
-        '<a class="lnk" href="'+esc(e.url||ffDay(e.r))+'" target="_blank" rel="noopener">'+ic('ext',14,2)+'ForexFactory</a></div></div>'; }).join('')+'</div>';
+        '<a class="lnk" href="'+esc(e.url||ffDay(e.r))+'" target="_blank" rel="noopener">'+ic('ext',14,2)+'ForexFactory</a></div></div>'; }).join('')+
+    (ev.length?'':'<div class="tr-l" style="margin-bottom:6px">'+TRUMP_LINKS.map(l=>'<a class="lnk" href="'+l[1]+'" target="_blank" rel="noopener">'+ic('ext',14,2)+l[0]+'</a>').join('')+'</div>')+
+    (fjT.length?'<div class="rc-sub" style="margin-top:10px">Cosa ha detto · titoli FinancialJuice</div>'+fjT.map(fjRow).join(''):'')+'</div>';
 }
 function nrow(e, now, nextT) {
   const past = !e.tbd && e.t<now-60000, nx = e.t===nextT;
@@ -1533,14 +1589,14 @@ function renderNews() {
        : newsErr && !newsRetry && !newsP ? emptyState('News non disponibili', esc(newsErr)+'. Tocca Aggiorna per riprovare.') : skeleton();
     enter(el,h); return;
   }
-  const now=Date.now(), all=newsEvents(), lvl=(S.newsLvl||CFG.newsImp)==='high'?'high':'med', per='w', t=todayIso(), wk=weekOf(t), nwk=iso(addDays(pdIso(wk),7));
+  const now=Date.now(), all=newsEvents(), lvl='med', per='w', t=todayIso(), wk=weekOf(t), nwk=iso(addDays(pdIso(wk),7));
   const keep = e => e.trump || e.imp==='Holiday' || e.imp==='High' || (lvl!=='high' && e.imp==='Medium');
   const inPer = e => weekOf(e.day)===wk || weekOf(e.day)===nwk;
   const pev=all.filter(e=>weekOf(e.day)===wk), ev=all.filter(inPer).filter(keep), nextT=(all.find(e=>!e.tbd && e.t>now-60000 && keep(e))||{}).t;
   const nextOk = !S.news.weeks || S.news.weeks.next==='ok' || all.some(e=>weekOf(e.day)===nwk);
   h += newsHero(all, now);
   h += trumpCard(all.filter(e=>e.trump && (e.tbd || e.t>now-4*3600000)).slice(0,4));
-  h += '<div class="nfil">'+seg('news-lvl',[{v:'high',l:'Impatto alto'},{v:'med',l:'Alto + medio'}],lvl,'sm')+'</div>';
+  h += fjCard();
   h += newsSummary(pev, 'w');
   const days=[...new Set(ev.map(e=>e.day))];
   if (!days.length) h += '<div class="card wide"><div class="empty-row">Nessuna news USD con questo impatto questa settimana.</div></div>';
@@ -1561,7 +1617,7 @@ function rowsOf(f) { if (f===S.file && S.loaded) return all(); const d=S.data[f]
   const v=d.rows.map(a=>unpack(d.h,a)).filter(only1).map(norm).filter(t=>t.d).sort((x,y)=>(x.d-y.d)||(x.o-y.o)); normCache[f]={ d, v }; return v; }
 function expectations(dayName, cat) {
   const E=rowsOf('EOW'); if (!E || E.length<10) return null;
-  const F=FILT_DEF(), m=model(2);
+  const F=FILT_DEF(), m=eModel(2);
   const ts=plan(E.filter(t=>(!F.asset||t.a===F.asset) && (!F.idea.length || F.idea.includes(t.idea))), m.rOf);
   const byDay = g => { const o={}; g.forEach(t=>{ const k=iso(t.d); (o[k]=o[k]||[]).push(m.rOf(t)); }); return Object.values(o).map(a=>a.reduce((x,y)=>x+y,0)); };
   const dstat = g => { const d=byDay(g); return { n:d.length, avg:d.length?d.reduce((x,y)=>x+y,0)/d.length:NaN, pos:d.length?d.filter(x=>x>0).length/d.length:NaN }; };
@@ -1576,14 +1632,15 @@ function briefing() {
   const lossLim=num(CFG.lossR);
   let st;
   if (weekend) st={ c:'off', t:'Mercati chiusi', s:'Oggi niente trading: è il momento giusto per la revisione della settimana (EOW).' };
-  else if (rn.getHours()*60+rn.getMinutes() > SESS[1]) st={ c:'off', t:'Sessione finita', s: n ? 'Oggi '+n+(n===1?' trade':' trade')+' · '+fmtR(rT,2)+'. Ricordati di completare il Journal.' : 'Oggi nessun trade nel Journal.' };
+  else if (rn.getHours()*60+rn.getMinutes() > SESS[1]) st={ c:'off', t:'Sessione finita', s: n ? 'Oggi '+n+' trade · '+fmtR(rT,2)+'.' : 'Oggi nessun trade: se non c\'era un setup valido, è la scelta giusta.' };
   else if (won) st={ c:'done', t:'Giornata chiusa', s:'Hai preso il TP: il piano dice stop per oggi.' };
-  else if (n>=2) st={ c:'done', t:'Trade finiti per oggi', s:'Hai usato i 2 trade del piano.' };
+  else if (n>=2) st={ c:'done', t:'Limite raggiunto', s:'Hai fatto i 2 trade massimi del piano.' };
   else if (isFinite(lossLim) && lossLim>0 && rT<=-lossLim) st={ c:'done', t:'Limite di perdita raggiunto', s:'Oggi sei a '+fmtR(rT,2)+': il tuo limite è −'+fmtN(lossLim,1)+' R.' };
-  else st={ c:'go', t: n ? 'Puoi prendere ancora 1 trade' : 'Hai 2 trade a disposizione', s:'Ingressi dalle '+CFG.s0+' alle '+CFG.s1+(n?' · oggi '+fmtR(rT,2):'') };
+  else st={ c:'go', t: n ? 'Al massimo un altro trade' : 'Nessun trade ancora', s:'Entra solo se si presenta un setup valido · ingressi dalle '+CFG.s0+' alle '+CFG.s1+'.' };
   let h='<div class="brief rise" style="--d:40ms"><div class="bcol">', h2='';
   h+='<div class="card bplan '+st.c+'"><div class="eyebrow">'+ic('shield',15,2)+' Il piano di oggi</div><div class="bp-t">'+st.t+'</div><p>'+st.s+'</p>'+
-     '<div class="bp-dots">'+[0,1].map(i=>{ const x=tj[i]; return '<i class="'+(x?(x.out==='Win'||x.rr>0?'w':x.out==='Loss'||x.rr<0?'l':'b'):'')+'">'+(x?fmtR(x.rr,1).replace(' R',''):(i+1))+'</i>'; }).join('')+'</div></div>';
+     (tj.length?'<div class="bp-tr">'+tj.map(x=>'<span class="'+(x.out==='Win'||x.rr>0?'w':x.out==='Loss'||x.rr<0?'l':'b')+'">'+esc(String(x.raw.Ora).slice(0,5))+' · '+esc(x.idea||x.a)+' <b class="num">'+fmtR(x.rr,2)+'</b></span>').join('')+'</div>':'')+
+     '<div class="bp-lim">Limite del piano: 2 trade al giorno, stop dopo il TP'+(isFinite(lossLim)&&lossLim>0?', perdita massima −'+fmtN(lossLim,1)+' R':'')+'.</div></div>';
   // news di oggi
   const ev = S.news ? newsEvents().filter(e=>e.day===t && (e.imp==='High' || e.trump)) : null;
   let nb='';
@@ -1655,7 +1712,6 @@ function renderSet() {
      '<div class="field"><span class="flabel">Piano</span>'+seg('cfg-plan',[{v:'max2',l:'Max 2 al giorno'},{v:'',l:'Nessuno'}],C.plan)+'</div></div>'+
      '<div class="field"><span class="flabel">Idee da includere</span>'+chips('cfg-idea',L.idea,L.idea.filter(i=>!C.exIdea.includes(i)),true)+'</div>'+
      '<button type="button" class="btn sec sm" data-act="cfgapply">Applica subito ai filtri</button>',100);
-  h+=sec('News','',' <div class="field"><span class="flabel">Impatto mostrato all\'apertura della pagina News</span>'+seg('cfg-newsImp',[{v:'high',l:'Alto'},{v:'med',l:'Alto + medio'}],C.newsImp==='high'?'high':'med')+'</div>',130);
   h+=sec('Checklist pre-sessione','una voce per riga',fld2('','<textarea class="inp" rows="6" data-cfg="check">'+esc(C.check.join('\n'))+'</textarea>','Compare nella pagina Oggi e si azzera ogni giorno.'),160);
   h+=sec('Collegamento','',(viaScript()?'<p class="mut">L\'app gira dentro Apps Script: nessun indirizzo da impostare.</p>':
      '<p class="mut" style="margin:0 0 12px">Collegata a <b>…'+esc(store.get('api','').slice(-24))+'</b></p><button type="button" class="btn sec sm" data-act="setup">Cambia indirizzo e chiave</button>')+
