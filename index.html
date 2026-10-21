@@ -723,8 +723,7 @@ header.top::before { display:none; } header.top { border-top:0; }
 .card, .kpi, .hero, .dayc, .intro, .mc-cta { box-shadow:none !important; }
 .intro { background:var(--surface) !important; }
 .sb-ind { background:var(--active) !important; box-shadow:none !important; transition:transform var(--t-ui) var(--ease-io), opacity var(--t-hover) ease !important; }
-.sb-i.on { color:var(--fg) !important; font-weight:600; } .sb-i.on .ic { color:var(--accent); animation:none !important; }
-.sb-i:hover .ic { transform:none; }
+.sb-i.on { color:var(--fg) !important; font-weight:600; } .sb-i.on .ic { color:var(--accent); }
 .aifab { background:var(--fg) !important; color:var(--bg) !important; box-shadow:0 8px 20px rgba(0,0,0,.18) !important; }
 .nh-cd { background:none !important; -webkit-text-fill-color:currentColor; color:var(--fg) !important; font-size:32px !important; }
 .chk-bar i { background:var(--accent) !important; } .bchk.ok .chk-bar i { background:var(--win) !important; }
@@ -747,16 +746,13 @@ header.top::before { display:none; } header.top { border-top:0; }
 .kpi .ring { display:none !important; }
 .num, .kpi .v, .big, .tres b, .kstrip b, .bl-t b, .rc-lead b, .ds-lead b, td { font-variant-numeric:tabular-nums; }
 /* movimento: risposta ai gesti, non entrate */
-.rise, .sb-i, .dots i, .more button, .cd, .wr, .chart .line, .chart .area, .chart .endpt, .bar { animation:none !important; opacity:1; }
-.view-in, .view-in.slide { animation:viewFade var(--t-ui) var(--ease-out) both !important; }
-@keyframes viewFade { from { opacity:0; transform:translateY(6px); } }
-.view-out { animation:viewGone 110ms ease both !important; } @keyframes viewGone { to { opacity:0; } }
+/* di base niente si muove da solo: le entrate le decide il blocco «Movimento» in fondo */
+.rise, .sb-i, .dots i, .more button, .cd, .wr, .chart .line, .chart .area, .chart .endpt, .bar, .track i, .ring .fgc, .fchip, .sheet.open .fsec { animation:none; }
 .sess.open i, .live i { animation:none !important; }
 .btn, .chip, .fchip, .fbtn, .seg button, .trow, .sb-i, .lnk, .link, .chk, .icon-btn, .fab, .aifab, nav.bar button { transition:transform var(--t-press) var(--ease-out), background-color var(--t-hover) ease, color var(--t-hover) ease, border-color var(--t-hover) ease, opacity var(--t-hover) ease; }
 .btn:active, .chip:active, .fchip:active, .fbtn:active, .trow:active, .lnk:active, .fab:active, .aifab:active, .sb-i:active, .icon-btn:active, .chk:active { transform:scale(.97); }
 .seg::before { transition:transform var(--t-ui) var(--ease-io) !important; }
 @media (hover:hover) { .card:hover, .kpi:hover, .cd:hover:not(:disabled):not(.wk) { transform:none !important; box-shadow:none !important; } .trow:hover { background:color-mix(in srgb,var(--fg) 3%,transparent); } }
-.chk .box { transition:background-color var(--t-hover) ease, border-color var(--t-hover) ease !important; } .chk.on .box { transform:none !important; }
 /* Panoramica: riepilogo per file, disciplina */
 .recap .rc-top { display:flex; justify-content:space-between; align-items:flex-start; gap:12px 20px; flex-wrap:wrap; margin-bottom:16px; }
 .recap .rc-top .sub { margin:3px 0 0; }
@@ -841,9 +837,6 @@ main:focus { outline:none; }
 ::view-transition-group(side), ::view-transition-group(topbar), ::view-transition-group(tabbar), ::view-transition-group(fab), ::view-transition-group(aifab), ::view-transition-group(toast) { animation:none; z-index:100; }
 ::view-transition-old(side), ::view-transition-new(side), ::view-transition-old(topbar), ::view-transition-new(topbar), ::view-transition-old(tabbar), ::view-transition-new(tabbar),
 ::view-transition-old(fab), ::view-transition-new(fab), ::view-transition-old(aifab), ::view-transition-new(aifab), ::view-transition-old(toast), ::view-transition-new(toast) { animation:none; }
-::view-transition-old(root) { animation:110ms cubic-bezier(.4,0,1,1) both vtOut; }
-::view-transition-new(root) { animation:220ms var(--ease-ui) both vtIn; }
-@keyframes vtOut { to { opacity:0; } } @keyframes vtIn { from { opacity:0; transform:translateY(6px); } }
 @media (prefers-reduced-motion: reduce) { ::view-transition-old(*), ::view-transition-new(*), ::view-transition-group(*) { animation-duration:0s !important; animation-delay:0s !important; } }
 /* palette comandi: si apre e si chiude senza animazione (si usa molte volte al giorno) */
 #pal { position:fixed; inset:0; z-index:90; display:none; align-items:flex-start; justify-content:center; padding:min(14vh,120px) 16px 16px; background:rgba(0,0,0,.32); }
@@ -863,6 +856,118 @@ main:focus { outline:none; }
 .top-search { display:none; }
 @media (max-width:999px) { .top-search { display:grid; margin-left:8px; flex:none; } }
 @media (hover:none) { #pal kbd { display:none; } }
+
+/* ═════════════ Movimento ═════════════
+   Pesi (design-motion-principles): Jakub per le entrate e le rifiniture, Emil per frequenza e tastiera, Jhey solo nei momenti rari.
+   · cambio pagina: la vecchia scivola via nella direzione opposta, i blocchi della nuova salgono in sequenza (opacità + 18px + sfocatura)
+   · numeri che contano fino al valore, grafici che si disegnano, barre che crescono; ai cambi di filtro i numeri scorrono dal valore vecchio
+   · molle (linear) per indicatori, pillole e spunte; scorciatoie da tastiera e palette ⌘K restano istantanee */
+:root {
+  --e-out:cubic-bezier(.16,1,.3,1); --e-in:cubic-bezier(.55,0,1,.45); --e-io:cubic-bezier(.65,0,.35,1); --e-drawer:cubic-bezier(.32,.72,0,1);
+  --spring:linear(0, 0.025, 0.09, 0.178, 0.277, 0.381, 0.481, 0.575, 0.66, 0.735, 0.799, 0.853, 0.897, 0.932, 0.959, 0.98, 0.995, 1.006, 1.013, 1.017, 1.019, 1.02, 1.019, 1.018, 1.016, 1.014, 1.012, 1.01, 1.008, 1.007, 1.005, 1.004, 1.003, 1.002, 1.001, 1.001, 1, 1, 1, 1, 1);
+  --spring-pop:linear(0, 0.062, 0.213, 0.408, 0.61, 0.795, 0.946, 1.055, 1.124, 1.157, 1.162, 1.146, 1.118, 1.086, 1.053, 1.025, 1.002, 0.987, 0.977, 0.974, 0.974, 0.977, 0.982, 0.988, 0.993, 0.997, 1.001, 1.003, 1.004, 1.004, 1.004, 1.003, 1.003, 1.002, 1.001, 1, 1, 0.999, 0.999, 0.999, 1);
+  --stg:55ms;
+}
+/* 1 · blocchi della pagina: entrano in sequenza; quelli più in basso quando ci arrivi scorrendo */
+.blk { animation:blkIn 620ms var(--e-out) backwards; animation-delay:calc(var(--k,0) * var(--stg) + var(--k0,0ms)); }
+@keyframes blkIn { from { opacity:0; transform:translateY(18px) scale(.985); filter:blur(5px); } }
+.pre { opacity:0; }
+/* 2 · grafici: la curva si disegna, l'area sfuma dopo, il punto finale arriva con una piccola molla; le barre crescono dalla linea dello zero */
+.blk .chart .line { animation:draw 1150ms var(--e-io) backwards; animation-delay:calc(var(--k,0) * var(--stg) + var(--k0,0ms) + 200ms); }
+.blk .chart .area { animation:mFade 800ms ease-out backwards; animation-delay:calc(var(--k,0) * var(--stg) + var(--k0,0ms) + 650ms); }
+.blk .chart .endpt { animation:mPop 560ms var(--spring-pop) backwards; animation-delay:calc(var(--k,0) * var(--stg) + var(--k0,0ms) + 1250ms); }
+.blk .bar { animation:barIn 700ms var(--e-out) backwards; animation-delay:calc(var(--k,0) * var(--stg) + var(--k0,0ms) + 180ms + var(--bi,0) * 38ms); }
+.blk .track i, .blk .bl-b i, .blk .ds-bar i, .blk .chk-bar i { transform-origin:left center; animation:grow 900ms var(--e-out) backwards; animation-delay:calc(var(--k,0) * var(--stg) + var(--k0,0ms) + 220ms + var(--d,0ms)); }
+.blk .dots i { animation:mPop 480ms var(--spring-pop) backwards; animation-delay:calc(var(--k,0) * var(--stg) + var(--k0,0ms) + 160ms + var(--d,0ms)); }
+.blk .fchip { animation:mPop 420ms var(--spring-pop) backwards; animation-delay:calc(var(--k,0) * var(--stg) + 120ms); }
+@keyframes mFade { from { opacity:0; } }
+@keyframes mPop { from { opacity:0; transform:scale(.4); } }
+@keyframes barIn { from { transform:scaleY(0); } }
+@keyframes grow { from { transform:scaleX(0); } }
+@keyframes draw { from { stroke-dashoffset:1; } }
+/* 3 · cambio di filtro, periodo o file del riepilogo: i grafici si ridisegnano in fretta (i numeri scorrono via JS) */
+.redraw .chart .line { animation:draw 760ms var(--e-io) backwards; }
+.redraw .chart .area { animation:mFade 520ms 260ms ease-out backwards; }
+.redraw .chart .endpt { animation:mPop 460ms 700ms var(--spring-pop) backwards; }
+.redraw .bar { animation:barIn 520ms var(--e-out) backwards; animation-delay:calc(var(--bi,0) * 26ms); }
+.redraw .track i, .redraw .bl-b i, .redraw .ds-bar i { transform-origin:left center; animation:grow 620ms var(--e-out) backwards; animation-delay:calc(var(--d,0ms) / 2); }
+/* 4 · passaggio tra le pagine (View Transitions): la cornice resta ferma, la pagina vecchia esce verso il lato da cui arrivi */
+::view-transition-old(root) { animation:vtOut 210ms var(--e-in) both; }
+::view-transition-new(root) { animation:vtIn 240ms var(--e-out) both; }
+@keyframes vtOut { to { opacity:0; transform:translateX(calc(var(--vt-dir,1) * -32px)); filter:blur(3px); } }
+@keyframes vtIn { from { opacity:0; } }
+/* 5 · barra laterale: comparsa all'avvio, indicatore a molla, icona che risponde */
+@media (min-width:1000px) {
+  .boot .sb-i, .boot .sb-search, .boot .sb-brand { animation:sbIn 560ms var(--e-out) backwards; animation-delay:calc(var(--k,0) * 26ms + 80ms + var(--boot0,0ms)); }
+  @keyframes sbIn { from { opacity:0; transform:translateX(-12px); filter:blur(3px); } }
+  .sb-ind { transition:transform 560ms var(--spring), opacity 200ms ease !important; }
+  .sb-i { transition:color 200ms ease, background-color 200ms ease, transform 140ms var(--e-out) !important; }
+  .sb-i .ic { transition:transform 420ms var(--spring-pop) !important; }
+  .sb-i:hover .ic { transform:translateX(2px) scale(1.06); }
+  .sb-i.on .ic { animation:icPop 520ms var(--spring-pop); }
+  .sb-i .sb-b.on { animation:mPop 420ms var(--spring-pop) backwards; }
+  .side { transition:width 460ms var(--e-drawer) !important; }
+}
+@keyframes icPop { from { transform:scale(.7); } }
+/* 6 · telefono: pillola della barra in basso a molla, icona che si posa, pressione */
+.ind { transition:left 520ms var(--spring) !important; }
+nav.bar button.on .pill .ic { animation:icPop 520ms var(--spring-pop) !important; }
+nav.bar button .pill { transition:transform 140ms var(--e-out), color 200ms ease, background-color 200ms ease; }
+nav.bar button:active .pill { transform:scale(.88); }
+/* 7 · controlli segmentati: la pillola scivola con una molla leggera */
+.seg::before { transition:transform 520ms var(--spring), opacity 200ms ease !important; }
+.seg button { transition:color 240ms ease; }
+/* 8 · checklist: la casella si gonfia e la spunta si disegna; a 5/5 la barra si illumina una volta */
+.chk .box { transition:background-color 200ms ease, border-color 200ms ease !important; }
+.chk.on .box { transform:none !important; }
+.chk .box .ic path { stroke-dasharray:24; stroke-dashoffset:0; }
+.chk.just.on .box { animation:chkPop 520ms var(--spring-pop); }
+.chk.just.on .box .ic path { animation:tick 340ms 70ms var(--e-out) backwards; }
+.chk.just:not(.on) .box { animation:chkOff 260ms var(--e-out); }
+@keyframes chkPop { from { transform:scale(.7); } }
+@keyframes chkOff { 40% { transform:scale(.9); } }
+.chk-bar i { transition:width 700ms var(--spring), background-color 400ms ease !important; }
+.chk-bar { position:relative; }
+.bchk.party .chk-bar::after { content:""; position:absolute; inset:0; border-radius:inherit; background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.65) 50%,transparent 70%); background-size:240% 100%; animation:shineOnce 1100ms 250ms var(--e-io) both; }
+@keyframes shineOnce { from { background-position:140% 0; } to { background-position:-60% 0; } }
+.bchk.party #chk-n { display:inline-block; color:var(--win); animation:mPop 520ms var(--spring-pop); }
+/* 9 · messaggi: arrivano con una molla e si mettono a fuoco, se ne vanno più in fretta e più piano */
+.toast { opacity:0; transform:translate(-50%,-14px) scale(.96); filter:blur(4px); pointer-events:none; transition:transform 200ms var(--e-in), opacity 180ms ease, filter 200ms ease !important; }
+.toast.show { opacity:1; transform:translate(-50%,0) scale(1); filter:none; pointer-events:auto; transition:transform 560ms var(--spring), opacity 220ms ease, filter 320ms var(--e-out) !important; }
+.toast.show .ic { animation:mPop 520ms 60ms var(--spring-pop) backwards; }
+/* 10 · pulsanti flottanti e schede */
+.fab, .aifab { transition:transform 460ms var(--spring), opacity 220ms ease, padding 360ms var(--e-out), gap 360ms var(--e-out) !important; }
+.fab.hide { transform:translateY(10px) scale(.86) !important; }
+.fab:active, .aifab:active { transform:scale(.94) !important; transition-duration:120ms !important; }
+.sheet.open .fsec, .sheet.open .more button { animation:blkIn 520ms var(--e-out) backwards; animation-delay:calc(var(--k,0) * 45ms + 150ms); }
+.sheet.open .sheet-h .wr { display:inline-block; animation:wordIn 520ms var(--e-out) backwards; animation-delay:calc(var(--i,0) * 50ms + 90ms); }
+@keyframes wordIn { from { opacity:0; transform:translateY(.35em); filter:blur(4px); } }
+#splash .wr { display:inline-block; animation:wordIn 700ms var(--e-out) backwards; animation-delay:calc(var(--i,0) * 80ms + 200ms); }
+/* 11 · palette: aperta col mouse/dito compare in 180ms; aperta da tastiera è istantanea */
+#pal.on.ptr { animation:mFade 160ms ease-out; }
+#pal.on.ptr .pl { animation:palIn 220ms var(--e-out); }
+@keyframes palIn { from { opacity:0; transform:translateY(-6px) scale(.98); } }
+/* 12 · news: un titolo appena arrivato da FinancialJuice scivola dentro evidenziato */
+.fjrow.fresh { animation:freshIn 1800ms var(--e-out) both; }
+@keyframes freshIn { 0% { opacity:0; transform:translateY(-8px); background:color-mix(in srgb,var(--accent) 14%,transparent); } 20% { opacity:1; transform:none; background:color-mix(in srgb,var(--accent) 14%,transparent); } 100% { background:transparent; } }
+/* 13 · righe cliccabili e pulsanti (solo con un puntatore vero) */
+@media (hover:hover) and (pointer:fine) {
+  .trow, .mrow, .nrow, .fjrow, .bl, .rule { transition:background-color 180ms ease; }
+  .trow .chev, .mrow .chev, .trow > .ic:last-child, .mrow > .ic:last-child { transition:transform 260ms var(--e-out); }
+  .trow:hover > .ic:last-child, .mrow:hover > .ic:last-child { transform:translateX(3px); }
+  .link:hover .ic, .lnk:hover .ic { transform:translateX(2px); transition:transform 260ms var(--e-out); }
+}
+.btn.busy .ic, [data-act="newsref"]:disabled .ic { animation:spin 900ms linear infinite; }
+/* 14 · screenshot a schermo intero: si apre dalla miniatura */
+#lb { transition:opacity 260ms ease, visibility 260ms !important; }
+#lb .lb-top, #lb .lb-hint { transition:opacity 300ms 120ms ease, transform 420ms 80ms var(--e-out); }
+#lb:not(.on) .lb-top { opacity:0; transform:translateY(-8px); transition-delay:0s; } #lb:not(.on) .lb-hint { opacity:0; transition-delay:0s; }
+/* 15 · meno movimento: niente spostamenti, solo dissolvenze brevi che spiegano cosa è cambiato */
+@media (prefers-reduced-motion: reduce) {
+  .blk, .sheet.open .fsec, .sheet.open .more button { animation-name:mFade !important; animation-duration:220ms !important; animation-delay:0s !important; }
+  .toast, .toast.show { transform:translate(-50%,0) !important; filter:none !important; transition-duration:160ms !important; }
+  ::view-transition-old(root), ::view-transition-new(root) { animation:none !important; }
+}
 </style>
 </head>
 <body>
@@ -1023,16 +1128,31 @@ function chips(key, opts, val, multi) {
     const on = multi ? (val||[]).includes(v) : String(val??'')===String(v);
     return '<button type="button" class="chip'+(on?' on':'')+'" data-v="'+esc(v)+'">'+esc(o.l ?? (v||'Tutti'))+'</button>'; }).join('')+'</div>';
 }
-function animateNums(root) {
-  return;   // le cifre compaiono subito al loro valore: niente conteggi animati
-  root.querySelectorAll('[data-num]').forEach(el => {
-    const to=+el.dataset.num, dec=+(el.dataset.dec||0), sg=el.dataset.sign==='1';
-    if (!isFinite(to)) return;
-    const t0=performance.now(), D=900;
-    const step = t => { const p=Math.min(1,(t-t0)/D), e=1-Math.pow(1-p,3); el.textContent=fmtN(to*e,dec,sg); if (p<1) requestAnimationFrame(step); };
-    requestAnimationFrame(step);
-  });
+// numeri: contano da zero quando il blocco entra; dopo un filtro scorrono dal valore di prima
+const NUMSEL='[data-num], .kstrip b, .rc-lead b, .ds-lead b, .be-big b, .bw-g b, .ds-cost b, .kpi .v';
+function numParse(el) {
+  const w=document.createTreeWalker(el, NodeFilter.SHOW_TEXT); let n;
+  while ((n=w.nextNode())) { const t=n.nodeValue; if (/[:\/]/.test(t)) return null; const m=/[+−-]?\d+(?:,\d+)?/.exec(t); if (!m) continue;
+    const g=m[0], sg=/^[+−-]/.test(g)?g[0]:'', core=sg?g.slice(1):g, v=parseFloat(core.replace(',','.'))*(sg==='+'||!sg?1:-1);
+    return isFinite(v) ? { n, t, pre:t.slice(0,m.index), post:t.slice(m.index+g.length), v, dec:(core.split(',')[1]||'').length, plus:sg==='+' } : null; }
+  return null;
 }
+const numFmt = (p, x) => p.pre+(x<0 && Math.abs(x)>=Math.pow(10,-p.dec)/2 ? '−' : p.plus && x>0 ? '+' : '')+Math.abs(x).toFixed(p.dec).replace('.',',')+p.post;
+const numEls = root => [...root.querySelectorAll(NUMSEL)].filter(el=>!el.querySelector('[data-num]'));
+const numSnap = root => numEls(root).map(numParse);
+let numJobs=[], numRaf=0;
+function numRun(jobs) {
+  if (reduceMotion() || !jobs.length) return; const t0=performance.now();
+  jobs.forEach(j=>{ j.t0=t0+(j.delay||0); j.p.n.nodeValue=numFmt(j.p, j.from); }); numJobs.push(...jobs);
+  if (numRaf) return;
+  const step = t => { numJobs=numJobs.filter(j=>{ if (!j.p.n.isConnected) return false; const k=Math.max(0, Math.min(1, (t-j.t0)/j.dur)), e=k===1?1:1-Math.pow(2,-10*k);
+      j.p.n.nodeValue = k>=1 ? j.p.t : numFmt(j.p, j.from+(j.p.v-j.from)*e); return k<1; });
+    numRaf = numJobs.length ? requestAnimationFrame(step) : 0; };
+  numRaf=requestAnimationFrame(step);
+}
+function countUp(root, delay) { numRun(numEls(root).map(numParse).filter(p=>p && p.v!==0).map(p=>({ p, from:0, dur:1000, delay }))); }
+function numFrom(root, prev) { const now=numSnap(root); numRun(now.map((p,i)=>{ const q=prev[i]; return p && q && q.post===p.post && q.v!==p.v ? { p, from:q.v, dur:650 } : null; }).filter(Boolean)); }
+function animateNums(root) { countUp(root, 0); }
 const words = t => String(t).split(' ').map((w,i)=>'<span class="wr" style="--i:'+i+'">'+esc(w)+'</span>').join(' ');
 function confetti() { // piccola festa per un trade vinto: ~90 coriandoli, 1,6 secondi, poi il canvas sparisce
   const dpr=Math.min(2, window.devicePixelRatio||1), c=document.createElement('canvas'); c.className='confetti'; document.body.appendChild(c);
@@ -1141,7 +1261,7 @@ function barChart(el, items, o={}) {
   let g=''; tk.forEach(t=>{ g+='<line class="grid'+(t===0?' zero':'')+'" x1="'+padL+'" x2="'+(W-padR)+'" y1="'+y(t)+'" y2="'+y(t)+'"/><text class="tick" x="'+(padL-8)+'" y="'+(y(t)+3.5)+'" text-anchor="end">'+(o.tickFmt||fmtTick)(t)+'</text>'; });
   if (!ax) g+='<line class="grid zero" x1="0" x2="'+W+'" y1="'+y(0)+'" y2="'+y(0)+'"/>';
   items.forEach((it,i)=>{ const cx=padL+slot*(i+.5);
-    g+='<path class="bar '+(it.cls||(it.v>=0?'p':'n'))+'" style="animation-delay:'+(i*45)+'ms" d="'+barPath(cx-bw/2,bw,y(0),y(it.v))+'"/>';
+    g+='<path class="bar '+(it.cls||(it.v>=0?'p':'n'))+'" style="--bi:'+Math.min(i,16)+'" d="'+barPath(cx-bw/2,bw,y(0),y(it.v))+'"/>';
     if ((n-1-i)%every===0) g+='<text class="tick" x="'+cx+'" y="'+(H-6)+'" text-anchor="middle">'+esc(it.l)+'</text>'; });
   el.innerHTML='<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(o.aria||'R per mese')+'">'+g+'</svg><div class="tip"></div>';
   const svg=el.querySelector('svg'), tip=el.querySelector('.tip'), bars=[...svg.querySelectorAll('.bar')];
@@ -1210,20 +1330,22 @@ let goTok=0;
 const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 // avvolge un cambio dell'interfaccia in una View Transition quando il browser la supporta
 function withVT(fn, instant) { if (!instant && document.startViewTransition && !reduceMotion() && !document.hidden) document.startViewTransition(fn); else fn(); }
+const NAV_ORDER = ['home','news','list:Journal','list:EOW','stats','cal','mc','coach','set'];
 const hashOf = () => S.tab==='list' ? 'list/'+S.file : S.tab;
 function go(tab, o) {
   o=o||{};
   if (tab===S.tab) { window.scrollTo({ top:0, behavior: o.instant||reduceMotion() ? 'auto' : 'smooth' }); navState(); syncHash(o); return; }
-  const tok=++goTok;
+  const tok=++goTok, a=NAV_ORDER.indexOf(o.fromK||curNavKey()), b=NAV_ORDER.indexOf(o.toK||tab);
+  document.documentElement.style.setProperty('--vt-dir', b<a ? -1 : 1);
   withVT(()=>{ if (tok!==goTok) return; S.tab=tab; navState();
-    VIEWS.forEach(v=>{ const el=$('v-'+v); el.classList.remove('view-out','view-in'); el.hidden = v!==tab; });
-    window.scrollTo({ top:0 }); renderCurrent(true); syncHash(o); }, o.instant);
+    VIEWS.forEach(v=>{ $('v-'+v).hidden = v!==tab; });
+    window.scrollTo({ top:0 }); renderCurrent(!!o.instant); syncHash(o); }, o.instant);
 }
 // l'indirizzo segue la pagina: il tasto Indietro e i link diretti funzionano (#news, #list/Journal…)
 function syncHash(o) { const h='#'+hashOf(); if (location.hash===h) return; if (o && o.fromPop) return; history.pushState(null, '', h); }
 window.addEventListener('popstate', () => { const [t,f]=location.hash.slice(1).split('/'); if (f && (f==='EOW'||f==='Journal')) switchFile(f); go(VIEWS.includes(t)?t:'home', { fromPop:true }); });
 function switchFile(f) { if (f===S.file) return; setSeg($('fileSeg'),f); S.file=f; S.type=f==='EOW'?'EOW':'JOURNAL'; S.filt=S.filtBy[f]; S.lmore=60; store.set('file',f); fileLook(); load(); }
-function navTo(key, o) { const [id,f]=key.split(':'); if (S.sheet) closeSheet(); if (f) switchFile(f); go(id, o); if (f && id==='list') syncHash(o); }
+function navTo(key, o) { const [id,f]=key.split(':'), fromK=curNavKey(); if (S.sheet) closeSheet(); if (f) switchFile(f); o=Object.assign({ fromK, toK:key }, o); go(id, o); if (f && id==='list') syncHash(o); }
 function openMore() {
   S.sheet='more'; $('sh-sub').textContent=APP; $('sh-title').innerHTML=words('Altro');
   const it=[['list:Journal','Journal','book','Trade reali'],['list:EOW','EOW','list','Backtest della settimana'],['cal','Calendario','cal','R giorno per giorno'],
@@ -1235,10 +1357,30 @@ function newsBadge() { const b=$('nb-news'); if (!b || !S.news) return; const no
   const n=newsEvents().filter(e=>e.day===t && !e.tbd && e.t>now-60000 && (e.imp==='High' || e.trump)).length; b.textContent=n; b.classList.toggle('on', n>0); b.title=n+' news ad alto impatto ancora da uscire oggi'; }
 function renderCurrent(quiet) { S.quiet=!!quiet; ({ home:renderHome, news:renderNews, list:renderList, stats:renderStats, cal:renderCal, mc:renderMC, coach:renderCoach, set:renderSet })[S.tab](); S.quiet=false; }
 function enter(el, html, after) {
-  const dir=+(el.dataset.dir||0); delete el.dataset.dir;
-  el.innerHTML = html; el.classList.remove('view-in','slide'); el.classList.toggle('quiet', S.quiet);
-  if (!S.quiet) { void el.offsetWidth; el.style.setProperty('--dir', dir||1); el.classList.add('view-in'); if (dir) el.classList.add('slide'); }
-  masonry(el, after); if (!S.quiet) animateNums(el);
+  const user = S.quiet && performance.now()-(S.userT||0) < 450 && !reduceMotion(), prev = user ? numSnap(el) : null;
+  el.innerHTML = html; el.classList.toggle('quiet', S.quiet);
+  masonry(el, after);
+  if (!S.quiet) blkStagger(el);
+  else if (user) { numFrom(el, prev); el.classList.remove('redraw'); void el.offsetWidth; el.classList.add('redraw'); clearTimeout(el._rd); el._rd=setTimeout(()=>el.classList.remove('redraw'), 1400); }
+}
+// I blocchi visibili entrano uno dopo l'altro nell'ordine in cui si leggono; gli altri quando ci arrivi scorrendo
+let revealIO=null;
+function blkStagger(el) {
+  const blocks=[]; [...el.children].forEach(n=>{ if (n.classList.contains('mcols')) [...n.children].forEach(c=>blocks.push(...c.children)); else blocks.push(n); });
+  const vh=innerHeight, k0=Math.max(0, (S.introAt||0)-performance.now()), later=[]; let k=0;
+  blocks.map(b=>[b, b.getBoundingClientRect()]).filter(x=>x[1].height>0).sort((a,b)=>(a[1].top-b[1].top)||(a[1].left-b[1].left))
+    .forEach(([b,r])=>{ if (r.top < vh-24) blkMark(b, Math.min(k++, 9), k0); else later.push(b); });
+  if (revealIO) revealIO.disconnect(); revealIO=null;
+  if (!later.length || !('IntersectionObserver' in window)) return;
+  let bt=0, bn=0;
+  revealIO=new IntersectionObserver(es=>{ const now=performance.now(); if (now-bt>160) { bt=now; bn=0; }
+    es.forEach(e=>{ if (!e.isIntersecting) return; revealIO.unobserve(e.target); e.target.classList.remove('pre'); blkMark(e.target, bn++, 0); }); }, { rootMargin:'0px 0px -6% 0px' });
+  later.forEach(b=>{ b.classList.add('pre'); revealIO.observe(b); });
+}
+function blkMark(b, k, k0) {
+  b.style.setProperty('--k', k); if (k0) b.style.setProperty('--k0', Math.round(k0)+'ms');
+  b.classList.add('blk'); const ms=k*55+k0; countUp(b, ms+140);
+  setTimeout(()=>{ b.classList.remove('blk'); b.style.removeProperty('--k'); b.style.removeProperty('--k0'); }, ms+2000);
 }
 // Su PC le card consecutive vanno in due colonne di altezza simile (senza buchi); sul telefono resta una colonna
 function masonry(el, after) {
@@ -1381,7 +1523,8 @@ function loadFJ(force) {
   if (!force && S.fj && Date.now()-S.fj.got < 110000) return Promise.resolve(S.fj);
   if (!force && Date.now()-fjTry < 60000 && fjErr) return Promise.reject(new Error(fjErr));
   fjTry=Date.now();
-  fjP = call('fjNews').then(d=>{ d.got=Date.now(); S.fj=d; fjErr=''; return d; })
+  fjP = call('fjNews').then(d=>{ d.got=Date.now(); const k=it=>it.t+'|'+it.title, old=S.fj ? new Set((S.fj.items||[]).map(k)) : null;
+    S.fjFresh = old ? new Set((d.items||[]).map(k).filter(x=>!old.has(x))) : new Set(); S.fj=d; fjErr=''; setTimeout(()=>{ S.fjFresh=new Set(); }, 4000); return d; })
     .catch(e=>{ fjErr = /Funzione sconosciuta/.test(e.message||'') ? 'OLD' : (e.message||String(e)); throw e; })
     .finally(()=>{ fjP=null; if (S.tab==='news' && !S.sheet) renderCurrent(true); });
   return fjP;
@@ -1389,7 +1532,7 @@ function loadFJ(force) {
 setInterval(()=>{ if (S.tab==='news' && !document.hidden) loadFJ().catch(()=>{}); }, 120000);
 const FJ_KEY = /trump|fed|powell|fomc|cpi|ppi|pce|payroll|nfp|tariff|dazi|rate cut|rate hike|recession|gdp|treasury|yields?|s&p|nasdaq|white house/i;
 const agoTxt = t => { const m=Math.max(0,Math.round((Date.now()-t)/60000)); if (m<1) return 'adesso'; if (m<60) return m+' min fa'; const h=Math.floor(m/60); if (h<24) return h+' h fa'; return romeDate(t).getDate()+' '+MESI[romeDate(t).getMonth()]; };
-const fjRow = it => '<a class="fjrow'+(FJ_KEY.test(it.title)?' key':'')+(/trump/i.test(it.title)?' tr':'')+'" href="'+esc(it.link||'https://www.financialjuice.com/home')+'" target="_blank" rel="noopener"><span class="fj-t">'+p2(romeDate(it.t).getHours())+':'+p2(romeDate(it.t).getMinutes())+'<em>'+agoTxt(it.t)+'</em></span><span class="fj-x">'+esc(it.title)+'</span></a>';
+const fjRow = it => '<a class="fjrow'+(S.fjFresh && S.fjFresh.has(it.t+'|'+it.title)?' fresh':'')+(FJ_KEY.test(it.title)?' key':'')+(/trump/i.test(it.title)?' tr':'')+'" href="'+esc(it.link||'https://www.financialjuice.com/home')+'" target="_blank" rel="noopener"><span class="fj-t">'+p2(romeDate(it.t).getHours())+':'+p2(romeDate(it.t).getMinutes())+'<em>'+agoTxt(it.t)+'</em></span><span class="fj-x">'+esc(it.title)+'</span></a>';
 function fjCard() {
   loadFJ().catch(()=>{});
   let h='<div class="card wide fj"><div class="card-h"><h2 class="h2">Titoli dal mercato</h2><span class="sub">FinancialJuice · si aggiorna ogni 2 minuti</span></div>';
@@ -1423,7 +1566,7 @@ function palAll(q) {
   }
   return out;
 }
-function palToggle(force) {
+function palToggle(force, ptr) {
   let el=$('pal');
   if (!el) { el=document.createElement('div'); el.id='pal'; el.setAttribute('role','dialog'); el.setAttribute('aria-modal','true'); el.setAttribute('aria-label','Palette comandi');
     el.innerHTML='<div class="pl"><div class="pl-in">'+ic('search',18,2)+'<input id="pal-q" type="text" placeholder="Cerca pagine, azioni, trade…" autocomplete="off" spellcheck="false" aria-controls="pal-list"><kbd>Esc</kbd></div><div class="pl-list" id="pal-list" role="listbox"></div></div>';
@@ -1437,7 +1580,7 @@ function palToggle(force) {
       else if (e.key==='Escape') { e.preventDefault(); palToggle(false); } }); }
   const on = force===undefined ? !PAL.on : !!force;
   if (on===PAL.on) { if (on) $('pal-q').focus(); return; }
-  PAL.on=on; el.classList.toggle('on', on);
+  PAL.on=on; el.classList.toggle('on', on); el.classList.toggle('ptr', !!(on && ptr && !reduceMotion()));
   if (on) { PAL.last=document.activeElement; $('pal-q').value=''; PAL.i=0; palRender(); $('pal-q').focus(); }
   else if (PAL.last && PAL.last.focus) PAL.last.focus();
 }
@@ -2425,20 +2568,29 @@ function lbEl() { let el=$('lb'); if (el) return el;
     if (LB.s<LB.fit) lbFit(); };
   v.addEventListener('pointerup', up); v.addEventListener('pointercancel', up);
   return el; }
-function lbOpen(list,i) { if (!list.length) return; LB.list=list; lbEl(); $('lb').classList.add('on'); lbShow(i); }
+function lbOpen(list,i,from) { if (!list.length) return; LB.list=list; LB.src=from||null; LB.i0=i; LB.from = from && !reduceMotion() ? from.getBoundingClientRect() : null; lbEl(); $('lb').classList.add('on'); lbShow(i); }
 function lbShow(i) { const n=LB.list.length; LB.i=(i+n)%n; const it=LB.list[LB.i], img=$('lb-i');
   $('lb-t').textContent=it.t+(n>1?'  ·  '+(LB.i+1)+'/'+n:''); $('lb-o').href=it.l;
   document.querySelectorAll('#lb [data-lbx=prev],#lb [data-lbx=next]').forEach(b=>b.hidden=n<2);
   $('lb-h').textContent=matchMedia('(hover:hover)').matches?'Rotella per lo zoom · trascina per spostare · doppio clic per ingrandire · Esc per chiudere':'Pizzica per lo zoom · trascina per spostare · doppio tocco per ingrandire';
   img.style.opacity='0'; img.src=it.u; if (img.complete && img.naturalWidth) lbFit(); }
 function lbFit() { const v=$('lb-v'), img=$('lb-i'); if (!img.naturalWidth) return; const W=v.clientWidth, H=v.clientHeight;
-  LB.fit=Math.min(W/img.naturalWidth, H/img.naturalHeight); LB.s=LB.fit; LB.x=(W-img.naturalWidth*LB.s)/2; LB.y=(H-img.naturalHeight*LB.s)/2; lbApply(); img.style.opacity='1'; }
+  LB.fit=Math.min(W/img.naturalWidth, H/img.naturalHeight); LB.s=LB.fit; LB.x=(W-img.naturalWidth*LB.s)/2; LB.y=(H-img.naturalHeight*LB.s)/2;
+  const r=LB.from; LB.from=null;
+  if (r && r.width) { const vr=v.getBoundingClientRect(), s0=r.width/img.naturalWidth; img.style.transition='none';
+    img.style.transform='translate('+(r.left-vr.left)+'px,'+(r.top-vr.top+(r.height-img.naturalHeight*s0)/2)+'px) scale('+s0+')'; img.style.opacity='1'; void img.offsetWidth;
+    img.style.transition='transform 480ms var(--e-drawer)'; lbApply(); clearTimeout(LB.tt); LB.tt=setTimeout(()=>{ img.style.transition=''; }, 500); return; }
+  lbApply(); img.style.opacity='1'; }
 function lbZoom(ns,cx,cy) { if (!$('lb-i').naturalWidth) return; const r=$('lb-v').getBoundingClientRect(); ns=Math.max(LB.fit*0.9, Math.min(LB.fit*8, ns)); const px=cx-r.left, py=cy-r.top;
   LB.x=px-(px-LB.x)*ns/LB.s; LB.y=py-(py-LB.y)*ns/LB.s; LB.s=ns; lbApply(); }
 function lbApply() { const img=$('lb-i'), v=$('lb-v'); const W=v.clientWidth, H=v.clientHeight, w=img.naturalWidth*LB.s, h=img.naturalHeight*LB.s;
   LB.x = w<=W ? (W-w)/2 : Math.min(0, Math.max(W-w, LB.x)); LB.y = h<=H ? (H-h)/2 : Math.min(0, Math.max(H-h, LB.y));
   img.style.transform='translate('+LB.x+'px,'+LB.y+'px) scale('+LB.s+')'; v.classList.toggle('z', LB.s>LB.fit*1.01); }
-function lbClose() { const el=$('lb'); if (el) el.classList.remove('on'); LB.pts.clear(); }
+function lbClose() { const el=$('lb'); if (!el) return; LB.pts.clear(); const img=$('lb-i'), src=LB.src;
+  if (src && src.isConnected && LB.i===LB.i0 && img.naturalWidth && !reduceMotion()) { const r=src.getBoundingClientRect(), vr=$('lb-v').getBoundingClientRect(), s0=r.width/img.naturalWidth;
+    if (r.width && r.bottom>0 && r.top<innerHeight) { img.style.transition='transform 340ms var(--e-drawer)'; img.style.transform='translate('+(r.left-vr.left)+'px,'+(r.top-vr.top+(r.height-img.naturalHeight*s0)/2)+'px) scale('+s0+')';
+      clearTimeout(LB.tt); LB.tt=setTimeout(()=>{ img.style.transition=''; }, 360); } }
+  el.classList.remove('on'); }
 window.addEventListener('resize', () => { const el=$('lb'); if (el && el.classList.contains('on')) lbFit(); });
 function tvImg(u) { const m=/tradingview\.com\/x\/([A-Za-z0-9]+)/.exec(u||''); return m ? 'https://s3.tradingview.com/snapshots/'+m[1][0].toLowerCase()+'/'+m[1]+'.png' : null; }
 function formClick(b) {
@@ -2494,17 +2646,19 @@ function closeSheet() { if (S.sheet==='chat') setTimeout(()=>{ if (!S.sheet) { $
 // ───────────────────────── eventi ─────────────────────────
 document.addEventListener('click', e => {
   const b=e.target.closest('button'); if (!b) return;
+  S.userT=performance.now();
   if (b.closest('#lb')) return;
-  if (b.dataset.lb) { lbOpen(lbList(S.f), +b.dataset.lb); return; }
-  if (b.dataset.act==='pal') { palToggle(true); return; }
+  if (b.dataset.lb) { lbOpen(lbList(S.f), +b.dataset.lb, b.querySelector('img')); return; }
+  if (b.dataset.act==='pal') { palToggle(true, true); return; }
   if (b.closest('#pal')) { const i=+b.dataset.pi; if (isFinite(i)) palRun(i); return; }
   if (b.dataset.nav) { navTo(b.dataset.nav); return; }
   if (b.dataset.bar) { if (b.dataset.bar==='more') openMore(); else navTo(b.dataset.bar); return; }
   if (b.closest('#fileSeg')) { switchFile(b.dataset.v); return; }
   if (b.dataset.act==='sbcol') { const c=document.documentElement.classList.toggle('sbc'); store.set('sbc', c?'1':''); setTimeout(moveInd, 60); setTimeout(moveInd, 560); return; }
   if (b.dataset.act==='newsref') { b.disabled=true; loadNews(true).then(()=>toast('Calendario aggiornato')).catch(e=>toast('News non disponibili: '+(e.message||e), true)); return; }
-  if (b.dataset.chk) { const i=+b.dataset.chk, ck=chkGet(), on=!ck.includes(i), nk=on?[...ck,i]:ck.filter(x=>x!==i); store.set(chkKey(), JSON.stringify(nk)); b.classList.toggle('on', on);
-    const c=b.closest('.bchk'), tot=CFG.check.length, done=CFG.check.filter((_,j)=>nk.includes(j)).length; c.querySelector('.chk-bar i').style.width=(100*done/tot)+'%'; $('chk-n').textContent=done+'/'+tot; c.classList.toggle('ok', done===tot); return; }
+  if (b.dataset.chk) { const i=+b.dataset.chk, ck=chkGet(), on=!ck.includes(i), nk=on?[...ck,i]:ck.filter(x=>x!==i); store.set(chkKey(), JSON.stringify(nk)); b.classList.toggle('on', on); b.classList.remove('just'); void b.offsetWidth; b.classList.add('just'); clearTimeout(b._j); b._j=setTimeout(()=>b.classList.remove('just'), 700);
+    const c=b.closest('.bchk'), tot=CFG.check.length, done=CFG.check.filter((_,j)=>nk.includes(j)).length; c.querySelector('.chk-bar i').style.width=(100*done/tot)+'%'; $('chk-n').textContent=done+'/'+tot; c.classList.toggle('ok', done===tot);
+    c.classList.remove('party'); if (on && done===tot) { void c.offsetWidth; c.classList.add('party'); setTimeout(()=>c.classList.remove('party'), 1600); } return; }
   if (b.dataset.cal) { const [y,mo]=S.calM.split('-').map(Number), d=new Date(y, mo-1+(+b.dataset.cal), 1); S.calM=d.getFullYear()+'-'+p2(d.getMonth()+1); S.calSel=null; renderCurrent(true); return; }
   if (b.dataset.cday) { S.calSel = S.calSel===b.dataset.cday ? null : b.dataset.cday; renderCurrent(true); return; }
   if (b.dataset.act==='cfgapply') { S.filtBy={ EOW:FILT_DEF(), Journal:FILT_DEF() }; S.filt=S.filtBy[S.file]; saveFilt(); toast('Filtri aggiornati'); return; }
@@ -2574,7 +2728,7 @@ let lastY=0;
 window.addEventListener('scroll', () => { const y=window.scrollY; $('top').classList.toggle('scrolled', y>4);
   if (Math.abs(y-lastY)>6) { const dn=y>lastY && y>120; $('fab').classList.toggle('mini', dn); $('aifab').classList.toggle('away', dn); lastY=y; } }, { passive:true });
 let lastW=window.innerWidth, rT;
-window.addEventListener('resize', () => { clearTimeout(rT); rT=setTimeout(()=>{ if (Math.abs(window.innerWidth-lastW)>20) { lastW=window.innerWidth; if (!S.sheet) renderCurrent(); } }, 200); });
+window.addEventListener('resize', () => { clearTimeout(rT); rT=setTimeout(()=>{ if (Math.abs(window.innerWidth-lastW)>20) { lastW=window.innerWidth; if (!S.sheet) renderCurrent(true); } }, 200); });
 setInterval(() => { const el=$('sess'); if (el) { const s=sessionInfo(); el.className='sess'+(s.open?' open':''); el.innerHTML='<i></i>'+s.txt; } }, 30000);
 
 S.filtBy=loadFilt(); S.filt=S.filtBy[S.file]; S.mc=loadMC();
@@ -2582,6 +2736,7 @@ try { S.cust=JSON.parse(store.get('cust','{}'))||{}; } catch(e) { S.cust={}; }
 (function welcome() {
   const sp=$('splash'); let seen=false; try { seen=sessionStorage.getItem('tj.hi')==='1'; sessionStorage.setItem('tj.hi','1'); } catch(e) {}
   if (seen) { sp.remove(); return; }
+  S.introAt=performance.now()+1150;
   sp.innerHTML='<div class="sp-in">'+logo(68)+'<h1>'+words(greeting())+'</h1><p>Preparo i tuoi trade…</p></div>';
   setTimeout(()=>{ sp.classList.add('out'); setTimeout(()=>sp.remove(), 600); }, 1150);
 })();
@@ -2603,6 +2758,7 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 applyTheme(); if (store.get('sbc','')==='1') document.documentElement.classList.add('sbc');
 { const [t,f]=location.hash.slice(1).split('/'); if (f==='EOW'||f==='Journal') { S.file=f; S.type=f==='EOW'?'EOW':'JOURNAL'; S.filt=S.filtBy[f]; }
   if (VIEWS.includes(t) && t!=='home') { S.tab=t; VIEWS.forEach(v=>{ $('v-'+v).hidden = v!==t; }); } }
+{ const b0=Math.max(0,(S.introAt||0)-performance.now()); document.documentElement.style.setProperty('--boot0', Math.round(b0)+'ms'); document.documentElement.classList.add('boot'); setTimeout(()=>document.documentElement.classList.remove('boot'), b0+1600); }
 renderChrome();
 window.addEventListener('load', moveInd);
 if (!viaScript() && !(store.get('api','') && store.get('key',''))) showSetup(); else { load(); loadNews().then(newsBadge).catch(()=>{}); }
