@@ -807,10 +807,6 @@ th, .bd.hd { text-transform:none !important; letter-spacing:0 !important; font-s
 .ds-cost span { display:block; font-size:12.5px; color:var(--fg3); } .ds-cost b { display:block; font-size:20px; font-weight:650; margin:2px 0; } .ds-cost em { font-style:normal; font-size:12px; color:var(--fg3); }
 .ds-errs { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
 .echip { font-size:12.5px; padding:5px 10px; border-radius:99px; background:color-mix(in srgb,var(--loss) 10%,var(--sunk)); color:var(--fg); } .echip b { color:var(--loss); margin-left:2px; }
-.fjrow { display:grid; grid-template-columns:72px minmax(0,1fr); gap:12px; padding:9px 4px; border-top:1px solid var(--line); color:inherit; text-decoration:none; border-radius:8px; transition:background-color var(--t-hover) ease; }
-.fjrow:hover { background:color-mix(in srgb,var(--fg) 3%,transparent); }
-.fj-t { font-size:13px; font-weight:600; font-variant-numeric:tabular-nums; } .fj-t em { display:block; font-style:normal; font-size:11.5px; color:var(--fg3); font-weight:500; }
-.fj-x { font-size:14px; line-height:1.4; } .fjrow.key .fj-x { font-weight:600; } .fjrow.tr .fj-x { color:var(--loss); }
 .nsrc a { color:var(--accent); }
 
 /* ═════════════ Interfaccia: regole di Vercel, Emil Kowalski, Apple, Impeccable ═════════════ */
@@ -829,7 +825,7 @@ h1, h2, h3, .h2, .bp-t, .nh-t { text-wrap:balance; } p { text-wrap:pretty; }
 .skip:focus { top:12px; }
 main:focus { outline:none; }
 /* hover solo dove c'è un puntatore vero */
-@media not ((hover:hover) and (pointer:fine)) { .sb-i:hover, .trow:hover, .nrow:hover, .fjrow:hover, .lnk:hover { background:none; } }
+@media not ((hover:hover) and (pointer:fine)) { .sb-i:hover, .trow:hover, .nrow:hover, .lnk:hover { background:none; } }
 /* passaggio tra le pagine: dissolvenza breve, la cornice resta ferma */
 .side { view-transition-name:side; } header.top { view-transition-name:topbar; } nav.bar { view-transition-name:tabbar; }
 .fab { view-transition-name:fab; } .aifab { view-transition-name:aifab; } .toast { view-transition-name:toast; }
@@ -856,6 +852,48 @@ main:focus { outline:none; }
 .top-search { display:none; }
 @media (max-width:999px) { .top-search { display:grid; margin-left:8px; flex:none; } }
 @media (hover:none) { #pal kbd { display:none; } }
+
+/* ═════════════ Panoramica: prima i risultati in R, poi la giornata in una card sola ═════════════ */
+.recap .rc-top { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; flex-wrap:nowrap; }
+.recap .rc-top .seg { width:184px; flex:none; }
+.rc-pers { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-bottom:16px; }
+.rcp { display:flex; flex-direction:column; align-items:flex-start; gap:2px; min-width:0; padding:11px 13px; border:1px solid var(--line); border-radius:14px; background:var(--surface); color:var(--fg); font:inherit; text-align:left; cursor:pointer;
+  transition:background-color 200ms ease, border-color 200ms ease, transform 140ms var(--e-out); }
+.rcp span { font-size:12.5px; color:var(--fg3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+.rcp b { font-size:24px; font-weight:700; letter-spacing:-.03em; line-height:1.15; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.rcp b small { font-size:.58em; font-weight:600; color:var(--fg3); letter-spacing:0; }
+.rcp em { font-style:normal; font-size:11.5px; color:var(--fg3); }
+.rcp span i { font-style:normal; } .rcp span .rcp-s { display:none; }
+.rcp.on { background:color-mix(in srgb,var(--hue) 9%,var(--surface)); border-color:color-mix(in srgb,var(--hue) 60%,transparent); }
+.rcp.on span { color:var(--fg2); }
+.rcp:active { transform:scale(.97); }
+@media (hover:hover) and (pointer:fine) { .rcp:not(.on):hover { border-color:color-mix(in srgb,var(--fg) 22%,transparent); } }
+.rc-cap { display:flex; align-items:baseline; gap:8px; } .rc-cap b { font-size:15px; font-weight:650; } .rc-cap span { font-size:12.5px; color:var(--fg3); }
+.recap .kstrip { margin:12px 0 0; }
+.rc-foot { display:flex; justify-content:space-between; align-items:center; gap:8px 16px; flex-wrap:wrap; margin-top:14px; padding-top:12px; border-top:1px solid var(--line); }
+.rc-src { margin:0; font-size:12px; color:var(--fg3); } .rc-foot .rc-act { margin:0; }
+.today { order:1; } .bchk { order:2; } .bexp { order:3; }
+.td-h { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:6px; }
+.td-main { display:flex; justify-content:space-between; align-items:flex-start; gap:14px; }
+.td-main p { margin:3px 0 0; color:var(--fg2); font-size:14px; }
+.td-r { text-align:right; flex:none; } .td-r b { display:block; font-size:26px; font-weight:700; letter-spacing:-.03em; line-height:1.1; } .td-r span { font-size:12px; color:var(--fg3); }
+.today .bp-tr { margin-top:10px; }
+.td-news { margin-top:12px; padding-top:10px; border-top:1px solid var(--line); }
+.td-sub { display:flex; justify-content:space-between; align-items:baseline; gap:10px; font-size:12.5px; color:var(--fg3); margin-bottom:2px; } .td-sub b { color:var(--accent); font-variant-numeric:tabular-nums; }
+.td-news .bn-none { padding:4px 0 0; font-size:13.5px; }
+.td-note { margin:12px 0 0; font-size:13px; color:var(--fg2); line-height:1.5; }
+.td-foot { display:flex; justify-content:space-between; align-items:center; gap:4px 14px; flex-wrap:wrap; margin-top:12px; font-size:12px; color:var(--fg3); }
+.td-foot .link { padding:0; }
+@media (max-width:640px) {
+  .rc-pers { gap:6px; margin-bottom:14px; } .rcp { padding:9px 9px 8px; border-radius:12px; } .rcp b { font-size:18px; } .rcp em { display:none; } .rcp span .rcp-l { display:none; } .rcp span .rcp-s { display:inline; }
+  .recap .kstrip { grid-template-columns:repeat(3,minmax(0,1fr)) !important; gap:1px; background:var(--line); overflow:hidden; }
+  .recap .kstrip > div { padding:9px 10px !important; border:0 !important; background:var(--surface); grid-column:auto !important; } .recap .kstrip > div:nth-child(5) { grid-column:span 2 !important; } .recap .kstrip em { display:none; } .recap .kstrip b { font-size:17px; } .recap .kstrip span { font-size:11.5px; }
+  .rc-ideas .bl:nth-child(n+5) { display:none; }
+  .hello { position:relative; } .hello .sess { position:absolute; right:0; top:0; font-size:11.5px; padding:3px 9px 3px 8px; }
+  .recap .rc-top .seg { width:150px; } .recap .rc-top { margin-bottom:12px; }
+  .today .bp-t { font-size:19px !important; } .td-r b { font-size:22px; }
+  .hello h1 { font-size:22px !important; } .hello { padding-top:0; }
+}
 
 /* ═════════════ Movimento ═════════════
    Pesi (design-motion-principles): Jakub per le entrate e le rifiniture, Emil per frequenza e tastiera, Jhey solo nei momenti rari.
@@ -947,12 +985,9 @@ nav.bar button:active .pill { transform:scale(.88); }
 #pal.on.ptr { animation:mFade 160ms ease-out; }
 #pal.on.ptr .pl { animation:palIn 220ms var(--e-out); }
 @keyframes palIn { from { opacity:0; transform:translateY(-6px) scale(.98); } }
-/* 12 · news: un titolo appena arrivato da FinancialJuice scivola dentro evidenziato */
-.fjrow.fresh { animation:freshIn 1800ms var(--e-out) both; }
-@keyframes freshIn { 0% { opacity:0; transform:translateY(-8px); background:color-mix(in srgb,var(--accent) 14%,transparent); } 20% { opacity:1; transform:none; background:color-mix(in srgb,var(--accent) 14%,transparent); } 100% { background:transparent; } }
 /* 13 · righe cliccabili e pulsanti (solo con un puntatore vero) */
 @media (hover:hover) and (pointer:fine) {
-  .trow, .mrow, .nrow, .fjrow, .bl, .rule { transition:background-color 180ms ease; }
+  .trow, .mrow, .nrow, .bl, .rule { transition:background-color 180ms ease; }
   .trow .chev, .mrow .chev, .trow > .ic:last-child, .mrow > .ic:last-child { transition:transform 260ms var(--e-out); }
   .trow:hover > .ic:last-child, .mrow:hover > .ic:last-child { transform:translateX(3px); }
   .link:hover .ic, .lnk:hover .ic { transform:translateX(2px); transition:transform 260ms var(--e-out); }
@@ -1068,7 +1103,7 @@ function call(fn, ...args) {
   const url=store.get('api',''), key=store.get('key','');
   if (!url || !key) { showSetup(); return Promise.reject(new Error('Inserisci indirizzo e chiave di accesso')); }
   // corpo in text/plain: è una richiesta «semplice», niente controllo preventivo CORS
-  const ctl = 'AbortController' in window ? new AbortController() : null, to = ctl && setTimeout(()=>ctl.abort(), fn==='chat'||fn==='coach'||fn==='news'||fn==='newsSunto'||fn==='fjNews' ? 90000 : 30000);
+  const ctl = 'AbortController' in window ? new AbortController() : null, to = ctl && setTimeout(()=>ctl.abort(), fn==='chat'||fn==='coach'||fn==='news'||fn==='newsSunto' ? 90000 : 30000);
   return fetch(url, { method:'POST', body: JSON.stringify({ key, fn, args }), signal: ctl ? ctl.signal : undefined })
     .catch(() => { throw new Error('NETWORK'); })
     .finally(() => clearTimeout(to))
@@ -1516,32 +1551,6 @@ function sessionInfo() {
   return { open:false, txt: add===1 ? 'Sessione domani alle '+CFG.s0 : 'Prossima sessione '+GIORNI[(wd+add)%7]+' alle '+CFG.s0 };
 }
 const greeting = () => { const h=new Date().getHours(); return (h<5 ? 'Buonanotte' : h<13 ? 'Buongiorno' : h<18 ? 'Buon pomeriggio' : 'Buonasera')+', '+USER; };
-// ───────────────────────── FINANCIALJUICE: titoli in tempo (quasi) reale ─────────────────────────
-S.fj=null; let fjP=null, fjErr='', fjTry=0;
-function loadFJ(force) {
-  if (fjP) return fjP;
-  if (!force && S.fj && Date.now()-S.fj.got < 110000) return Promise.resolve(S.fj);
-  if (!force && Date.now()-fjTry < 60000 && fjErr) return Promise.reject(new Error(fjErr));
-  fjTry=Date.now();
-  fjP = call('fjNews').then(d=>{ d.got=Date.now(); const k=it=>it.t+'|'+it.title, old=S.fj ? new Set((S.fj.items||[]).map(k)) : null;
-    S.fjFresh = old ? new Set((d.items||[]).map(k).filter(x=>!old.has(x))) : new Set(); S.fj=d; fjErr=''; setTimeout(()=>{ S.fjFresh=new Set(); }, 4000); return d; })
-    .catch(e=>{ fjErr = /Funzione sconosciuta/.test(e.message||'') ? 'OLD' : (e.message||String(e)); throw e; })
-    .finally(()=>{ fjP=null; if (S.tab==='news' && !S.sheet) renderCurrent(true); });
-  return fjP;
-}
-setInterval(()=>{ if (S.tab==='news' && !document.hidden) loadFJ().catch(()=>{}); }, 120000);
-const FJ_KEY = /trump|fed|powell|fomc|cpi|ppi|pce|payroll|nfp|tariff|dazi|rate cut|rate hike|recession|gdp|treasury|yields?|s&p|nasdaq|white house/i;
-const agoTxt = t => { const m=Math.max(0,Math.round((Date.now()-t)/60000)); if (m<1) return 'adesso'; if (m<60) return m+' min fa'; const h=Math.floor(m/60); if (h<24) return h+' h fa'; return romeDate(t).getDate()+' '+MESI[romeDate(t).getMonth()]; };
-const fjRow = it => '<a class="fjrow'+(S.fjFresh && S.fjFresh.has(it.t+'|'+it.title)?' fresh':'')+(FJ_KEY.test(it.title)?' key':'')+(/trump/i.test(it.title)?' tr':'')+'" href="'+esc(it.link||'https://www.financialjuice.com/home')+'" target="_blank" rel="noopener"><span class="fj-t">'+p2(romeDate(it.t).getHours())+':'+p2(romeDate(it.t).getMinutes())+'<em>'+agoTxt(it.t)+'</em></span><span class="fj-x">'+esc(it.title)+'</span></a>';
-function fjCard() {
-  loadFJ().catch(()=>{});
-  let h='<div class="card wide fj"><div class="card-h"><h2 class="h2">Titoli dal mercato</h2><span class="sub">FinancialJuice · si aggiorna ogni 2 minuti</span></div>';
-  if (!S.fj) return h+(fjErr==='OLD'?'<div class="empty-row">Aggiorna Code.gs per vedere i titoli di FinancialJuice.</div>':fjErr?'<div class="empty-row">FinancialJuice non ha risposto. Riprovo tra poco.</div>':'<div class="empty-row">Carico i titoli…</div>')+'</div>';
-  const it=S.fj.items||[], key=it.filter(x=>FJ_KEY.test(x.title)).slice(0,6);
-  if (key.length) h+='<div class="rc-sub">Da non perdere</div>'+key.map(fjRow).join('')+'<div class="rc-sub" style="margin-top:14px">Altri titoli</div>';
-  h+=it.filter(x=>!key.includes(x)).slice(0,12).map(fjRow).join('');
-  return h+'<p class="nsrc" style="margin:10px 0 0">'+ic('clock',14,2)+'<span>Feed pubblico di FinancialJuice: i titoli arrivano con qualche minuto di ritardo; il tempo reale vero (e l\'audio) è nel loro abbonamento. <a href="https://www.financialjuice.com/home" target="_blank" rel="noopener">Apri FinancialJuice</a></span></p></div>';
-}
 
 // ───────────────────────── PALETTE COMANDI (⌘K / Ctrl+K) ─────────────────────────
 // Pagine, azioni e trade di entrambi i file in un solo campo. Si apre senza animazione: la si usa di continuo.
@@ -1553,7 +1562,7 @@ function palAll(q) {
   add('Azioni','Nuovo trade nel Journal','plus',()=>{ switchFile('Journal'); openForm(); },'N','aggiungi registra reale');
   add('Azioni','Nuovo backtest nell\'EOW','plus',()=>{ switchFile('EOW'); openForm(); },'','aggiungi registra eow');
   if (!NOFILE.includes(S.tab)) add('Azioni','Apri i filtri','filter',openFilters,'F','filtra');
-  add('Azioni','Aggiorna le news','refresh',()=>{ navTo('news',{ instant:true }); loadNews(true).catch(()=>{}); loadFJ(true).catch(()=>{}); },'','forexfactory financialjuice');
+  add('Azioni','Aggiorna le news','refresh',()=>{ navTo('news',{ instant:true }); loadNews(true).catch(()=>{}); },'','forexfactory calendario');
   add('Azioni','Passa a '+(S.file==='EOW'?'Journal':'EOW'),'list',()=>switchFile(S.file==='EOW'?'Journal':'EOW'),'','file cambia');
   add('Azioni','Tema: '+({ auto:'chiaro', light:'scuro', dark:'automatico' }[CFG.theme]||'chiaro'),'sun',()=>{ CFG.theme={ auto:'light', light:'dark', dark:'auto' }[CFG.theme]||'light'; cfgChanged('theme'); toast('Tema '+({ auto:'automatico', light:'chiaro', dark:'scuro' }[CFG.theme])); },'','dark light scuro chiaro');
   if (innerWidth>=1000) add('Azioni',document.documentElement.classList.contains('sbc')?'Espandi la barra laterale':'Comprimi la barra laterale','side',()=>{ const c=document.documentElement.classList.toggle('sbc'); store.set('sbc', c?'1':''); setTimeout(moveInd, 560); });
@@ -1595,30 +1604,23 @@ function palRun(i) { const it=PAL.items[i]; if (!it) return; palToggle(false); i
 
 // ───────────────────────── PANORAMICA: tutto insieme (Journal + EOW + news) e introduzione alla giornata ─────────────────────────
 function renderHome() {
-  const el=$('v-home'); loadNews().catch(()=>{}); loadFJ().catch(()=>{});
+  const el=$('v-home'); loadNews().catch(()=>{});
   const now=new Date(), ses=sessionInfo();
   let h='<div class="hello rise"><div><div class="eyebrow">'+GIORNI[now.getDay()]+' '+now.getDate()+' '+MESI_F[now.getMonth()]+'</div><h1>'+words(greeting())+'</h1></div>'+
     '<span class="sess'+(ses.open?' open':'')+'" id="sess"><i></i>'+ses.txt+'</span></div>';
   if (!rowsOf('Journal') && !rowsOf('EOW')) { enter(el, h+skeleton()); return; }
-  h+=dayIntro();
-  h+=briefing();
-  h+=recapCards();
+  h+=recapCards();      // prima i risultati in R
+  h+=briefing();        // poi la giornata: piano, news, checklist, cosa aspettarsi
   h+='<div class="pgrid">'+discCard()+lastCard()+'</div>';
-  enter(el, h, ()=>{ document.querySelectorAll('[data-spark]').forEach(x=>{ const p=SPARK[x.dataset.spark]; if (p && p.length>1) lineChart(x, p, { h: innerWidth<640 ? 170 : 210 }); }); });
+  enter(el, h, ()=>{ document.querySelectorAll('[data-spark]').forEach(x=>{ const p=SPARK[x.dataset.spark]; if (p && p.length>1) lineChart(x, p, { h: innerWidth<640 ? 150 : 210 }); }); });
 }
-// il racconto della giornata: piano, news, apertura di New York, storico
-function dayIntro() {
-  const now=Date.now(), rn=romeDate(now), t=iso(rn), wdN=rn.getDay(), weekend=wdN===0||wdN===6, cat=S.news&&!weekend?newsCat(t):'';
-  const ev=S.news?newsEvents().filter(e=>e.day===t && (e.imp==='High'||e.trump)):[], nx=ev.find(e=>!e.tbd && e.t>now-60000);
-  const nyo=nyOpenIt(t), parts=[];
-  if (weekend) parts.push('Mercati chiusi: è il momento della revisione della settimana (EOW).');
-  else {
-    if (cat) parts.push('Oggi è una giornata <b class="'+(cat==='Red News'?'neg':cat==='Orange News'?'warn':'pos')+'">'+cat+'</b>'+(ev.length?': '+ev.slice(0,3).map(e=>esc(newsIt(e.title))+' alle '+e.hm).join(', ')+'.':', nessuna news USD importante.'));
-    if (nyo && nyo!==CFG.s0) parts.push('<b>Attenzione:</b> per il cambio dell\'ora, oggi Wall Street apre alle <b>'+nyo+'</b> ora italiana.');
-    const X=expectations(L.days[(wdN+6)%7], cat);
-    if (X && X.wd.n>=3) parts.push('Nel backtest il '+GIORNI[wdN]+' rende in media <b class="'+sgn(X.wd.avg)+'">'+fmtR(X.wd.avg,2)+'</b> ('+X.wd.n+' giornate).');
-  }
-  return '<div class="intro rise" style="--d:30ms">'+(nx?'<div class="in-cd"><span>'+esc(newsIt(nx.title))+'</span><b data-cd="'+nx.t+'">'+cdTxt(nx.t-now)+'</b></div>':'')+'<p>'+parts.join(' ')+'</p></div>';
+// note della giornata: cambio dell'ora a New York, com'è andato questo giorno della settimana nel backtest
+function dayNotes(t, wdN, cat) {
+  const out=[], nyo=nyOpenIt(t);
+  if (nyo && nyo!==CFG.s0) out.push('<b>Attenzione:</b> per il cambio dell\'ora oggi Wall Street apre alle <b>'+nyo+'</b> ora italiana.');
+  const X=expectations(L.days[(wdN+6)%7], cat);
+  if (X && X.wd.n>=3) out.push('Nel backtest il '+GIORNI[wdN]+' rende in media <b class="'+sgn(X.wd.avg)+'">'+fmtR(X.wd.avg,2)+'</b> ('+X.wd.n+' giornate).');
+  return out;
 }
 // orario italiano dell'apertura di New York (9:30 ET) in una data: cambia di un'ora nelle settimane del cambio d'ora
 function nyOpenIt(dIso) { const d=pdIso(dIso); for (let h=12; h<=17; h++) for (const m of [0,30]) { const u=Date.UTC(d.getFullYear(),d.getMonth(),d.getDate(),h,m), n=nyHM(u);
@@ -1626,26 +1628,30 @@ function nyOpenIt(dIso) { const d=pdIso(dIso); for (let h=12; h<=17; h++) for (c
 const SPARK={};
 const FHUE = { Journal:'#E8870E', EOW:'#1F7AE0' };   // il colore di ogni file, solo sui suoi dati
 const jModel = () => ({ rOf:t=>isFinite(t.rr)?t.rr:0, isWin:t=>t.out==='Win', isLoss:t=>t.out==='Loss' });
-// Riepilogo: un file alla volta (Journal o EOW), periodo a scelta
+// Risultati: un file alla volta (Journal o EOW). In alto le R di settimana, mese, anno e da sempre (si toccano per cambiare periodo),
+// sotto la curva del periodo scelto, le metriche e il dettaglio per idea
 function recapCards() {
   const f=S.recapF||store.get('recapF','Journal'), per=S.recapP||'m', E=f==='EOW', F=FILT_DEF(), m=E?eModel(2):jModel(), now=new Date();
   const rows=rowsOf(f)||[], base=E ? plan(rows.filter(t=>(!F.asset||t.a===F.asset) && (!F.idea.length||F.idea.includes(t.idea))), m.rOf) : rows;
-  const start={ w:addDays(new Date(now.getFullYear(),now.getMonth(),now.getDate()), -((now.getDay()+6)%7)), m:new Date(now.getFullYear(),now.getMonth(),1), y:new Date(now.getFullYear(),0,1), all:null }[per];
-  const ts=base.filter(t=>!start||t.d>=start), a=agg(ts,m), perL={ w:'questa settimana', m:MESI_F[now.getMonth()], y:'quest\'anno', all:'da sempre' }[per];
-  let h='<div class="card wide recap"><div class="rc-top"><div><h2 class="h2">Riepilogo</h2><p class="sub">'+(E?'EOW · '+(F.asset||'tutti gli asset')+', idee del piano, max 2 al giorno, esito a 2R':'Journal · tutti i trade reali, RR reale')+'</p></div>'+
-    '<div class="rc-ctl">'+seg('rc-file',[{v:'Journal',l:'Journal'},{v:'EOW',l:'EOW'}],f,'sm')+seg('rc-per',[{v:'w',l:'Sett.'},{v:'m',l:'Mese'},{v:'y',l:'Anno'},{v:'all',l:'Tutto'}],per,'sm')+'</div></div>';
-  if (!ts.length) { h+='<div class="empty-row">Nessun trade '+(E?'nel backtest':'reale')+' '+perL+'.</div></div>'; return h; }
+  const d0=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  const START={ w:addDays(d0, -((now.getDay()+6)%7)), m:new Date(now.getFullYear(),now.getMonth(),1), y:new Date(now.getFullYear(),0,1), all:null };
+  const cap=x=>x.replace(/^./,c=>c.toUpperCase()), PL={ w:['Settimana','questa settimana','Sett.'], m:[cap(MESI_F[now.getMonth()]),MESI_F[now.getMonth()],cap(MESI[now.getMonth()])], y:[String(now.getFullYear()),'quest\'anno',String(now.getFullYear())], all:['Tutto','da sempre','Tutto'] };
+  const inP = k => base.filter(t=>!START[k]||t.d>=START[k]);
+  let h='<div class="card wide recap" style="--hue:'+FHUE[f]+'"><div class="rc-top"><h2 class="h2">Risultati</h2>'+seg('rc-file',[{v:'Journal',l:'Journal'},{v:'EOW',l:'EOW'}],f,'sm')+'</div>'+
+    '<div class="rc-pers">'+['w','m','y','all'].map(k=>{ const g=inP(k), a=agg(g,m);
+      return '<button type="button" class="rcp'+(k===per?' on':'')+'" data-rcp="'+k+'" aria-pressed="'+(k===per)+'"><span><i class="rcp-l">'+PL[k][0]+'</i><i class="rcp-s">'+PL[k][2]+'</i></span><b class="'+(g.length?sgn(a.R):'')+' num">'+(g.length?fmtN(a.R,E?0:1,true):'0')+'<small> R</small></b><em>'+g.length+' trade</em></button>'; }).join('')+'</div>';
+  const ts=inP(per), a=agg(ts,m), perL=PL[per][1];
+  if (!ts.length) return h+'<div class="empty-row">Nessun trade '+(E?'nel backtest':'reale')+' '+perL+'.</div><p class="rc-src">'+(E?'EOW · '+(F.asset||'tutti gli asset')+', idee del piano, max 2 al giorno, esito a 2R':'Journal · trade reali, RR reale')+'</p></div>';
   const hs=ts.map(t=>t.hold).filter(isFinite), mx=ts.filter(t=>isFinite(t.max));
-  h+='<div class="rc-lead"><b class="'+sgn(a.R)+' num">'+fmtR(a.R,E?0:2)+'</b><span>'+perL+' · '+a.n+' trade</span></div>'+
-    '<div class="kstrip num"><div><span>Win rate</span><b>'+pct(a.wr)+'</b><em>'+a.w+' su '+(a.w+a.l)+'</em></div><div><span>Profit factor</span><b>'+(a.pf===Infinity?'∞':fmtN(a.pf,2))+'</b><em>R vinti per R perso</em></div>'+
-    '<div><span>Expectancy</span><b class="'+sgn(a.exp)+'">'+fmtN(a.exp,2,true)+' R</b><em>per trade</em></div><div><span>Max drawdown</span><b>'+fmtN(a.dd,1)+' R</b><em>dal picco</em></div>'+
-    (E?'<div><span>Max RR medio</span><b>'+(mx.length?fmtN(mx.reduce((s,t)=>s+t.max,0)/mx.length,2):'–')+'</b><em>escursione favorevole</em></div>':'<div><span>Holding medio</span><b>'+(hs.length?hhmm(hs.reduce((x,y)=>x+y,0)/hs.length):'–')+'</b><em>durata del trade</em></div>')+'</div>';
-  // curva e idee
   let eq=0; SPARK.rc=[{ y:0, x:'', tip:'Inizio' }].concat(ts.map((t,i)=>({ y:(eq+=m.rOf(t)), x:t.d.getDate()+' '+MESI[t.d.getMonth()], tip:'Trade '+(i+1)+' · '+t.d.getDate()+' '+MESI[t.d.getMonth()]+' · '+(t.idea||'') })));
   const ideas=L.idea.map(k=>{ const g=ts.filter(t=>t.idea===k); return g.length ? { k, a:agg(g,m) } : null; }).filter(Boolean).sort((x,y)=>y.a.R-x.a.R), top=Math.max(...ideas.map(x=>Math.abs(x.a.R)),1);
-  h+='<div class="rc-body"><div class="rc-chart"><div class="chart" data-spark="rc" style="--accent:'+FHUE[f]+'"></div></div><div class="rc-ideas"><div class="rc-sub">Per idea</div>'+
+  h+='<div class="rc-body"><div class="rc-chart"><div class="rc-cap"><b class="'+sgn(a.R)+' num">'+fmtR(a.R,E?0:2)+'</b><span>'+perL+' · '+a.n+' trade</span></div><div class="chart" data-spark="rc" style="--accent:'+FHUE[f]+'"></div>'+
+    '<div class="kstrip num"><div><span>Win rate</span><b>'+pct(a.wr)+'</b><em>'+a.w+' su '+(a.w+a.l)+'</em></div><div><span>Expectancy</span><b class="'+sgn(a.exp)+'">'+fmtN(a.exp,2,true)+'</b><em>R per trade</em></div>'+
+    '<div><span>Profit factor</span><b>'+(a.pf===Infinity?'∞':fmtN(a.pf,2))+'</b><em>R vinti per R perso</em></div><div><span>Max drawdown</span><b>'+fmtN(a.dd,1)+'</b><em>R dal picco</em></div>'+
+    (E?'<div><span>Max RR medio</span><b>'+(mx.length?fmtN(mx.reduce((s,t)=>s+t.max,0)/mx.length,2):'–')+'</b><em>escursione favorevole</em></div>':'<div><span>Holding medio</span><b>'+(hs.length?hhmm(hs.reduce((x,y)=>x+y,0)/hs.length):'–')+'</b><em>durata del trade</em></div>')+'</div></div>'+
+    '<div class="rc-ideas"><div class="rc-sub">Per idea</div>'+
     ideas.map(x=>'<div class="bl"><div class="bl-t"><span>'+esc(x.k)+'</span><b class="'+sgn(x.a.R)+' num">'+fmtR(x.a.R,E?0:1)+'</b></div><div class="bl-b"><i class="'+(x.a.R<0?'n':'')+'" style="width:'+(100*Math.abs(x.a.R)/top).toFixed(1)+'%"></i></div><em>'+x.a.n+' trade · WR '+pct(x.a.wr)+'</em></div>').join('')+'</div></div>'+
-    '<div class="rc-act"><button type="button" class="link" data-nav="list:'+f+'">Apri '+(E?'l\'EOW':'il Journal')+ic('chev',15,2)+'</button><button type="button" class="link" data-nav="stats">Analisi completa'+ic('chev',15,2)+'</button></div></div>';
+    '<div class="rc-foot"><p class="rc-src">'+(E?'EOW · '+(F.asset||'tutti gli asset')+', idee del piano, max 2 al giorno, esito a 2R':'Journal · trade reali, RR reale')+'</p><div class="rc-act"><button type="button" class="link" data-nav="list:'+f+'">Apri '+(E?'l\'EOW':'il Journal')+ic('chev',15,2)+'</button><button type="button" class="link" data-nav="stats">Analisi'+ic('chev',15,2)+'</button></div></div></div>';
   return h;
 }
 // Disciplina: le regole del piano, una per riga, con quante volte le hai rispettate questo mese
@@ -1766,7 +1772,7 @@ function newsEvents() {
 const inSess = e => !e.tbd && e.mm>=SESS[0]-15 && e.mm<=SESS[1];   // dentro la sessione (o nei 15 minuti prima dell'apertura)
 const when = e => e.tbd ? 'orario da definire' : e.mm<SESS[0]-15 ? 'prima della sessione' : e.mm<=SESS[1] ? 'in sessione' : 'dopo la sessione';
 const ffDay = d => 'https://www.forexfactory.com/calendar?day='+['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'][d.getMonth()]+d.getDate()+'.'+d.getFullYear();
-const TRUMP_LINKS = [['Diretta Casa Bianca','https://www.youtube.com/@WhiteHouse/streams'],['Titoli in tempo reale','https://www.financialjuice.com/home']];
+const TRUMP_LINKS = [['Diretta Casa Bianca','https://www.youtube.com/@WhiteHouse/streams']];
 function cdTxt(ms) { const a=Math.abs(ms), s=Math.floor(a/1000)%60, m=Math.floor(a/60000)%60, h=Math.floor(a/3600000), d=Math.floor(h/24);
   if (ms<0) return a<60000 ? 'adesso' : 'uscita '+(h ? (d ? d+' g' : h+' h '+p2(m)+' min') : m+' min')+' fa';
   if (d>=1) return 'tra '+d+(d===1?' giorno':' giorni'); if (h) return 'tra '+h+' h '+p2(m)+' min'; return 'tra '+m+':'+p2(s); }
@@ -1778,8 +1784,7 @@ const weekOf = dIso => { const d=pdIso(dIso); return iso(addDays(d, -((d.getDay(
 function newsCat(dIso) { if (!S.news) return ''; const ev=newsEvents().filter(e=>e.day===dIso && e.cur==='USD');
   return ev.some(e=>e.imp==='High') ? 'Red News' : ev.some(e=>e.imp==='Medium') ? 'Orange News' : 'No News Day'; }
 function trumpCard(ev) {
-  const fjT = S.fj ? (S.fj.items||[]).filter(x=>/trump/i.test(x.title) && Date.now()-x.t < 36*3600000).slice(0,6) : [];
-  if (!ev.length && !fjT.length) return '';
+  if (!ev.length) return '';
   const now=Date.now();
   return '<div class="card wide trump rise" style="--d:90ms"><div class="card-h"><div class="h2">'+ic('mic',19,2)+' Trump</div><span class="sub">orari ufficiali di ForexFactory</span></div>'+
     ev.map(e=>{ const st = e.tbd ? 'Orario da definire' : now<e.t ? 'Inizia alle '+e.hm+' · <b data-cd="'+e.t+'">'+cdTxt(e.t-now)+'</b>' :
@@ -1787,8 +1792,7 @@ function trumpCard(ev) {
       return '<div class="tr-row"><div><b>'+esc(newsIt(e.title))+'</b><span>'+dayLbl(e.day)+' · '+st+'</span></div><div class="tr-l">'+
         TRUMP_LINKS.map(l=>'<a class="lnk" href="'+l[1]+'" target="_blank" rel="noopener">'+ic('ext',14,2)+l[0]+'</a>').join('')+
         '<a class="lnk" href="'+esc(e.url||ffDay(e.r))+'" target="_blank" rel="noopener">'+ic('ext',14,2)+'ForexFactory</a></div></div>'; }).join('')+
-    (ev.length?'':'<div class="tr-l" style="margin-bottom:6px">'+TRUMP_LINKS.map(l=>'<a class="lnk" href="'+l[1]+'" target="_blank" rel="noopener">'+ic('ext',14,2)+l[0]+'</a>').join('')+'</div>')+
-    (fjT.length?'<div class="rc-sub" style="margin-top:10px">Cosa ha detto · titoli FinancialJuice</div>'+fjT.map(fjRow).join(''):'')+'</div>';
+    '</div>';
 }
 function nrow(e, now, nextT) {
   const past = !e.tbd && e.t<now-60000, nx = e.t===nextT;
@@ -1850,7 +1854,6 @@ function renderNews() {
   const nextOk = !S.news.weeks || S.news.weeks.next==='ok' || all.some(e=>weekOf(e.day)===nwk);
   h += newsHero(all, now);
   h += trumpCard(all.filter(e=>e.trump && (e.tbd || e.t>now-4*3600000)).slice(0,4));
-  h += fjCard();
   h += newsSummary(pev, 'w');
   const days=[...new Set(ev.map(e=>e.day))];
   if (!days.length) h += '<div class="card wide"><div class="empty-row">Nessuna news USD con questo impatto questa settimana.</div></div>';
@@ -1885,25 +1888,26 @@ function briefing() {
   const J=rowsOf('Journal'), tj=J ? J.filter(t2=>iso(t2.d)===t) : [], won=tj.some(x=>x.out==='Win' || x.rr>0), n=tj.length, rT=tj.reduce((s,x)=>s+(isFinite(x.rr)?x.rr:0),0);
   const lossLim=num(CFG.lossR);
   let st;
-  if (weekend) st={ c:'off', t:'Mercati chiusi', s:'Oggi niente trading: è il momento giusto per la revisione della settimana (EOW).' };
-  else if (rn.getHours()*60+rn.getMinutes() > SESS[1]) st={ c:'off', t:'Sessione finita', s: n ? 'Oggi '+n+' trade · '+fmtR(rT,2)+'.' : 'Oggi nessun trade: se non c\'era un setup valido, è la scelta giusta.' };
+  if (weekend) st={ c:'off', t:'Mercati chiusi', s:'Oggi niente trading: è il momento della revisione della settimana (EOW).' };
+  else if (rn.getHours()*60+rn.getMinutes() > SESS[1]) st={ c:'off', t:'Sessione finita', s: n ? (won?'Giornata chiusa in positivo.':rT<0?'Una giornata storta fa parte del piano.':'Giornata chiusa.') : 'Nessun trade: se non c\'era un setup valido, è la scelta giusta.' };
   else if (won) st={ c:'done', t:'Giornata chiusa', s:'Hai preso il TP: il piano dice stop per oggi.' };
   else if (n>=2) st={ c:'done', t:'Limite raggiunto', s:'Hai fatto i 2 trade massimi del piano.' };
   else if (isFinite(lossLim) && lossLim>0 && rT<=-lossLim) st={ c:'done', t:'Limite di perdita raggiunto', s:'Oggi sei a '+fmtR(rT,2)+': il tuo limite è −'+fmtN(lossLim,1)+' R.' };
   else st={ c:'go', t: n ? 'Al massimo un altro trade' : 'Nessun trade ancora', s:'Entra solo se si presenta un setup valido · ingressi dalle '+CFG.s0+' alle '+CFG.s1+'.' };
-  let h='<div class="brief rise" style="--d:40ms"><div class="bcol">', h2='';
-  h+='<div class="card bplan '+st.c+'"><div class="eyebrow">'+ic('shield',15,2)+' Il piano di oggi</div><div class="bp-t">'+st.t+'</div><p>'+st.s+'</p>'+
-     (tj.length?'<div class="bp-tr">'+tj.map(x=>'<span class="'+(x.out==='Win'||x.rr>0?'w':x.out==='Loss'||x.rr<0?'l':'b')+'">'+esc(String(x.raw.Ora).slice(0,5))+' · '+esc(x.idea||x.a)+' <b class="num">'+fmtR(x.rr,2)+'</b></span>').join('')+'</div>':'')+
-     '<div class="bp-lim">Limite del piano: 2 trade al giorno, stop dopo il TP'+(isFinite(lossLim)&&lossLim>0?', perdita massima −'+fmtN(lossLim,1)+' R':'')+'.</div></div>';
-  // news di oggi
-  const ev = S.news ? newsEvents().filter(e=>e.day===t && (e.imp==='High' || e.trump)) : null;
+  let h='<div class="brief"><div class="bcol">', h2='';
+  const ev = S.news ? newsEvents().filter(e=>e.day===t && (e.imp==='High' || e.trump)) : null, cat = S.news && !weekend ? newsCat(t) : '';
+  const nx = ev && ev.find(e=>!e.tbd && e.t>now-60000), notes = weekend ? [] : dayNotes(t, wdN, cat);
   let nb='';
-  if (!ev) nb = newsErr==='OLD' ? '<p class="mut">Aggiorna Code.gs per vedere le news.</p>' : '<p class="mut">Carico il calendario…</p>';
-  else if (!ev.length) nb='<div class="bn-none">'+ic('check',18,2.2)+'Nessuna news USD ad alto impatto oggi</div>';
+  if (weekend) nb='';
+  else if (!ev) nb = newsErr==='OLD' ? '<p class="mut">Aggiorna Code.gs per vedere le news.</p>' : '<p class="mut">Carico il calendario…</p>';
+  else if (!ev.length) nb='<div class="bn-none">'+ic('check',16,2.2)+'Nessuna news USD ad alto impatto</div>';
   else nb=ev.slice(0,5).map(e=>'<div class="bn-row'+(e.t<now-60000&&!e.tbd?' past':'')+(e.trump?' tr':'')+'"><b>'+e.hm+'</b><span>'+esc(newsIt(e.title))+'</span>'+(e.tbd||e.t<now-60000?'':'<em data-cd="'+e.t+'">'+cdTxt(e.t-now)+'</em>')+'</div>').join('');
-  const cat = S.news && !weekend ? newsCat(t) : '';
-  h2+='<div class="card bnews"><div class="card-h"><div class="eyebrow">'+ic('news',15,2)+' News di oggi</div>'+(cat?'<span class="ncat '+(cat==='Red News'?'hi':cat==='Orange News'?'md':'')+'">'+cat+'</span>':'')+'</div>'+nb+
-     '<button type="button" class="link" data-nav="news">Calendario completo '+ic('chev',15,2)+'</button></div>';
+  h+='<div class="card today '+st.c+'"><div class="td-h"><div class="eyebrow">'+ic('shield',15,2)+' Oggi</div>'+(cat?'<span class="ncat '+(cat==='Red News'?'hi':cat==='Orange News'?'md':'')+'">'+cat+'</span>':'')+'</div>'+
+     '<div class="td-main"><div><div class="bp-t">'+st.t+'</div><p>'+st.s+'</p></div>'+(n?'<div class="td-r"><b class="'+sgn(rT)+' num">'+fmtR(rT,2)+'</b><span>'+n+' trade</span></div>':'')+'</div>'+
+     (tj.length?'<div class="bp-tr">'+tj.map(x=>'<span class="'+(x.out==='Win'||x.rr>0?'w':x.out==='Loss'||x.rr<0?'l':'b')+'">'+esc(String(x.raw.Ora).slice(0,5))+' · '+esc(x.idea||x.a)+' <b class="num">'+fmtR(x.rr,2)+'</b></span>').join('')+'</div>':'')+
+     (nb?'<div class="td-news"><div class="td-sub"><span>News USD</span>'+(nx?'<span>'+esc(newsIt(nx.title))+' <b data-cd="'+nx.t+'">'+cdTxt(nx.t-now)+'</b></span>':'')+'</div>'+nb+'</div>':'')+
+     (notes.length?'<p class="td-note">'+notes.join(' ')+'</p>':'')+
+     '<div class="td-foot"><span>Piano: 2 trade al giorno, stop dopo il TP'+(isFinite(lossLim)&&lossLim>0?', max −'+fmtN(lossLim,1)+' R':'')+'</span><button type="button" class="link" data-nav="news">Calendario'+ic('chev',15,2)+'</button></div></div>';
   // aspettative dallo storico EOW
   const X = weekend ? null : expectations(dayName, cat);
   if (X) {
@@ -1912,15 +1916,15 @@ function briefing() {
     if (cat && X.nw.n>=5) rows.push(['news','Con '+cat, 'WR '+pct(X.nw.wr), X.nw.n+' trade · expectancy '+fmtN(X.nw.exp,2,true)+' R', X.nw.exp]);
     if (X.band && X.band.a.R>0) rows.push(['clock','Fascia migliore', X.band.k, X.band.a.n+' trade · '+fmtR(X.band.a.R), X.band.a.R]);
     if (X.idea && X.idea.a.R>0) rows.push(['target','Idea migliore', X.idea.k, X.idea.a.n+' trade · WR '+pct(X.idea.a.wr), X.idea.a.R]);
-    h+='<div class="card bexp"><div class="card-h"><div class="eyebrow">'+ic('spark',15,2)+' Cosa aspettarsi</div><span class="sub">storico EOW · '+X.F.asset+' · 2R · max 2 trade</span></div>'+
+    h2+='<div class="card bexp"><div class="card-h"><div class="eyebrow">'+ic('spark',15,2)+' Cosa aspettarsi</div><span class="sub">storico EOW · '+X.F.asset+' · 2R · max 2 trade</span></div>'+
       '<div class="be-big"><b class="'+sgn(X.all.avg)+'">'+fmtR(X.all.avg,2)+'</b><span>resa media di una giornata con setup<br>'+pct(X.all.pos)+' delle '+X.all.n+' giornate chiuse in positivo</span></div>'+
       rows.map(r=>'<div class="be-row"><span class="be-ic">'+ic(r[0],16,2)+'</span><div><span>'+r[1]+'</span><b>'+esc(r[2])+'</b></div><em class="'+sgn(r[4])+'">'+esc(r[3])+'</em></div>').join('')+'</div>';
   }
   // checklist pre-sessione
-  if (!weekend && CFG.check.length) { const ck=chkGet(), done=CFG.check.filter((_,i)=>ck.includes(i)).length, tot=CFG.check.length;
-    h2+='<div class="card bchk'+(done===tot?' ok':'')+'"><div class="card-h"><div class="eyebrow">'+ic('check',15,2.2)+' Prima di aprire il grafico</div><span class="sub" id="chk-n">'+done+'/'+tot+'</span></div>'+
+  if (st.c!=='off' && CFG.check.length) { const ck=chkGet(), done=CFG.check.filter((_,i)=>ck.includes(i)).length, tot=CFG.check.length;
+    h+='<div class="card bchk'+(done===tot?' ok':'')+'"><div class="card-h"><div class="eyebrow">'+ic('check',15,2.2)+' Prima di aprire il grafico</div><span class="sub" id="chk-n">'+done+'/'+tot+'</span></div>'+
       '<div class="chk-bar"><i style="width:'+(100*done/tot)+'%"></i></div>'+CFG.check.map((c,i)=>'<button type="button" class="chk'+(ck.includes(i)?' on':'')+'" data-chk="'+i+'"><span class="box">'+ic('check',14,2.6)+'</span>'+esc(c)+'</button>').join('')+'</div>'; }
-  return h+'</div><div class="bcol">'+h2+'</div></div>';
+  return h+'</div>'+(h2?'<div class="bcol">'+h2+'</div>':'')+'</div>';
 }
 
 // ───────────────────────── CALENDARIO ─────────────────────────
@@ -2665,6 +2669,7 @@ document.addEventListener('click', e => {
   if (b.dataset.act==='cacheclear') { Object.keys(localStorage).filter(k=>/^tj\.(data\.|news)/.test(k)).forEach(k=>localStorage.removeItem(k)); toast('Dati salvati cancellati: ricarico'); setTimeout(()=>location.reload(), 900); return; }
   { const sgc=b.closest('[data-seg]');
     if (sgc && sgc.dataset.seg.indexOf('cfg-')===0) { const k=sgc.dataset.seg.slice(4); CFG[k]=b.dataset.v; setSeg(sgc,b.dataset.v); cfgChanged(k); return; }
+    if (b.dataset.rcp) { S.recapP=b.dataset.rcp; renderCurrent(true); return; }
     if (sgc && (sgc.dataset.seg==='rc-file' || sgc.dataset.seg==='rc-per')) { if (sgc.dataset.seg==='rc-file') { S.recapF=b.dataset.v; store.set('recapF', b.dataset.v); } else S.recapP=b.dataset.v; renderCurrent(true); return; }
     if (sgc && sgc.dataset.seg.indexOf('news-')===0) { S[sgc.dataset.seg==='news-per'?'newsPer':'newsLvl']=b.dataset.v; renderCurrent(true); return; }
     const chc=b.closest('[data-chips="cfg-idea"]');
