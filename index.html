@@ -507,22 +507,185 @@ nav.bar { background:color-mix(in srgb,var(--surface) 76%,transparent); -webkit-
   .fab { width:56px; height:56px; padding:0; gap:0; justify-content:center; border-radius:18px; } .fab span { display:none; }
   .aifab { left:auto; right:max(20px,calc(env(safe-area-inset-right,0px) + 20px)); bottom:calc(env(safe-area-inset-bottom,0px) + 146px); width:48px; height:48px; border-radius:16px; }
 }
+/* ───── navigazione: barra laterale su PC, barra in basso con «Altro» sul telefono ───── */
+.side { display:none; }
+.ptitle { display:none; }
+.btn.sm { height:38px; padding:0 14px; font-size:13.5px; border-radius:12px; }
+.fdot { width:7px; height:7px; border-radius:50%; margin-left:auto; flex:none; }
+.fdot.EOW { background:#2E9BFF; } .fdot.Journal { background:#FF9F0A; }
+@media (min-width:1000px) {
+  :root { --sbw:248px; } :root.sbc { --sbw:78px; }
+  body { padding-left:var(--sbw); transition:padding-left .5s cubic-bezier(.3,1,.3,1); }
+  nav.bar { display:none; }
+  header.top .brand { display:none; }
+  .ptitle { display:flex; align-items:center; gap:10px; font-size:15px; font-weight:600; color:var(--fg2); letter-spacing:-.01em; }
+  .ptitle b { color:var(--fg); }
+  .aifab { left:auto; right:32px; bottom:168px; }
+  .side { display:flex; flex-direction:column; position:fixed; z-index:36; top:0; bottom:0; left:0; width:var(--sbw); padding:18px 12px 14px;
+    background:color-mix(in srgb,var(--surface) 72%,transparent); -webkit-backdrop-filter:saturate(180%) blur(26px); backdrop-filter:saturate(180%) blur(26px);
+    border-right:1px solid var(--line); transition:width .5s cubic-bezier(.3,1,.3,1); overflow:hidden; }
+  .side::before { content:""; position:absolute; inset:-30% -60% auto; height:360px; pointer-events:none; z-index:-1;
+    background:radial-gradient(closest-side, color-mix(in srgb,var(--accent) 18%,transparent), transparent); transition:background .6s; animation:float 12s ease-in-out infinite alternate; }
+  .sb-brand { display:flex; align-items:center; gap:11px; padding:2px 9px 20px; font-size:20px; font-weight:650; letter-spacing:-.03em; white-space:nowrap; }
+  .sb-brand .logo { flex:none; filter:drop-shadow(0 6px 12px color-mix(in srgb,var(--accent) 40%,transparent)); }
+  .sb-nav { display:flex; flex-direction:column; gap:2px; flex:1; min-height:0; }
+  .sb-g { font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--fg3); font-weight:650; padding:14px 13px 6px; white-space:nowrap; height:34px; transition:opacity .3s, height .4s, padding .4s; }
+  .sb-i { position:relative; z-index:1; display:flex; align-items:center; gap:13px; height:42px; min-height:42px; padding:0 13px; border:0; background:none; border-radius:13px; color:var(--fg2);
+    font:inherit; font-size:14.5px; font-weight:550; white-space:nowrap; text-align:left; cursor:pointer; transition:color .3s, background .25s, transform .18s;
+    animation:sbIn .55s cubic-bezier(.2,.9,.3,1.2) both; animation-delay:calc(var(--k,0) * 35ms + 80ms); }
+  @keyframes sbIn { from { opacity:0; transform:translateX(-14px); } }
+  .sb-i:hover { background:color-mix(in srgb,var(--fg) 6%,transparent); color:var(--fg); }
+  .sb-i:active { transform:scale(.97); }
+  .sb-i .ic { flex:none; transition:transform .45s cubic-bezier(.3,1.7,.5,1); }
+  .sb-i:hover .ic { transform:scale(1.12) rotate(-4deg); }
+  .sb-i span { transition:opacity .3s; }
+  .sb-i.on { color:var(--accent-ink); background:none; }
+  .sb-i.on .ic { animation:navPop .55s cubic-bezier(.3,1.7,.5,1); }
+  .sb-i .sb-b { margin-left:auto; font-style:normal; font-size:11px; font-weight:700; min-width:20px; height:20px; padding:0 6px; border-radius:99px; display:none; place-items:center; background:var(--loss); color:#fff; }
+  .sb-i .sb-b.on { display:grid; }
+  .sb-i .fdot + .sb-b { margin-left:8px; }
+  .sb-ind { position:absolute; z-index:0; left:12px; right:12px; top:0; height:42px; border-radius:13px; pointer-events:none;
+    background:linear-gradient(135deg,var(--accent),var(--glow2)); box-shadow:0 12px 26px -12px color-mix(in srgb,var(--accent) 90%,transparent), inset 0 1px 0 rgba(255,255,255,.25);
+    transform:translateY(var(--y,0px)); transition:transform .55s cubic-bezier(.3,1.35,.4,1), opacity .3s, background .6s; }
+  .sb-ind::after { content:""; position:absolute; inset:0; border-radius:inherit; background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.35) 50%,transparent 70%); background-size:250% 100%; animation:indShine 3.5s ease-in-out infinite; }
+  @keyframes indShine { 0%,60% { background-position:150% 0; } 100% { background-position:-100% 0; } }
+  .sb-foot { border-top:1px solid var(--line); padding-top:10px; margin-top:8px; display:flex; flex-direction:column; gap:2px; }
+  .sb-col .ic { transition:transform .5s cubic-bezier(.3,1.4,.4,1); }
+  :root.sbc .sb-g { opacity:0; height:10px; padding:0; }
+  :root.sbc .sb-i span, :root.sbc .sb-brand span, :root.sbc .sb-i .fdot { opacity:0; }
+  :root.sbc .sb-col .ic { transform:rotate(180deg); }
+  :root.sbc .sb-i[data-tip]:hover::after { content:attr(data-tip); position:fixed; left:calc(var(--sbw) + 6px); margin-top:0; padding:6px 10px; border-radius:9px; font-size:12.5px; font-weight:600;
+    background:var(--fg); color:var(--bg); white-space:nowrap; pointer-events:none; animation:tipIn .2s ease both; }
+  @keyframes tipIn { from { opacity:0; transform:translateX(-4px); } }
+  :root.sbc .side { overflow:visible; }
+  :root.sbc .sb-i .sb-b { position:absolute; left:28px; top:5px; min-width:17px; height:17px; padding:0 4px; font-size:10px; margin:0; box-shadow:0 0 0 2px var(--surface); }
+}
+@media (max-width:999px) {
+  :root[data-tab="news"] #fileSeg, :root[data-tab="set"] #fileSeg { visibility:hidden; }
+}
+.more { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.more button { display:flex; flex-direction:column; align-items:flex-start; gap:10px; padding:16px; border-radius:20px; border:1px solid var(--line); background:var(--surface); color:var(--fg); font:inherit; text-align:left; animation:rise .5s cubic-bezier(.2,.9,.3,1.2) both; animation-delay:calc(var(--k) * 40ms); }
+.more button .ic { color:var(--accent); } .more b { font-size:15.5px; font-weight:650; } .more span { font-size:12.5px; color:var(--fg3); }
+.more button.on { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+
+/* ───── Oggi ───── */
+.brief { display:flex; flex-direction:column; gap:14px; }
+.bcol { display:contents; }
+.bplan { order:1; } .bnews { order:2; } .bexp { order:3; } .bchk { order:4; } .bweek { order:5; }
+@media (min-width:1000px) { .brief { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; align-items:start; } .bcol { display:flex; flex-direction:column; gap:16px; min-width:0; } }
+.brief .card { margin:0; }
+.brief .eyebrow { display:flex; align-items:center; gap:6px; }
+.bplan { position:relative; overflow:hidden; }
+.bplan::after { content:""; position:absolute; right:-40px; top:-40px; width:160px; height:160px; border-radius:50%; background:radial-gradient(closest-side, color-mix(in srgb,var(--win) 28%,transparent), transparent); }
+.bplan.done::after { background:radial-gradient(closest-side, color-mix(in srgb,var(--accent) 26%,transparent), transparent); }
+.bplan.off::after { background:radial-gradient(closest-side, color-mix(in srgb,var(--fg3) 22%,transparent), transparent); }
+.bp-t { font-size:26px; font-weight:700; letter-spacing:-.035em; margin:8px 0 2px; }
+.bplan p { margin:0; color:var(--fg2); font-size:14px; }
+.bp-dots { display:flex; gap:8px; margin-top:14px; }
+.bp-dots i { font-style:normal; min-width:46px; height:30px; padding:0 10px; border-radius:10px; display:grid; place-items:center; font-size:12.5px; font-weight:700; background:var(--sunk); color:var(--fg3); border:1px dashed var(--line); }
+.bp-dots i.w { background:var(--win); color:#fff; border:0; } .bp-dots i.l { background:var(--loss); color:#fff; border:0; } .bp-dots i.b { background:var(--fg3); color:#fff; border:0; }
+.bn-row { display:grid; grid-template-columns:50px minmax(0,1fr) auto; gap:10px; align-items:center; padding:9px 0; border-top:1px solid var(--line); font-size:14px; }
+.bn-row:first-of-type { border-top:0; }
+.bn-row b { font-variant-numeric:tabular-nums; } .bn-row span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.bn-row em { font-style:normal; font-size:12px; color:var(--accent); font-weight:600; font-variant-numeric:tabular-nums; }
+.bn-row.past { opacity:.45; } .bn-row.tr b { color:var(--loss); }
+.bn-none { display:flex; align-items:center; gap:8px; color:var(--win); font-weight:600; font-size:14px; padding:6px 0 4px; }
+.bnews .link { margin-top:8px; }
+.ncat { font-size:11.5px; font-weight:700; padding:3px 9px; border-radius:99px; background:var(--sunk); color:var(--fg2); }
+.ncat.hi { background:color-mix(in srgb,var(--loss) 15%,transparent); color:var(--loss); } .ncat.md { background:color-mix(in srgb,var(--warn) 18%,transparent); color:var(--warn); }
+.be-big { display:flex; align-items:center; gap:14px; padding:4px 0 12px; }
+.be-big b { font-size:34px; font-weight:700; letter-spacing:-.04em; white-space:nowrap; } .be-big span { font-size:12.5px; color:var(--fg3); line-height:1.35; }
+.be-row { display:grid; grid-template-columns:34px minmax(0,1fr); gap:4px 12px; align-items:center; padding:10px 0; border-top:1px solid var(--line); }
+.be-ic { grid-row:span 2; width:34px; height:34px; border-radius:11px; display:grid; place-items:center; background:var(--accent-soft); color:var(--accent); }
+.be-row div span { display:block; font-size:12px; color:var(--fg3); } .be-row div b { font-size:15px; }
+.be-row em { grid-column:2; font-style:normal; font-size:12.5px; color:var(--fg2); }
+.chk-bar { height:6px; border-radius:99px; background:var(--sunk); overflow:hidden; margin:-4px 0 8px; }
+.chk-bar i { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,var(--accent),var(--glow2)); transition:width .5s cubic-bezier(.3,1.3,.4,1); }
+.chk { display:flex; align-items:center; gap:12px; width:100%; padding:10px 2px; border:0; border-top:1px solid var(--line); background:none; font:inherit; font-size:14px; color:var(--fg); text-align:left; cursor:pointer; }
+.chk .box { width:24px; height:24px; flex:none; border-radius:8px; border:1.5px solid var(--fg3); display:grid; place-items:center; color:transparent; transition:all .3s cubic-bezier(.3,1.5,.4,1); }
+.chk.on { color:var(--fg3); } .chk.on .box { background:var(--win); border-color:var(--win); color:#fff; transform:scale(1.08); }
+.bchk.ok .chk-bar i { background:var(--win); }
+.bw-g { display:grid; grid-template-columns:repeat(auto-fit,minmax(80px,1fr)); gap:10px; margin-top:12px; }
+.bw-g div { background:var(--sunk); border-radius:14px; padding:10px 12px; } .bw-g b { display:block; font-size:20px; font-weight:700; letter-spacing:-.03em; } .bw-g span { font-size:11.5px; color:var(--fg3); }
+.sect { display:flex; align-items:center; gap:10px; margin:10px 0 -2px; font-size:13px; font-weight:650; color:var(--fg3); letter-spacing:.06em; text-transform:uppercase; }
+.sect::after { content:""; flex:1; height:1px; background:var(--line); }
+
+/* ───── News ───── */
+.nhero { padding:20px; }
+.nh-t { font-size:26px; font-weight:700; letter-spacing:-.035em; margin:8px 0 6px; position:relative; }
+.nh-m { display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:14px; color:var(--fg2); font-weight:550; }
+.nh-cd { font-size:44px; font-weight:700; letter-spacing:-.045em; margin:10px 0 4px; font-variant-numeric:tabular-nums; background:linear-gradient(90deg,var(--accent),var(--glow2)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.nfil { display:flex; gap:10px; flex-wrap:wrap; } .nfil .seg { flex:1; min-width:240px; }
+.nimp { display:inline-flex; gap:2px; align-items:flex-end; flex:none; }
+.nimp i { width:4px; border-radius:2px; background:var(--line); } .nimp i:nth-child(1) { height:7px; } .nimp i:nth-child(2) { height:11px; } .nimp i:nth-child(3) { height:15px; }
+.nimp.lo i:nth-child(1) { background:#E3B400; } .nimp.md i:nth-child(-n+2) { background:#FF8A00; } .nimp.hi i { background:var(--loss); } .nimp.ho i { background:var(--fg3); }
+.nrow { display:grid; grid-template-columns:62px 20px minmax(0,1fr) auto; gap:12px; align-items:center; padding:12px 6px; border-top:1px solid var(--line); border-radius:12px; transition:background .25s; }
+.nday .nrow:first-of-type { border-top:0; }
+.nrow:hover { background:color-mix(in srgb,var(--fg) 3%,transparent); }
+.nt b { display:block; font-size:15px; font-variant-numeric:tabular-nums; } .nt span { font-size:11.5px; color:var(--accent); font-weight:600; font-variant-numeric:tabular-nums; }
+.nx b { display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:14.5px; font-weight:600; } .nx > span { display:block; font-size:12px; color:var(--fg3); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.nv { display:flex; gap:12px; font-size:13px; font-variant-numeric:tabular-nums; } .nv span { display:flex; flex-direction:column; align-items:flex-end; } .nv em { font-style:normal; font-size:10.5px; color:var(--fg3); text-transform:uppercase; letter-spacing:.05em; }
+.nv .ac { font-weight:700; color:var(--accent); }
+.nrow.past { opacity:.5; }
+.nrow.next { background:color-mix(in srgb,var(--accent) 8%,transparent); box-shadow:inset 3px 0 0 var(--accent); }
+.nrow.tr .nx b { color:var(--loss); }
+.tag { font-style:normal; font-size:10.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; padding:2px 7px; border-radius:99px; background:var(--accent); color:var(--accent-ink); }
+.tag.s { background:color-mix(in srgb,var(--warn) 20%,transparent); color:var(--warn); }
+.nday.today { border-color:color-mix(in srgb,var(--accent) 40%,var(--line)); }
+.nsrc { display:flex; gap:8px; align-items:flex-start; font-size:12.5px; color:var(--fg3); margin:4px 2px; } .nsrc .ic { flex:none; margin-top:2px; }
+.trump { border-color:color-mix(in srgb,var(--loss) 35%,var(--line)); background:linear-gradient(135deg,color-mix(in srgb,var(--loss) 7%,var(--surface)),var(--surface)); }
+.trump .h2 { display:flex; align-items:center; gap:8px; } .trump .h2 .ic { color:var(--loss); }
+.tr-row { display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; padding:12px 0; border-top:1px solid var(--line); }
+.tr-row:first-of-type { border-top:0; } .tr-row b { display:block; font-size:15px; } .tr-row span { font-size:13px; color:var(--fg2); }
+.tr-l { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.lnk { display:inline-flex; align-items:center; gap:6px; padding:7px 12px; border-radius:99px; background:var(--sunk); color:var(--fg); font-size:12.5px; font-weight:600; text-decoration:none; transition:background .2s, transform .15s; }
+.lnk:hover { background:color-mix(in srgb,var(--accent) 14%,var(--sunk)); } .lnk:active { transform:scale(.96); }
+.live { display:inline-flex; align-items:center; gap:6px; color:var(--loss); } .live i { width:8px; height:8px; border-radius:50%; background:var(--loss); animation:pulse 1.6s infinite; }
+@media (max-width:640px) {
+  .nrow { grid-template-columns:52px 16px minmax(0,1fr); }
+  .nv { grid-column:3; justify-content:flex-start; } .nv span { align-items:flex-start; }
+  .nh-cd { font-size:36px; } .nh-t { font-size:22px; }
+}
+
+/* ───── Calendario ───── */
+.cal-h { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:14px; }
+.cal-h div { text-align:center; } .cal-h b { display:block; font-size:19px; font-weight:700; letter-spacing:-.025em; } .cal-h span { font-size:12.5px; color:var(--fg3); }
+.cal-g { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)) minmax(0,.9fr); gap:6px; }
+.cw { font-size:11px; font-weight:650; color:var(--fg3); text-align:center; text-transform:uppercase; letter-spacing:.06em; padding-bottom:2px; }
+.cd { position:relative; min-height:78px; border-radius:14px; border:1px solid var(--line); background:var(--sunk); padding:8px; display:flex; flex-direction:column; align-items:flex-start; gap:2px; font:inherit; color:var(--fg); text-align:left; cursor:pointer;
+  animation:rise .45s cubic-bezier(.2,.9,.3,1.2) both; animation-delay:calc(var(--k) * 12ms); transition:transform .18s, box-shadow .25s; overflow:hidden; }
+.cd::before { content:""; position:absolute; inset:0; opacity:var(--a); transition:opacity .3s; }
+.cd.p::before { background:var(--win); } .cd.n::before { background:var(--loss); }
+.cd > * { position:relative; } .cd.p, .cd.n { color:#fff; border-color:transparent; }
+.cd:hover:not(:disabled):not(.wk) { transform:translateY(-2px); box-shadow:var(--shadow); }
+.cd.out { opacity:.3; cursor:default; } .cd.sel { box-shadow:0 0 0 2.5px var(--accent); } .cd.td .cn { background:var(--accent); color:var(--accent-ink); border-radius:99px; padding:0 6px; }
+.cd .cn { font-size:12px; font-weight:650; opacity:.85; } .cd b { font-size:16px; font-weight:700; letter-spacing:-.03em; margin-top:auto; } .cd .ct { font-size:10.5px; opacity:.85; }
+.cd.wk { background:transparent; border-style:dashed; cursor:default; } .cd.wk.p, .cd.wk.n { color:inherit; } .cd.wk::before { display:none; } .cd.wk.p b { color:var(--win); } .cd.wk.n b { color:var(--loss); }
+@media (max-width:640px) { .cd { min-height:58px; padding:6px; border-radius:11px; } .cd b { font-size:12.5px; } .cd .ct { display:none; } .cal-g { gap:4px; } }
+
+/* ───── Impostazioni ───── */
+.set .field { margin-bottom:12px; } .set textarea.inp { min-height:140px; resize:vertical; padding-top:10px; line-height:1.5; }
 </style>
 </head>
 <body>
+<aside class="side" id="side" aria-label="Pagine"></aside>
 <header class="top" id="top">
   <div class="wrap">
     <div class="brand" id="brand"></div>
+    <div class="ptitle" id="ptitle"></div>
     <div class="seg file sm" id="fileSeg" style="--n:2;--i:0"><button type="button" data-v="EOW" class="on">EOW</button><button type="button" data-v="Journal">Journal</button></div>
   </div>
   <div class="wrap filebar" id="filebar"></div>
 </header>
 <main class="wrap">
   <section class="view" id="v-home"></section>
+  <section class="view" id="v-news" hidden></section>
   <section class="view" id="v-list" hidden></section>
   <section class="view" id="v-stats" hidden></section>
+  <section class="view" id="v-cal" hidden></section>
   <section class="view" id="v-mc" hidden></section>
   <section class="view" id="v-coach" hidden></section>
+  <section class="view" id="v-set" hidden></section>
 </main>
 <button class="fab" id="fab" type="button"></button>
 <button class="aifab" id="aifab" type="button" aria-label="Chiedi al coach"></button>
@@ -556,7 +719,6 @@ const L = {
   days: ['Lunedì','Martedì','Mercoledì','Giovedì','Venerdì'], dir: ['Long','Short'], exe: ['Trade valido','Errore'],
   errs: ['FOMO','TP spostato','SL spostato','Ingresso anticipato','Uscita anticipata','Size sbagliata','Fuori piano','Altro'],
 };
-const USER = 'Gianmarco';
 const APP = 'Edgebook';
 const EM1 = '1° EMA';   // unico entry model: sempre scritto così, mai chiesto
 const MESI = ['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
@@ -585,6 +747,14 @@ function fmtN(x, dec, sign) { if (!isFinite(x)) return '–'; const s=Math.abs(x
 const fmtR = (x, dec=1) => fmtN(x, dec, true)+' R';
 const pct = x => isFinite(x) ? Math.round(x*100)+'%' : '–';
 const sgn = x => x>0 ? 'pos' : x<0 ? 'neg' : '';
+// impostazioni dell'utente (pagina Impostazioni), salvate su questo dispositivo
+const CFG_DEF = { name:'Gianmarco', theme:'auto', s0:'15:30', s1:'18:30', asset:'ES', plan:'max2', exIdea:['Open Play','Reversal Play'], risk:'', lossR:'2', newsImp:'high',
+  check:['Ho controllato le news di oggi','Ho segnato livelli e LVN su ES e NQ','So quanto rischio su questo trade','Sono riposato e concentrato','Accetto la perdita prima di entrare'] };
+let CFG = (()=>{ let c={}; try { c=JSON.parse(localStorage.getItem('tj.cfg')||'{}')||{}; } catch(e) {} return Object.assign({}, CFG_DEF, c); })();
+const saveCfg = () => store.set('cfg', JSON.stringify(CFG));
+let USER = CFG.name.trim() || 'trader';
+let SESS = [mins(CFG.s0), mins(CFG.s1)];   // primo e ultimo ingresso, ora italiana
+function applyTheme() { if (CFG.theme==='light' || CFG.theme==='dark') document.documentElement.dataset.theme=CFG.theme; else delete document.documentElement.dataset.theme; }
 // colonne facoltative (Direzione, Esecuzione…): il modulo e le statistiche le usano solo se esistono nel foglio
 const hasCol = h => !!(S.data[S.file] && S.data[S.file].h.indexOf(h)>=0);
 const splitL = v => String(v||'').split(',').map(x=>x.trim()).filter(Boolean);
@@ -615,6 +785,15 @@ const I = {
   cal:'<rect x="4" y="5.5" width="16" height="14.5" rx="3"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/>',
   spark:'<path d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9L12 17.5l-1.9-5.1L5 10.5l5.1-1.9z"/><path d="M18.5 15.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/>',
   send:'<path d="M4.5 12h13M12.5 6l6 6-6 6"/>', trash:'<path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 12.5h9l1-12.5"/>',
+  news:'<path d="M5 5.5h11v13a1.5 1.5 0 0 0 1.5 1.5H6.5A1.5 1.5 0 0 1 5 18.5z"/><path d="M16 9h3v9.5a1.5 1.5 0 0 1-3 0"/><path d="M8 9h5M8 12.5h5M8 16h3"/>',
+  book:'<path d="M5 4.5h10.5a3 3 0 0 1 3 3V20H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h10.5"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M12 3.5v2.2M12 18.3v2.2M20.5 12h-2.2M5.7 12H3.5M18 6l-1.6 1.6M7.6 16.4 6 18M18 18l-1.6-1.6M7.6 7.6 6 6"/>',
+  grid:'<rect x="4" y="4" width="6.5" height="6.5" rx="1.8"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.8"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.8"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.8"/>',
+  side:'<rect x="3.5" y="4.5" width="17" height="15" rx="3.5"/><path d="M9.5 4.5v15M14 10l-2 2 2 2"/>',
+  ext:'<path d="M14 4.5h5.5V10M19.5 4.5 11 13"/><path d="M18 14v4.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6H10"/>',
+  mic:'<rect x="9" y="3.5" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v2.5"/>',
+  refresh:'<path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.5 4.5v4h-4"/>',
+  shield:'<path d="M12 3.5 5 6v5.5c0 4.3 3 7.6 7 9 4-1.4 7-4.7 7-9V6z"/><path d="m9 12 2 2 4-4"/>',
   dice:'<rect x="3.5" y="3.5" width="17" height="17" rx="4.5"/><path d="M8.5 8.5h.01M15.5 8.5h.01M12 12h.01M8.5 15.5h.01M15.5 15.5h.01" stroke-width="3"/>',
 };
 const ic = (n, s=20, w=1.8) => '<svg class="ic" width="'+s+'" height="'+s+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="'+w+'" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+I[n]+'</svg>';
@@ -780,29 +959,69 @@ function monthItems(ts, m, last) {
 }
 
 // ───────────────────────── navigazione ─────────────────────────
-const TABS = [['home','Home','home'],['list','Trade','list'],['stats','Analisi','chart'],['coach','Coach','spark'],['mc','Simula','dice']];
+// Pagine: barra laterale su PC (gruppi), barra in basso sul telefono (le pagine meno usate stanno in «Altro»)
+const NAV = [ { g:'Oggi' }, { id:'home', l:'Oggi', i:'home' }, { id:'news', l:'News', i:'news' },
+  { g:'Registro' }, { id:'list', f:'Journal', l:'Journal', i:'book' }, { id:'list', f:'EOW', l:'EOW', i:'list' },
+  { g:'Performance' }, { id:'stats', l:'Analisi', i:'chart' }, { id:'cal', l:'Calendario', i:'cal' }, { id:'mc', l:'Simula', i:'dice' },
+  { g:'Crescita' }, { id:'coach', l:'Coach', i:'spark' } ];
+const NAV_FOOT = [ { id:'set', l:'Impostazioni', i:'gear' } ];
+const BAR = [['home','Oggi','home'],['news','News','news'],['list','Trade','list'],['stats','Analisi','chart'],['more','Altro','grid']];
+const VIEWS = ['home','news','list','stats','cal','mc','coach','set'];
+const PTITLE = { home:'Oggi', news:'News', list:'Trade', stats:'Analisi', cal:'Calendario', mc:'Simula', coach:'Coach', set:'Impostazioni' };
+const NOFILE = ['news','set'];   // pagine che non dipendono da EOW / Journal
 const FILE_LBL = { EOW:['EOW','End of Week · backtest della settimana'], Journal:['JOURNAL','Trade reali eseguiti'] };
+const navKey = n => n.id+(n.f?':'+n.f:'');
+const curNavKey = () => S.tab==='list' ? 'list:'+S.file : S.tab;
 function fileLook() { document.documentElement.dataset.file=S.file; const l=FILE_LBL[S.file]; $('filebar').innerHTML='<i></i><b>'+l[0]+'</b><span>'+l[1]+'</span>';
-  const mt=document.querySelector('meta[name=theme-color]'); if (mt) mt.content = S.file==='EOW' ? '#0071E3' : '#C25E00'; }
+  const mt=document.querySelector('meta[name=theme-color]'); if (mt) mt.content = S.file==='EOW' ? '#0071E3' : '#C25E00'; navState(); }
 function renderChrome() {
   $('brand').innerHTML = logo(26)+'<span>'+APP+'</span>';
-  $('nav').firstElementChild.innerHTML = '<span class="ind" id="navInd"></span>'+TABS.map(t=>'<button type="button" data-tab="'+t[0]+'" class="'+(S.tab===t[0]?'on':'')+'"><span class="pill">'+ic(t[2],21)+'</span>'+t[1]+'</button>').join('');
+  let k=0; const item = n => '<button type="button" class="sb-i" data-nav="'+navKey(n)+'" data-tip="'+n.l+'" style="--k:'+(k++)+'">'+ic(n.i,20)+'<span>'+n.l+'</span>'+
+    (n.f?'<i class="fdot '+n.f+'"></i>':'')+'<em class="sb-b" id="nb-'+navKey(n).replace(':','-')+'"></em></button>';
+  $('side').innerHTML = '<span class="sb-ind" id="sbInd"></span><div class="sb-brand">'+logo(30)+'<span>'+APP+'</span></div><div class="sb-nav">'+
+    NAV.map(n=>n.g?'<div class="sb-g">'+n.g+'</div>':item(n)).join('')+'</div><div class="sb-foot">'+NAV_FOOT.map(item).join('')+
+    '<button type="button" class="sb-i sb-col" data-act="sbcol" data-tip="Espandi" style="--k:'+(k++)+'">'+ic('side',20)+'<span>Comprimi</span></button></div>';
+  $('nav').firstElementChild.innerHTML = '<span class="ind" id="navInd"></span>'+BAR.map(t=>'<button type="button" data-bar="'+t[0]+'"><span class="pill">'+ic(t[2],21)+'</span>'+t[1]+'</button>').join('');
   $('fab').innerHTML = ic('plus',20,2.2)+'<span>Nuovo trade</span>';
   $('sh-close').innerHTML = ic('x',18,2); $('aifab').innerHTML = ic('spark',24,1.8);
-  setSeg($('fileSeg'), S.file); moveInd(); fileLook();
+  setSeg($('fileSeg'), S.file); fileLook(); newsBadge();
 }
-function moveInd() { const i=TABS.findIndex(t=>t[0]===S.tab), el=$('navInd'); if (el) el.style.setProperty('--i', i); }
+function navState() {
+  const key=curNavKey(), root=document.documentElement;
+  root.dataset.tab=S.tab;
+  document.querySelectorAll('#side [data-nav]').forEach(b=>b.classList.toggle('on', b.dataset.nav===key));
+  document.querySelectorAll('#nav [data-bar]').forEach(b=>b.classList.toggle('on', b.dataset.bar===S.tab || (b.dataset.bar==='more' && !BAR.some(x=>x[0]===S.tab))));
+  const pt=$('ptitle'); if (pt) pt.innerHTML='<b>'+PTITLE[S.tab]+'</b>';
+  $('fab').classList.toggle('hide', ['mc','coach','news','set'].includes(S.tab) || !!S.sheet); $('aifab').classList.toggle('hide', S.tab==='coach' || !!S.sheet);
+  moveInd();
+}
+function moveInd() {
+  const bi=BAR.findIndex(t=>t[0]===S.tab), el=$('navInd'); if (el) el.style.setProperty('--i', bi<0?BAR.length-1:bi);
+  const side=$('side'), act=side && side.querySelector('.sb-i.on'), ind=$('sbInd');
+  if (!ind) return;
+  if (act && act.offsetParent) { ind.style.setProperty('--y', (act.getBoundingClientRect().top-side.getBoundingClientRect().top)+'px'); ind.style.opacity=1; } else ind.style.opacity=0;
+}
 let goTok=0;
 function go(tab) {
-  if (tab===S.tab) { window.scrollTo({ top:0, behavior:'smooth' }); return; }
-  const from=TABS.findIndex(t=>t[0]===S.tab), to=TABS.findIndex(t=>t[0]===tab), dir = to>from ? 1 : -1, old=$('v-'+S.tab), tok=++goTok;
-  S.tab=tab; [...$('nav').querySelectorAll('button')].forEach(b=>b.classList.toggle('on', b.dataset.tab===tab)); moveInd();
-  $('fab').classList.toggle('hide', tab==='mc' || tab==='coach' || !!S.sheet); $('aifab').classList.toggle('hide', tab==='coach' || !!S.sheet);
-  const show = () => { if (tok!==goTok) return; TABS.forEach(t=>$('v-'+t[0]).classList.remove('view-out'));
-    TABS.forEach(t=>{ $('v-'+t[0]).hidden = t[0]!==tab; }); $('v-'+tab).dataset.dir=dir; window.scrollTo({ top:0 }); renderCurrent(); };
+  if (tab===S.tab) { window.scrollTo({ top:0, behavior:'smooth' }); navState(); return; }
+  const from=VIEWS.indexOf(S.tab), to=VIEWS.indexOf(tab), dir = to>from ? 1 : -1, old=$('v-'+S.tab), tok=++goTok;
+  S.tab=tab; navState();
+  const show = () => { if (tok!==goTok) return; VIEWS.forEach(v=>$('v-'+v).classList.remove('view-out'));
+    VIEWS.forEach(v=>{ $('v-'+v).hidden = v!==tab; }); $('v-'+tab).dataset.dir=dir; window.scrollTo({ top:0 }); renderCurrent(); };
   old.style.setProperty('--dir', dir); old.classList.add('view-out'); setTimeout(show, 150);
 }
-function renderCurrent(quiet) { S.quiet=!!quiet; ({ home:renderHome, list:renderList, stats:renderStats, mc:renderMC, coach:renderCoach })[S.tab](); S.quiet=false; }
+function switchFile(f) { if (f===S.file) return; setSeg($('fileSeg'),f); S.file=f; S.type=f==='EOW'?'EOW':'JOURNAL'; S.filt=S.filtBy[f]; S.lmore=60; store.set('file',f); fileLook(); load(); }
+function navTo(key) { const [id,f]=key.split(':'); if (S.sheet) closeSheet(); if (f) switchFile(f); go(id); }
+function openMore() {
+  S.sheet='more'; $('sh-sub').textContent=APP; $('sh-title').innerHTML=words('Altro');
+  const it=[['list:Journal','Journal','book','Trade reali'],['list:EOW','EOW','list','Backtest della settimana'],['cal','Calendario','cal','R giorno per giorno'],
+            ['coach','Coach','spark','Consigli e chat con Claude'],['mc','Simula','dice','Monte Carlo'],['set','Impostazioni','gear','Profilo, sessione, filtri']];
+  $('sh-body').innerHTML='<div class="more">'+it.map((x,k)=>'<button type="button" data-nav="'+x[0]+'" style="--k:'+k+'" class="'+(curNavKey()===x[0]?'on':'')+'">'+ic(x[2],24,1.8)+'<b>'+x[1]+'</b><span>'+x[3]+'</span></button>').join('')+'</div>';
+  $('sh-foot').innerHTML=''; openSheet();
+}
+function newsBadge() { const b=$('nb-news'); if (!b || !S.news) return; const now=Date.now(), t=todayIso();
+  const n=newsEvents().filter(e=>e.day===t && !e.tbd && e.t>now-60000 && (e.imp==='High' || e.trump)).length; b.textContent=n; b.classList.toggle('on', n>0); b.title=n+' news ad alto impatto ancora da uscire oggi'; }
+function renderCurrent(quiet) { S.quiet=!!quiet; ({ home:renderHome, news:renderNews, list:renderList, stats:renderStats, cal:renderCal, mc:renderMC, coach:renderCoach, set:renderSet })[S.tab](); S.quiet=false; }
 function enter(el, html, after) {
   const dir=+(el.dataset.dir||0); delete el.dataset.dir;
   el.innerHTML = html; el.classList.remove('view-in','slide'); el.classList.toggle('quiet', S.quiet);
@@ -857,13 +1076,13 @@ async function load() {
     else { toast('Non riesco a leggere il foglio: '+(e.message||e), true); $('v-'+S.tab).innerHTML = emptyState('Foglio non raggiungibile', 'Controlla gli ID in Code.gs e i permessi, poi ricarica la pagina.'); }
   }
   const o = f==='EOW' ? 'Journal' : 'EOW';   // precarica l'altro file, così il cambio è immediato
-  if (!fetchedAt[o]) { if (!S.data[o]) S.data[o]=cacheGet(o); setTimeout(()=>fetchFile(o).catch(()=>{}), 1200); }   // dopo, per non rallentare il file aperto
+  if (!fetchedAt[o]) { if (!S.data[o]) S.data[o]=cacheGet(o); setTimeout(()=>fetchFile(o).then(()=>{ if (S.tab==='home' && !S.sheet) renderCurrent(true); }).catch(()=>{}), 1200); }   // dopo, per non rallentare il file aperto
 }
 const emptyState = (t, p, btn) => '<div class="card empty rise">'+logo(40)+'<div class="h2">'+t+'</div><p>'+p+'</p>'+(btn?'<button class="btn" type="button" data-act="new">'+ic('plus',18,2.2)+btn+'</button>':'')+'</div>';
 
 // ───────────────────────── FILTRI (condivisi da Home, Trade, Analisi e Simula) ─────────────────────────
 // All'apertura dell'app i filtri partono sempre da qui; poi ogni file (EOW / Journal) tiene i suoi finché l'app resta aperta
-const FILT_DEF = () => ({ asset:'ES', plan:'max2', tgt:2, idea:L.idea.filter(i=>i!=='Open Play' && i!=='Reversal Play') });
+const FILT_DEF = () => ({ asset:CFG.asset, plan:CFG.plan, tgt:2, idea:L.idea.filter(i=>!CFG.exIdea.includes(i)) });
 function loadFilt() { let v=null; try { v=JSON.parse(sessionStorage.getItem('tj.filtBy')||'null'); } catch(e) {}
   return v && v.EOW && v.Journal ? v : { EOW:FILT_DEF(), Journal:FILT_DEF() }; }
 const saveFilt = () => { S.filtBy[S.file]=S.filt; try { sessionStorage.setItem('tj.filtBy', JSON.stringify(S.filtBy)); } catch(e) {} };
@@ -933,14 +1152,13 @@ function filtClick(b) {
 }
 
 // ───────────────────────── HOME ─────────────────────────
-const SESS = [930, 1110];   // la tua sessione: 15:30–18:30 ora italiana
 function sessionInfo() {
   const it = new Date(new Date().toLocaleString('en-US',{ timeZone:'Europe/Rome' })), m=it.getHours()*60+it.getMinutes(), wd=it.getDay();
   const fm = x => (x>=60 ? Math.floor(x/60)+' h ' : '')+String(x%60).padStart(x>=60?2:1,'0')+' min';
   if (wd>=1 && wd<=5 && m>=SESS[0] && m<SESS[1]) return { open:true, txt:'Sessione aperta · chiude tra '+fm(SESS[1]-m) };
   if (wd>=1 && wd<=5 && m<SESS[0]) return { open:false, txt:'La sessione inizia tra '+fm(SESS[0]-m) };
   let add=1; while ([0,6].includes((wd+add)%7)) add++;
-  return { open:false, txt: add===1 ? 'Sessione domani alle 15:30' : 'Prossima sessione '+GIORNI[(wd+add)%7]+' alle 15:30' };
+  return { open:false, txt: add===1 ? 'Sessione domani alle '+CFG.s0 : 'Prossima sessione '+GIORNI[(wd+add)%7]+' alle '+CFG.s0 };
 }
 const greeting = () => { const h=new Date().getHours(); return (h<5 ? 'Buonanotte' : h<13 ? 'Buongiorno' : h<18 ? 'Buon pomeriggio' : 'Buonasera')+', '+USER; };
 function renderHome() {
@@ -955,6 +1173,9 @@ function renderHome() {
                     c: cOk ? 'rispetto ai '+Math.round((cr[1]-cr[0])/dayMs)+' giorni prima' : '' }[S.per];
   let html = '<div class="hello rise"><div><div class="eyebrow">'+GIORNI[now.getDay()]+' '+now.getDate()+' '+MESI_F[now.getMonth()]+'</div><h1>'+words(greeting())+'</h1></div>'+
     '<span class="sess'+(ses.open?' open':'')+'" id="sess"><i></i>'+ses.txt+'</span></div>';
+  loadNews().catch(()=>{});
+  html += briefing();
+  html += '<div class="sect rise" style="--d:80ms">Performance · '+S.file+'</div>';
   html += fbar(30);
   html += '<div class="perseg rise" style="--d:40ms">'+seg('per',[{v:'w',l:'Sett.'},{v:'m',l:'Mese'},{v:'3m',l:'3M'},{v:'y',l:'Anno'},{v:'all',l:'Tutto'},{v:'c',h:ic('cal',16,2),l:'Date'}],S.per)+'</div>';
   if (S.per==='c') html += '<div class="card"><div class="g2"><div class="field"><label for="hp-from">Dal</label><input class="inp" id="hp-from" type="date" data-hp="from" value="'+esc(S.cust.from||'')+'"></div>'+
@@ -1003,6 +1224,229 @@ function bestGroup(ts, m, keyFn, keys, dir) {
   let best=null; keys.forEach(k=>{ const g=ts.filter(t=>{ const v=keyFn(t); return Array.isArray(v) ? v.includes(k) : v===k; }); if (g.length<3) return; const a=agg(g,m); if (!best || dir*a.R>dir*best.a.R) best={k,a}; }); return best;
 }
 const insRow = (icn, lbl, k, b, bad) => '<div class="ins-row"><div class="ins-ic'+(bad?' bad':'')+'">'+ic(icn,18)+'</div><div><span>'+lbl+'</span><b>'+esc(k)+'</b><span>'+b.a.n+' trade · WR '+pct(b.a.wr)+'</span></div><div class="r '+sgn(b.a.R)+'">'+fmtR(b.a.R)+'</div></div>';
+
+// ───────────────────────── NEWS (calendario economico USD, fonte ForexFactory) ─────────────────────────
+const NEWS_TTL = 15*60000;
+S.news = (()=>{ try { return JSON.parse(localStorage.getItem('tj.news')||'null'); } catch(e) { return null; } })();
+let newsP=null, newsErr='', newsTry=0;
+function loadNews(force) {
+  if (newsP) return newsP;
+  if (!force && S.news && Date.now()-S.news.got < NEWS_TTL) return Promise.resolve(S.news);
+  if (!force && Date.now()-newsTry < 60000) return Promise.reject(new Error(newsErr||'attendi'));   // dopo un errore riprova al massimo una volta al minuto
+  newsTry=Date.now();
+  newsP = call('news').then(d=>{ d.got=Date.now(); S.news=d; newsErr=''; try { localStorage.setItem('tj.news', JSON.stringify(d)); } catch(e) {} return d; })
+    .catch(e=>{ newsErr = /Funzione sconosciuta/.test(e.message||'') ? 'OLD' : (e.message||String(e)); throw e; })
+    .finally(()=>{ newsP=null; if (S.tab==='news' || S.tab==='home') renderCurrent(true); });
+  return newsP;
+}
+const romeDate = t => new Date(new Date(t).toLocaleString('en-US',{ timeZone:'Europe/Rome' }));
+const nyHM = t => new Date(new Date(t).toLocaleString('en-US',{ timeZone:'America/New_York' }));
+const p2 = n => String(n).padStart(2,'0');
+const todayIso = () => iso(romeDate(Date.now()));
+// nomi in italiano degli eventi principali (il nome originale di ForexFactory resta sempre visibile sotto)
+const NEWS_IT = [
+  [/^Non-Farm Employment Change/i,'Buste paga non agricole (NFP)'], [/^ADP Non-Farm/i,'Occupazione privata ADP'], [/^Unemployment Rate/i,'Tasso di disoccupazione'],
+  [/^Average Hourly Earnings/i,'Salari orari medi'], [/^Unemployment Claims/i,'Richieste di sussidi di disoccupazione'], [/^JOLTS/i,'Posti di lavoro vacanti (JOLTS)'],
+  [/^Core CPI/i,'Inflazione core CPI'], [/^CPI/i,'Inflazione CPI'], [/^Core PPI/i,'Prezzi alla produzione core (PPI)'], [/^PPI/i,'Prezzi alla produzione (PPI)'],
+  [/^Core PCE/i,'Inflazione core PCE'], [/PCE Price/i,'Inflazione PCE'], [/GDP/i,'PIL'], [/^Core Retail Sales/i,'Vendite al dettaglio core'], [/^Retail Sales/i,'Vendite al dettaglio'],
+  [/^ISM Manufacturing PMI/i,'ISM manifatturiero'], [/^ISM Services PMI/i,'ISM servizi'], [/Flash Manufacturing PMI/i,'PMI manifatturiero (flash)'], [/Flash Services PMI/i,'PMI servizi (flash)'],
+  [/^Federal Funds Rate/i,'Decisione sui tassi della Fed'], [/^FOMC Statement/i,'Comunicato FOMC'], [/^FOMC Press Conference/i,'Conferenza stampa FOMC'],
+  [/^FOMC Meeting Minutes/i,'Verbali FOMC'], [/^FOMC Economic Projections/i,'Proiezioni economiche FOMC'], [/^Fed Chair .* Speaks/i,'Parla il presidente della Fed'],
+  [/^FOMC Member .* Speaks/i,'Parla un membro del FOMC'], [/Trump Speaks/i,'Parla il presidente Trump'], [/Trump/i,'Evento con Trump'],
+  [/UoM Consumer Sentiment/i,'Fiducia consumatori Michigan'], [/UoM Inflation Expectations/i,'Aspettative d\'inflazione Michigan'], [/CB Consumer Confidence/i,'Fiducia consumatori Conference Board'],
+  [/^Durable Goods/i,'Ordini di beni durevoli'], [/^Core Durable Goods/i,'Ordini di beni durevoli core'], [/^Empire State Manufacturing/i,'Manifattura Empire State'],
+  [/^Philly Fed Manufacturing/i,'Manifattura Philadelphia Fed'], [/^Crude Oil Inventories/i,'Scorte di petrolio'], [/^Pending Home Sales/i,'Vendite case in corso'],
+  [/^New Home Sales/i,'Vendite di case nuove'], [/^Existing Home Sales/i,'Vendite di case esistenti'], [/^Building Permits/i,'Permessi di costruzione'], [/^Housing Starts/i,'Nuovi cantieri'],
+  [/^Treasury Currency Report/i,'Rapporto del Tesoro sulle valute'], [/Bond Auction/i,'Asta di titoli di Stato'], [/^Bank Holiday/i,'Festività: mercati USA chiusi'],
+  [/^Prelim Nonfarm Productivity/i,'Produttività (preliminare)'], [/^Trade Balance/i,'Bilancia commerciale'], [/^Industrial Production/i,'Produzione industriale'],
+];
+const newsIt = t => { const m=NEWS_IT.find(x=>x[0].test(t)); return m ? m[1] : t; };
+const IMP = { High:['hi','Alto'], Medium:['md','Medio'], Low:['lo','Basso'], Holiday:['ho','Festività'] };
+function newsEvents() {
+  return ((S.news && S.news.ev) || []).map(e=>{ const r=romeDate(e.t), ny=nyHM(e.t), tbd=ny.getHours()===0 && ny.getMinutes()===0;
+    return Object.assign({}, e, { r, day:iso(r), hm: tbd ? (e.imp==='Holiday'?'Tutto il giorno':'Da definire') : p2(r.getHours())+':'+p2(r.getMinutes()), mm:r.getHours()*60+r.getMinutes(),
+      tbd, trump:/trump/i.test(e.title), imp2:(IMP[e.imp]||['lo',e.imp||''])[0], impL:(IMP[e.imp]||['',e.imp||''])[1] }); });
+}
+const inSess = e => !e.tbd && e.mm>=SESS[0]-15 && e.mm<=SESS[1];   // dentro la sessione (o nei 15 minuti prima dell'apertura)
+const ffDay = d => 'https://www.forexfactory.com/calendar?day='+['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'][d.getMonth()]+d.getDate()+'.'+d.getFullYear();
+const TRUMP_LINKS = [['Diretta Casa Bianca','https://www.youtube.com/@WhiteHouse/streams'],['Titoli in tempo reale','https://www.financialjuice.com/home']];
+function cdTxt(ms) { const a=Math.abs(ms), s=Math.floor(a/1000)%60, m=Math.floor(a/60000)%60, h=Math.floor(a/3600000), d=Math.floor(h/24);
+  if (ms<0) return a<60000 ? 'adesso' : 'uscita '+(h ? (d ? d+' g' : h+' h '+p2(m)+' min') : m+' min')+' fa';
+  if (d>=1) return 'tra '+d+(d===1?' giorno':' giorni'); if (h) return 'tra '+h+' h '+p2(m)+' min'; return 'tra '+m+':'+p2(s); }
+const dayLbl = (dIso) => { const t=todayIso(), d=pdIso(dIso); if (dIso===t) return 'Oggi'; if (dIso===iso(addDays(pdIso(t),1))) return 'Domani'; if (dIso===iso(addDays(pdIso(t),-1))) return 'Ieri';
+  return GIORNI[d.getDay()].replace(/^./,c=>c.toUpperCase())+' '+d.getDate()+' '+MESI_F[d.getMonth()]; };
+const weekOf = dIso => { const d=pdIso(dIso); return iso(addDays(d, -((d.getDay()+6)%7))); };
+// categoria di news della giornata, come nella colonna News del foglio
+function newsCat(dIso) { if (!S.news) return ''; const ev=newsEvents().filter(e=>e.day===dIso && e.cur==='USD');
+  return ev.some(e=>e.imp==='High') ? 'Red News' : ev.some(e=>e.imp==='Medium') ? 'Orange News' : 'No News Day'; }
+function trumpCard(ev) {
+  if (!ev.length) return '';
+  const now=Date.now();
+  return '<div class="card wide trump rise" style="--d:90ms"><div class="card-h"><div class="h2">'+ic('mic',19,2)+' Trump</div><span class="sub">orari ufficiali di ForexFactory</span></div>'+
+    ev.map(e=>{ const st = e.tbd ? 'Orario da definire' : now<e.t ? 'Inizia alle '+e.hm+' · <b data-cd="'+e.t+'">'+cdTxt(e.t-now)+'</b>' :
+        now-e.t < 4*3600000 ? '<b class="live"><i></i>Iniziato alle '+e.hm+'</b> · la fine non viene annunciata: segui la diretta' : 'Iniziato alle '+e.hm;
+      return '<div class="tr-row"><div><b>'+esc(newsIt(e.title))+'</b><span>'+dayLbl(e.day)+' · '+st+'</span></div><div class="tr-l">'+
+        TRUMP_LINKS.map(l=>'<a class="lnk" href="'+l[1]+'" target="_blank" rel="noopener">'+ic('ext',14,2)+l[0]+'</a>').join('')+
+        '<a class="lnk" href="'+esc(e.url||ffDay(e.r))+'" target="_blank" rel="noopener">'+ic('ext',14,2)+'ForexFactory</a></div></div>'; }).join('')+'</div>';
+}
+function nrow(e, now, nextT) {
+  const past = !e.tbd && e.t<now-60000, nx = e.t===nextT;
+  const vals = [['Prev.',e.fc],['Prec.',e.pv],['Reale',e.ac]].filter(v=>v[1]).map(v=>'<span'+(v[0]==='Reale'?' class="ac"':'')+'><em>'+v[0]+'</em>'+esc(v[1])+'</span>').join('');
+  return '<div class="nrow '+e.imp2+(past?' past':'')+(nx?' next':'')+(e.trump?' tr':'')+'"><div class="nt"><b>'+e.hm+'</b>'+(e.tbd||past?'':'<span data-cd="'+e.t+'">'+cdTxt(e.t-now)+'</span>')+'</div>'+
+    '<span class="nimp '+e.imp2+'" title="Impatto '+esc(e.impL.toLowerCase())+'"><i></i><i></i><i></i></span>'+
+    '<div class="nx"><b>'+esc(newsIt(e.title))+(nx?'<em class="tag">Prossima</em>':'')+(inSess(e)&&!past?'<em class="tag s">In sessione</em>':'')+'</b><span>'+esc(e.title)+' · '+e.cur+'</span></div>'+
+    (vals?'<div class="nv">'+vals+'</div>':'')+'</div>';
+}
+function newsHero(ev, now) {
+  const nx=ev.find(e=>!e.tbd && e.t>now-60000 && (e.imp==='High' || e.trump));
+  if (!nx) return '<div class="hero nhero rise"><div class="hero-glow"></div><div class="eyebrow">Prossima news ad alto impatto</div><div class="nh-t">Nessuna in calendario</div><p class="mut">Non ci sono altre news USD ad alto impatto nelle settimane disponibili.</p></div>';
+  return '<div class="hero nhero rise"><div class="hero-glow"></div><div class="eyebrow">Prossima news ad alto impatto</div>'+
+    '<div class="nh-t">'+esc(newsIt(nx.title))+'</div><div class="nh-m"><span class="nimp hi"><i></i><i></i><i></i></span>'+dayLbl(nx.day)+' alle '+nx.hm+(inSess(nx)?'<em class="tag s">In sessione</em>':'')+'</div>'+
+    '<div class="nh-cd" data-cd="'+nx.t+'">'+cdTxt(nx.t-now)+'</div><div class="mut" style="font-size:12.5px">'+esc(nx.title)+(nx.fc?' · previsione '+esc(nx.fc):'')+(nx.pv?' · precedente '+esc(nx.pv):'')+'</div></div>';
+}
+function renderNews() {
+  const el=$('v-news'); loadNews().catch(()=>{});
+  let h='<div class="stat-h rise"><div><div class="eyebrow">Calendario economico · USD · ora italiana</div><h1>'+words('News')+'</h1></div>'+
+    '<button type="button" class="btn sec sm" data-act="newsref">'+ic('refresh',16,2)+'Aggiorna</button></div>';
+  if (!S.news) {
+    h += newsErr==='OLD' ? emptyState('Aggiorna lo script', 'Per le news serve il nuovo Code.gs: sostituiscilo nel progetto Apps Script e fai un nuovo deployment (Gestisci deployment → modifica → Nuova versione).')
+       : newsErr ? emptyState('News non disponibili', esc(newsErr)+'. Riprova tra qualche minuto.') : skeleton();
+    enter(el,h); return;
+  }
+  const now=Date.now(), all=newsEvents(), lvl=S.newsLvl||CFG.newsImp, per=S.newsPer||'w', t=todayIso(), wk=weekOf(t), nwk=iso(addDays(pdIso(wk),7));
+  const keep = e => e.trump || e.imp==='Holiday' || e.imp==='High' || (lvl!=='high' && e.imp==='Medium') || lvl==='all';
+  const inPer = e => per==='d' ? e.day===t : per==='n' ? weekOf(e.day)===nwk : weekOf(e.day)===wk;
+  const ev=all.filter(e=>keep(e) && inPer(e)), nextT=(all.find(e=>!e.tbd && e.t>now-60000 && keep(e))||{}).t;
+  h += newsHero(all, now);
+  h += trumpCard(all.filter(e=>e.trump && (e.tbd || e.t>now-4*3600000)).slice(0,4));
+  h += '<div class="nfil rise" style="--d:120ms">'+seg('news-per',[{v:'d',l:'Oggi'},{v:'w',l:'Settimana'},{v:'n',l:'Prossima'}],per)+seg('news-lvl',[{v:'high',l:'Alto'},{v:'med',l:'Alto + medio'},{v:'all',l:'Tutti'}],lvl)+'</div>';
+  const days=[...new Set(ev.map(e=>e.day))];
+  if (!days.length) h += emptyState(per==='n'?'Prossima settimana non ancora pubblicata':'Nessuna news', per==='n' ? 'ForexFactory pubblica il calendario della settimana successiva verso il fine settimana.' : 'Nessun evento USD con questo livello di impatto nel periodo scelto.');
+  days.forEach((d,i)=>{ const g=ev.filter(e=>e.day===d), hi=g.filter(e=>e.imp==='High').length;
+    h += '<div class="card wide nday rise'+(d===t?' today':'')+'" style="--d:'+(150+i*40)+'ms"><div class="card-h"><div class="h2">'+dayLbl(d)+'</div><span class="sub">'+(hi?hi+' ad alto impatto':'nessuna ad alto impatto')+' · '+newsCat(d)+'</span></div>'+g.map(e=>nrow(e,now,nextT)).join('')+'</div>'; });
+  h += '<p class="nsrc rise">'+ic('clock',14,2)+'Fonte: calendario ForexFactory, aggiornato '+(S.news.at?'alle '+p2(romeDate(S.news.at).getHours())+':'+p2(romeDate(S.news.at).getMinutes()):'')+
+    (S.news.stale?' · <b>ForexFactory non risponde: sto mostrando l\'ultimo calendario salvato</b>':'')+'. Orari, impatto e valori sono quelli di ForexFactory. La fine dei discorsi non viene mai annunciata: per quella serve la diretta.</p>';
+  enter(el,h);
+}
+setInterval(()=>{ const now=Date.now(); document.querySelectorAll('[data-cd]').forEach(x=>{ x.textContent=cdTxt(+x.dataset.cd-now); }); }, 1000);
+
+// ───────────────────────── OGGI: riepilogo della giornata ─────────────────────────
+const normCache={};
+function rowsOf(f) { if (f===S.file && S.loaded) return all(); const d=S.data[f]; if (!d) return null; if (normCache[f] && normCache[f].d===d) return normCache[f].v;
+  const v=d.rows.map(a=>unpack(d.h,a)).filter(only1).map(norm).filter(t=>t.d).sort((x,y)=>(x.d-y.d)||(x.o-y.o)); normCache[f]={ d, v }; return v; }
+function expectations(dayName, cat) {
+  const E=rowsOf('EOW'); if (!E || E.length<10) return null;
+  const F=FILT_DEF(), m=model(2);
+  const ts=plan(E.filter(t=>(!F.asset||t.a===F.asset) && (!F.idea.length || F.idea.includes(t.idea))), m.rOf);
+  const byDay = g => { const o={}; g.forEach(t=>{ const k=iso(t.d); (o[k]=o[k]||[]).push(m.rOf(t)); }); return Object.values(o).map(a=>a.reduce((x,y)=>x+y,0)); };
+  const dstat = g => { const d=byDay(g); return { n:d.length, avg:d.length?d.reduce((x,y)=>x+y,0)/d.length:NaN, pos:d.length?d.filter(x=>x>0).length/d.length:NaN }; };
+  const wd=ts.filter(t=>t.day===dayName), nw=cat?ts.filter(t=>t.news===cat):[];
+  return { all:dstat(ts), wd:dstat(wd), wdA:agg(wd,m), nw:agg(nw,m), cat, band:bestGroup(ts,m,bandOf,L.bands.map(b=>b[0]),1), idea:bestGroup(ts,m,t=>t.idea,L.idea,1), n:ts.length, F };
+}
+const chkKey = () => 'chk.'+todayIso();
+function chkGet() { try { return JSON.parse(store.get(chkKey(),'[]'))||[]; } catch(e) { return []; } }
+function briefing() {
+  const now=Date.now(), rn=romeDate(now), t=iso(rn), wdN=rn.getDay(), weekend = wdN===0 || wdN===6, dayName=L.days[(wdN+6)%7];
+  const J=rowsOf('Journal'), tj=J ? J.filter(t2=>iso(t2.d)===t) : [], won=tj.some(x=>x.out==='Win' || x.rr>0), n=tj.length, rT=tj.reduce((s,x)=>s+(isFinite(x.rr)?x.rr:0),0);
+  const lossLim=num(CFG.lossR);
+  let st;
+  if (weekend) st={ c:'off', t:'Mercati chiusi', s:'Oggi niente trading: è il momento giusto per la revisione della settimana (EOW).' };
+  else if (rn.getHours()*60+rn.getMinutes() > SESS[1]) st={ c:'off', t:'Sessione finita', s: n ? 'Oggi '+n+(n===1?' trade':' trade')+' · '+fmtR(rT,2)+'. Ricordati di completare il Journal.' : 'Oggi nessun trade nel Journal.' };
+  else if (won) st={ c:'done', t:'Giornata chiusa', s:'Hai preso il TP: il piano dice stop per oggi.' };
+  else if (n>=2) st={ c:'done', t:'Trade finiti per oggi', s:'Hai usato i 2 trade del piano.' };
+  else if (isFinite(lossLim) && lossLim>0 && rT<=-lossLim) st={ c:'done', t:'Limite di perdita raggiunto', s:'Oggi sei a '+fmtR(rT,2)+': il tuo limite è −'+fmtN(lossLim,1)+' R.' };
+  else st={ c:'go', t: n ? 'Puoi prendere ancora 1 trade' : 'Hai 2 trade a disposizione', s:'Ingressi dalle '+CFG.s0+' alle '+CFG.s1+(n?' · oggi '+fmtR(rT,2):'') };
+  let h='<div class="brief rise" style="--d:40ms"><div class="bcol">', h2='';
+  h+='<div class="card bplan '+st.c+'"><div class="eyebrow">'+ic('shield',15,2)+' Il piano di oggi</div><div class="bp-t">'+st.t+'</div><p>'+st.s+'</p>'+
+     '<div class="bp-dots">'+[0,1].map(i=>{ const x=tj[i]; return '<i class="'+(x?(x.out==='Win'||x.rr>0?'w':x.out==='Loss'||x.rr<0?'l':'b'):'')+'">'+(x?fmtR(x.rr,1).replace(' R',''):(i+1))+'</i>'; }).join('')+'</div></div>';
+  // news di oggi
+  const ev = S.news ? newsEvents().filter(e=>e.day===t && (e.imp==='High' || e.trump)) : null;
+  let nb='';
+  if (!ev) nb = newsErr==='OLD' ? '<p class="mut">Aggiorna Code.gs per vedere le news.</p>' : '<p class="mut">Carico il calendario…</p>';
+  else if (!ev.length) nb='<div class="bn-none">'+ic('check',18,2.2)+'Nessuna news USD ad alto impatto oggi</div>';
+  else nb=ev.slice(0,5).map(e=>'<div class="bn-row'+(e.t<now-60000&&!e.tbd?' past':'')+(e.trump?' tr':'')+'"><b>'+e.hm+'</b><span>'+esc(newsIt(e.title))+'</span>'+(e.tbd||e.t<now-60000?'':'<em data-cd="'+e.t+'">'+cdTxt(e.t-now)+'</em>')+'</div>').join('');
+  const cat = S.news && !weekend ? newsCat(t) : '';
+  h2+='<div class="card bnews"><div class="card-h"><div class="eyebrow">'+ic('news',15,2)+' News di oggi</div>'+(cat?'<span class="ncat '+(cat==='Red News'?'hi':cat==='Orange News'?'md':'')+'">'+cat+'</span>':'')+'</div>'+nb+
+     '<button type="button" class="link" data-nav="news">Calendario completo '+ic('chev',15,2)+'</button></div>';
+  // aspettative dallo storico EOW
+  const X = weekend ? null : expectations(dayName, cat);
+  if (X) {
+    const rows=[];
+    if (X.wd.n>=3) rows.push(['cal','Di '+dayName.toLowerCase(), fmtR(X.wd.avg,2)+' al giorno', X.wd.n+' giornate · '+pct(X.wd.pos)+' positive · WR '+pct(X.wdA.wr), X.wd.avg]);
+    if (cat && X.nw.n>=5) rows.push(['news','Con '+cat, 'WR '+pct(X.nw.wr), X.nw.n+' trade · expectancy '+fmtN(X.nw.exp,2,true)+' R', X.nw.exp]);
+    if (X.band && X.band.a.R>0) rows.push(['clock','Fascia migliore', X.band.k, X.band.a.n+' trade · '+fmtR(X.band.a.R), X.band.a.R]);
+    if (X.idea && X.idea.a.R>0) rows.push(['target','Idea migliore', X.idea.k, X.idea.a.n+' trade · WR '+pct(X.idea.a.wr), X.idea.a.R]);
+    h+='<div class="card bexp"><div class="card-h"><div class="eyebrow">'+ic('spark',15,2)+' Cosa aspettarsi</div><span class="sub">storico EOW · '+X.F.asset+' · 2R · max 2 trade</span></div>'+
+      '<div class="be-big"><b class="'+sgn(X.all.avg)+'">'+fmtR(X.all.avg,2)+'</b><span>resa media di una giornata con setup<br>'+pct(X.all.pos)+' delle '+X.all.n+' giornate chiuse in positivo</span></div>'+
+      rows.map(r=>'<div class="be-row"><span class="be-ic">'+ic(r[0],16,2)+'</span><div><span>'+r[1]+'</span><b>'+esc(r[2])+'</b></div><em class="'+sgn(r[4])+'">'+esc(r[3])+'</em></div>').join('')+'</div>';
+  }
+  // checklist pre-sessione
+  if (!weekend && CFG.check.length) { const ck=chkGet(), done=CFG.check.filter((_,i)=>ck.includes(i)).length, tot=CFG.check.length;
+    h2+='<div class="card bchk'+(done===tot?' ok':'')+'"><div class="card-h"><div class="eyebrow">'+ic('check',15,2.2)+' Prima di aprire il grafico</div><span class="sub" id="chk-n">'+done+'/'+tot+'</span></div>'+
+      '<div class="chk-bar"><i style="width:'+(100*done/tot)+'%"></i></div>'+CFG.check.map((c,i)=>'<button type="button" class="chk'+(ck.includes(i)?' on':'')+'" data-chk="'+i+'"><span class="box">'+ic('check',14,2.6)+'</span>'+esc(c)+'</button>').join('')+'</div>'; }
+  // settimana reale
+  if (J) { const mon=addDays(pdIso(t), -((pdIso(t).getDay()+6)%7)), wk=J.filter(x=>x.d>=mon), R=wk.reduce((s,x)=>s+(isFinite(x.rr)?x.rr:0),0), er=wk.filter(x=>x.exe==='Errore').length;
+    h2+='<div class="card bweek"><div class="eyebrow">'+ic('book',15,2)+' Questa settimana · Journal</div><div class="bw-g"><div><b class="'+sgn(R)+'">'+fmtR(R,2)+'</b><span>risultato</span></div><div><b>'+wk.length+'</b><span>trade</span></div><div><b class="'+(er?'neg':'')+'">'+er+'</b><span>errori</span></div>'+
+      (CFG.risk && isFinite(num(CFG.risk)) ? '<div><b class="'+sgn(R)+'">'+(R<0?'−':'')+'$'+Math.round(Math.abs(R*num(CFG.risk))).toLocaleString('it-IT')+'</b><span>in dollari</span></div>' : '')+'</div></div>'; }
+  return h+'</div><div class="bcol">'+h2+'</div></div>';
+}
+
+// ───────────────────────── CALENDARIO ─────────────────────────
+function renderCal() {
+  const el=$('v-cal'); if (!S.loaded) { el.innerHTML=skeleton(); return; }
+  const m=curModel(), ts=filtered(m), now=new Date(); if (!S.calM) S.calM=now.getFullYear()+'-'+p2(now.getMonth()+1);
+  const [Y,M]=S.calM.split('-').map(Number), first=new Date(Y,M-1,1), last=new Date(Y,M,0), byDay={};
+  ts.forEach(t=>{ if (t.d.getFullYear()===Y && t.d.getMonth()===M-1) { const k=iso(t.d); (byDay[k]=byDay[k]||[]).push(t); } });
+  const dayR = k => byDay[k] ? byDay[k].reduce((s,t)=>s+m.rOf(t),0) : 0, ks=Object.keys(byDay), mx=Math.max(1,...ks.map(k=>Math.abs(dayR(k))));
+  const mt=ts.filter(t=>t.d>=first && t.d<=last), a=agg(mt,m), pos=ks.filter(k=>dayR(k)>0).length, neg=ks.filter(k=>dayR(k)<0).length;
+  const best=ks.slice().sort((x,y)=>dayR(y)-dayR(x))[0], worst=ks.slice().sort((x,y)=>dayR(x)-dayR(y))[0];
+  let h='<div class="stat-h rise"><div><div class="eyebrow">'+S.file+' · R per giorno</div><h1>'+words('Calendario')+'</h1></div><span class="mut num">'+mt.length+' trade</span></div>'+fbar(20);
+  h+='<div class="card wide calcard rise" style="--d:60ms"><div class="cal-h"><button type="button" class="icon-btn" data-cal="-1" aria-label="Mese precedente">'+ic('chev',18,2).replace('<svg','<svg style="transform:rotate(180deg)"')+'</button>'+
+     '<div><b>'+MESI_F[M-1].replace(/^./,c=>c.toUpperCase())+' '+Y+'</b><span class="'+sgn(a.R)+'">'+fmtR(a.R)+' · '+pos+' giorni verdi · '+neg+' rossi</span></div>'+
+     '<button type="button" class="icon-btn" data-cal="1" aria-label="Mese successivo">'+ic('chev',18,2)+'</button></div>'+
+     '<div class="cal-g"><span class="cw">Lun</span><span class="cw">Mar</span><span class="cw">Mer</span><span class="cw">Gio</span><span class="cw">Ven</span><span class="cw">Sett.</span>';
+  let d=addDays(first, -((first.getDay()+6)%7)), wi=0;
+  while (d<=last) { let wR=0, wn=0;
+    for (let i=0;i<5;i++) { const x=addDays(d,i), k=iso(x), inM=x.getMonth()===M-1, g=byDay[k]||[], r=dayR(k); wR+=r; wn+=g.length;
+      h+='<button type="button" class="cd'+(inM?'':' out')+(g.length?(r>0?' p':r<0?' n':' z'):'')+(k===S.calSel?' sel':'')+(k===iso(now)?' td':'')+'" style="--a:'+(g.length?(.25+.75*Math.abs(r)/mx).toFixed(2):0)+';--k:'+(wi*5+i)+'" data-cday="'+k+'"'+(inM?'':' disabled')+'>'+
+        '<span class="cn">'+x.getDate()+'</span>'+(g.length?'<b>'+fmtN(r,1,true)+'</b><span class="ct">'+g.length+(g.length===1?' trade':' trade')+'</span>':'')+'</button>'; }
+    h+='<div class="cd wk'+(wn?(wR>0?' p':wR<0?' n':''):'')+'"><span class="cn">S'+(wi+1)+'</span>'+(wn?'<b>'+fmtN(wR,1,true)+'</b><span class="ct">'+wn+' trade</span>':'')+'</div>';
+    d=addDays(d,7); wi++; }
+  h+='</div></div>';
+  if (mt.length) h+='<div class="kgrid">'+kpi('Win rate', numEl(a.wr*100,0)+'<small>%</small>', a.w+' vinti su '+(a.w+a.l), 120)+kpi('Giorni verdi', numEl(ks.length?100*pos/ks.length:0,0)+'<small>%</small>', pos+' su '+ks.length+' giornate', 150)+
+    kpi('Giorno migliore', best?fmtR(dayR(best)):'–', best?dayLbl(best):'', 180, best?sgn(dayR(best)):'')+kpi('Giorno peggiore', worst&&dayR(worst)<0?fmtR(dayR(worst)):'–', worst&&dayR(worst)<0?dayLbl(worst):'Nessun giorno in perdita', 210, worst?sgn(dayR(worst)):'')+'</div>';
+  if (S.calSel && byDay[S.calSel]) h+='<div class="card wide rise" style="--d:120ms"><div class="card-h"><div class="h2">'+dayLbl(S.calSel)+'</div><span class="sub '+sgn(dayR(S.calSel))+'">'+fmtR(dayR(S.calSel),2)+'</span></div>'+byDay[S.calSel].map(t=>trow(t,m,true)).join('')+'</div>';
+  else if (mt.length) h+='<p class="nsrc">'+ic('cal',14,2)+'Tocca un giorno per vedere i suoi trade.</p>';
+  enter(el,h);
+}
+
+// ───────────────────────── IMPOSTAZIONI ─────────────────────────
+function renderSet() {
+  const el=$('v-set'), C=CFG, sec=(t,s,b,d)=>'<div class="card wide set rise" style="--d:'+d+'ms"><div class="card-h"><div class="h2">'+t+'</div>'+(s?'<span class="sub">'+s+'</span>':'')+'</div>'+b+'</div>';
+  const fld2=(l,inp,hint)=>'<div class="field"><label>'+l+'</label>'+inp+(hint?'<span class="hint">'+hint+'</span>':'')+'</div>';
+  let h='<div class="stat-h rise"><div><div class="eyebrow">'+APP+'</div><h1>'+words('Impostazioni')+'</h1></div></div>';
+  h+=sec('Profilo','',fld2('Il tuo nome','<input class="inp" data-cfg="name" value="'+esc(C.name)+'" maxlength="30">')+
+     '<div class="field"><span class="flabel">Tema</span>'+seg('cfg-theme',[{v:'auto',l:'Automatico'},{v:'light',l:'Chiaro'},{v:'dark',l:'Scuro'}],C.theme)+'</div>',40);
+  h+=sec('Sessione e piano','ora italiana','<div class="g2">'+fld2('Primo ingresso','<input class="inp" type="time" data-cfg="s0" value="'+esc(C.s0)+'">')+fld2('Ultimo ingresso','<input class="inp" type="time" data-cfg="s1" value="'+esc(C.s1)+'">')+'</div>'+
+     '<div class="g2">'+fld2('Rischio per trade ($)','<input class="inp" inputmode="decimal" data-cfg="risk" value="'+esc(C.risk)+'" placeholder="es. 200">','Per vedere i risultati anche in dollari.')+
+     fld2('Limite di perdita giornaliero (R)','<input class="inp" inputmode="decimal" data-cfg="lossR" value="'+esc(C.lossR)+'" placeholder="es. 2">','Oltre questo, la pagina Oggi ti dice di fermarti.')+'</div>',70);
+  h+=sec('Filtri all\'apertura','valgono ogni volta che apri l\'app','<div class="g2"><div class="field"><span class="flabel">Asset</span>'+seg('cfg-asset',[{v:'',l:'Tutti'},'ES','NQ'],C.asset)+'</div>'+
+     '<div class="field"><span class="flabel">Piano</span>'+seg('cfg-plan',[{v:'max2',l:'Max 2 al giorno'},{v:'',l:'Nessuno'}],C.plan)+'</div></div>'+
+     '<div class="field"><span class="flabel">Idee da includere</span>'+chips('cfg-idea',L.idea,L.idea.filter(i=>!C.exIdea.includes(i)),true)+'</div>'+
+     '<button type="button" class="btn sec sm" data-act="cfgapply">Applica subito ai filtri</button>',100);
+  h+=sec('News','',' <div class="field"><span class="flabel">Impatto mostrato all\'apertura della pagina News</span>'+seg('cfg-newsImp',[{v:'high',l:'Alto'},{v:'med',l:'Alto + medio'},{v:'all',l:'Tutti'}],C.newsImp)+'</div>',130);
+  h+=sec('Checklist pre-sessione','una voce per riga',fld2('','<textarea class="inp" rows="6" data-cfg="check">'+esc(C.check.join('\n'))+'</textarea>','Compare nella pagina Oggi e si azzera ogni giorno.'),160);
+  h+=sec('Collegamento','',(viaScript()?'<p class="mut">L\'app gira dentro Apps Script: nessun indirizzo da impostare.</p>':
+     '<p class="mut" style="margin:0 0 12px">Collegata a <b>…'+esc(store.get('api','').slice(-24))+'</b></p><button type="button" class="btn sec sm" data-act="setup">Cambia indirizzo e chiave</button>')+
+     ' <button type="button" class="btn sec sm" data-act="cacheclear">Svuota i dati salvati</button>',190);
+  enter(el,h);
+}
+function cfgChanged(k) {
+  if (k==='name') USER=CFG.name.trim()||'trader';
+  if (k==='s0'||k==='s1') SESS=[mins(CFG.s0), mins(CFG.s1)];
+  if (k==='theme') applyTheme();
+  saveCfg();
+}
 
 // ───────────────────────── TRADE ─────────────────────────
 const isFlash = t => t.raw===S.flash && performance.now()-S.flashT < 1800;
@@ -1657,15 +2101,29 @@ async function save() {
 // ───────────────────────── scheda: apertura e chiusura ─────────────────────────
 function openSheet(side) { $('sheet').classList.toggle('side', !!side); $('sheet').classList.add('open'); $('scrim').classList.add('open'); $('fab').classList.add('hide'); $('aifab').classList.add('hide'); document.body.style.overflow='hidden'; $('sh-body').scrollTop=0; }
 function closeSheet() { if (S.sheet==='chat') setTimeout(()=>{ if (!S.sheet) { $('sh-body').innerHTML=''; $('sh-foot').innerHTML=''; } }, 520);
-  $('sheet').classList.remove('open'); $('scrim').classList.remove('open'); $('fab').classList.toggle('hide', S.tab==='mc' || S.tab==='coach'); $('aifab').classList.toggle('hide', S.tab==='coach'); document.body.style.overflow=''; S.sheet=null; }
+  $('sheet').classList.remove('open'); $('scrim').classList.remove('open'); $('fab').classList.toggle('hide', ['mc','coach','news','set'].includes(S.tab)); $('aifab').classList.toggle('hide', S.tab==='coach'); document.body.style.overflow=''; S.sheet=null; }
 
 // ───────────────────────── eventi ─────────────────────────
 document.addEventListener('click', e => {
   const b=e.target.closest('button'); if (!b) return;
   if (b.closest('#lb')) return;
   if (b.dataset.lb) { lbOpen(lbList(S.f), +b.dataset.lb); return; }
-  if (b.closest('#nav')) { if (b.dataset.tab) go(b.dataset.tab); return; }
-  if (b.closest('#fileSeg')) { const f=b.dataset.v; if (f===S.file) return; setSeg($('fileSeg'),f); S.file=f; S.type=f==='EOW'?'EOW':'JOURNAL'; S.filt=S.filtBy[f]; S.lmore=60; store.set('file',f); fileLook(); load(); return; }
+  if (b.dataset.nav) { navTo(b.dataset.nav); return; }
+  if (b.dataset.bar) { if (b.dataset.bar==='more') openMore(); else navTo(b.dataset.bar); return; }
+  if (b.closest('#fileSeg')) { switchFile(b.dataset.v); return; }
+  if (b.dataset.act==='sbcol') { const c=document.documentElement.classList.toggle('sbc'); store.set('sbc', c?'1':''); setTimeout(moveInd, 60); setTimeout(moveInd, 560); return; }
+  if (b.dataset.act==='newsref') { b.disabled=true; loadNews(true).then(()=>toast('Calendario aggiornato')).catch(e=>toast('News non disponibili: '+(e.message||e), true)); return; }
+  if (b.dataset.chk) { const i=+b.dataset.chk, ck=chkGet(), on=!ck.includes(i), nk=on?[...ck,i]:ck.filter(x=>x!==i); store.set(chkKey(), JSON.stringify(nk)); b.classList.toggle('on', on);
+    const c=b.closest('.bchk'), tot=CFG.check.length, done=CFG.check.filter((_,j)=>nk.includes(j)).length; c.querySelector('.chk-bar i').style.width=(100*done/tot)+'%'; $('chk-n').textContent=done+'/'+tot; c.classList.toggle('ok', done===tot); return; }
+  if (b.dataset.cal) { const [y,mo]=S.calM.split('-').map(Number), d=new Date(y, mo-1+(+b.dataset.cal), 1); S.calM=d.getFullYear()+'-'+p2(d.getMonth()+1); S.calSel=null; renderCurrent(true); return; }
+  if (b.dataset.cday) { S.calSel = S.calSel===b.dataset.cday ? null : b.dataset.cday; renderCurrent(true); return; }
+  if (b.dataset.act==='cfgapply') { S.filtBy={ EOW:FILT_DEF(), Journal:FILT_DEF() }; S.filt=S.filtBy[S.file]; saveFilt(); toast('Filtri aggiornati'); return; }
+  if (b.dataset.act==='cacheclear') { Object.keys(localStorage).filter(k=>/^tj\.(data\.|news)/.test(k)).forEach(k=>localStorage.removeItem(k)); toast('Dati salvati cancellati: ricarico'); setTimeout(()=>location.reload(), 900); return; }
+  { const sgc=b.closest('[data-seg]');
+    if (sgc && sgc.dataset.seg.indexOf('cfg-')===0) { const k=sgc.dataset.seg.slice(4); CFG[k]=b.dataset.v; setSeg(sgc,b.dataset.v); cfgChanged(k); return; }
+    if (sgc && sgc.dataset.seg.indexOf('news-')===0) { S[sgc.dataset.seg==='news-per'?'newsPer':'newsLvl']=b.dataset.v; renderCurrent(true); return; }
+    const chc=b.closest('[data-chips="cfg-idea"]');
+    if (chc) { b.classList.toggle('on'); CFG.exIdea=L.idea.filter(i=>!chc.querySelector('[data-v="'+i+'"]').classList.contains('on')); saveCfg(); return; } }
   if (b.id==='fab' || b.dataset.act==='new') { openForm(); return; }
   if (b.id==='sh-close' || b.dataset.act==='close') { closeSheet(); return; }
   if (b.closest('[data-seg=coach-scope]')) { S.coachScope=b.dataset.v; try { sessionStorage.setItem('tj.cscope', S.coachScope); } catch(e) {} renderCoach(); return; }
@@ -1696,6 +2154,8 @@ $('sh-body').addEventListener('input', e => {
   if (k && S.sheet==='form') { S.f[k]=e.target.value; refresh(); }
   if (fk && S.sheet==='filt') { S.filt[fk]=e.target.value; S.filt.quick=''; saveFilt(); renderCurrent(true); filtFoot(); }
 });
+document.addEventListener('change', e => { const c=e.target.dataset && e.target.dataset.cfg; if (!c) return;
+  CFG[c] = c==='check' ? e.target.value.split('\n').map(x=>x.trim()).filter(Boolean) : e.target.value; cfgChanged(c); toast('Impostazione salvata'); });
 document.addEventListener('change', e => { const k=e.target.dataset && e.target.dataset.hp; if (!k) return;
   S.cust[k]=e.target.value; store.set('cust', JSON.stringify(S.cust)); renderHome(); });
 document.addEventListener('input', e => { const k=e.target.dataset && e.target.dataset.mc; if (!k) return; S.mc[k]=e.target.value; saveMC();
@@ -1736,8 +2196,10 @@ $('setupForm').addEventListener('submit', async e => {
   finally { b.disabled=false; b.textContent='Collega'; }
 });
 document.addEventListener('visibilitychange', () => { if (document.visibilityState==='visible' && S.loaded && !S.sheet && Date.now()-(fetchedAt[S.file]||0) > FRESH_MS) load(); });
+applyTheme(); if (store.get('sbc','')==='1') document.documentElement.classList.add('sbc');
 renderChrome();
-if (!viaScript() && !(store.get('api','') && store.get('key',''))) showSetup(); else load();
+window.addEventListener('load', moveInd);
+if (!viaScript() && !(store.get('api','') && store.get('key',''))) showSetup(); else { load(); loadNews().then(newsBadge).catch(()=>{}); }
 </script>
 </body>
 </html>
