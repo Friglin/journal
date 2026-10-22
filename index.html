@@ -640,6 +640,7 @@ nav.bar { background:color-mix(in srgb,var(--surface) 76%,transparent); -webkit-
 .cd > * { position:relative; } .cd.p, .cd.n { color:#fff; border-color:transparent; }
 .cd:hover:not(:disabled):not(.wk) { transform:translateY(-2px); box-shadow:var(--shadow); }
 .cd.out { opacity:.3; cursor:default; } .cd.sel { box-shadow:0 0 0 2.5px var(--accent); } .cd.td .cn { background:var(--accent); color:var(--accent-ink); border-radius:99px; padding:0 6px; }
+#cal-day { scroll-margin-top:84px; }
 .cd .cn { font-size:12px; font-weight:650; opacity:.85; } .cd b { font-size:16px; font-weight:700; letter-spacing:-.03em; margin-top:auto; } .cd .ct { font-size:10.5px; opacity:.85; } .cd .cu { font-size:11px; font-weight:600; opacity:.9; font-variant-numeric:tabular-nums; }
 .cd.wk { background:transparent; border-style:dashed; cursor:default; } .cd.wk.p, .cd.wk.n { color:inherit; } .cd.wk::before { display:none; } .cd.wk.p b { color:var(--win); } .cd.wk.n b { color:var(--loss); }
 @media (max-width:640px) { .cd { min-height:58px; padding:6px; border-radius:11px; } .cd b { font-size:12.5px; } .cd .ct { display:none; } .cd .cu { font-size:9.5px; letter-spacing:-.02em; } .cal-g { gap:4px; } }
@@ -1058,7 +1059,7 @@ const L = {
   errs: ['FOMO','TP spostato','SL spostato','Ingresso anticipato','Uscita anticipata','Size sbagliata','Fuori piano','Altro'],
 };
 const APP = 'Edgebook';
-const BUILD = '2026-10-22.4';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
+const BUILD = '2026-10-22.5';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
 let updChk=0;
 function checkUpdate() {
   if (viaScript() || location.protocol==='file:' || Date.now()-updChk<60000) return; updChk=Date.now();
@@ -1114,12 +1115,30 @@ function applyTheme() { if (CFG.theme==='light' || CFG.theme==='dark') document.
 const hasCol = h => !!(S.data[S.file] && S.data[S.file].h.indexOf(h)>=0);
 const splitL = v => String(v||'').split(',').map(x=>x.trim()).filter(Boolean);
 const viaScript = () => !!(window.google && google.script && google.script.run);
+// scritture sul foglio una alla volta: il server le esegue comunque in fila (lock), così l'attesa di una non consuma il tempo della successiva
+const WRITES=['addTrade','updateTrade','deleteTrade']; let wChain=Promise.resolve();
+function callW(fn, ...args) { const p=wChain.then(()=>call(fn, ...args)); wChain=p.catch(()=>{}); return p; }
+const netErr = e => /^NETWORK$|Il server ha risposto 5|timed? ?out|Timeout/i.test((e && e.message) || String(e));
+const errTxt = e => netErr(e) ? 'connessione persa o server lento' : ((e && e.message) || String(e));
+// dopo un errore di rete il trade può essere già nel foglio (il server finisce anche se la risposta si perde): lo cerca prima di dire che non è salvato
+async function verifySaved(file, d, edit) {
+  const same = r => { if (!r || r.Asset!==d.Asset || r.Data!==fmtIt(d.Data) || mins(r.Ora)!==mins(d.Ora)) return false;
+    return ['RR','PnL $','SL','SL Points','Max Real RR'].every(k=>!(k in d) || (d[k]==='' ? empty(r[k]) : Math.abs(num(r[k])-num(d[k]))<0.006)); };
+  for (const wait of [1500, 5000, 12000]) {
+    await new Promise(r=>setTimeout(r, wait));
+    try { const D=await call('getTrades', file), rows=D.rows.map(a=>unpack(D.h,a));
+      const r = edit ? rows.find(x=>x._row===edit.row && same(x)) : rows.slice().reverse().find(same);
+      if (r) { const a=D.rows.find(x=>x[0]===r._row); return { ok:true, row:a, h:D.h }; }
+    } catch(e) {}
+  }
+  return null;
+}
 function call(fn, ...args) {
   if (viaScript()) return new Promise((res, rej) => google.script.run.withSuccessHandler(res).withFailureHandler(e=>rej(e))[fn](...args));
   const url=store.get('api',''), key=store.get('key','');
   if (!url || !key) { showSetup(); return Promise.reject(new Error('Inserisci indirizzo e chiave di accesso')); }
   // corpo in text/plain: è una richiesta «semplice», niente controllo preventivo CORS
-  const ctl = 'AbortController' in window ? new AbortController() : null, to = ctl && setTimeout(()=>ctl.abort(), fn==='chat'||fn==='coach'||fn==='news'||fn==='newsSunto' ? 90000 : 30000);
+  const ctl = 'AbortController' in window ? new AbortController() : null, to = ctl && setTimeout(()=>ctl.abort(), fn==='chat'||fn==='coach'||fn==='news'||fn==='newsSunto'||WRITES.includes(fn) ? 90000 : 30000);
   return fetch(url, { method:'POST', body: JSON.stringify({ key, fn, args }), signal: ctl ? ctl.signal : undefined })
     .catch(() => { throw new Error('NETWORK'); })
     .finally(() => clearTimeout(to))
@@ -2007,8 +2026,8 @@ function renderCal() {
   h+='</div></div>';
   if (mt.length) h+='<div class="kgrid">'+kpi('Win rate', numEl(a.wr*100,0)+'<small>%</small>', a.w+' vinti su '+(a.w+a.l), 120)+kpi('Giorni verdi', numEl(ks.length?100*pos/ks.length:0,0)+'<small>%</small>', pos+' su '+ks.length+' giornate', 150)+
     kpi('Giorno migliore', best?fmtR(dayR(best)):'–', best?withU(dayLbl(best), U?dayU(best):NaN):'', 180, best?sgn(dayR(best)):'')+kpi('Giorno peggiore', worst&&dayR(worst)<0?fmtR(dayR(worst)):'–', worst&&dayR(worst)<0?withU(dayLbl(worst), U?dayU(worst):NaN):'Nessun giorno in perdita', 210, worst?sgn(dayR(worst)):'')+'</div>';
-  if (S.calSel && byDay[S.calSel]) h+='<div class="card wide rise" style="--d:120ms"><div class="card-h"><div class="h2">'+dayLbl(S.calSel)+'</div><span class="sub '+sgn(dayR(S.calSel))+'">'+fmtR(dayR(S.calSel),2)+(U?' · '+fmtU(dayU(S.calSel)):'')+'</span></div>'+byDay[S.calSel].map(t=>trow(t,m,true)).join('')+'</div>';
-  else if (mt.length) h+='<p class="nsrc">'+ic('cal',14,2)+'Tocca un giorno per vedere i suoi trade.</p>';
+  if (S.calSel && byDay[S.calSel]) h+='<div class="card wide rise" id="cal-day" style="--d:120ms"><div class="card-h"><div class="h2">'+dayLbl(S.calSel)+'</div><span class="sub '+sgn(dayR(S.calSel))+'">'+fmtR(dayR(S.calSel),2)+(U?' · '+fmtU(dayU(S.calSel)):'')+'</span></div>'+byDay[S.calSel].map(t=>trow(t,m,true)).join('')+'</div>';
+  else if (mt.length) h+='<p class="nsrc">'+ic('cal',14,2)+'Tocca un giorno: con un trade si apre, con più trade vedi l\'elenco qui sotto.</p>';
   enter(el,h);
 }
 
@@ -2354,8 +2373,8 @@ async function delTrade() {
   S.rows=S.rows.filter(r=>r._row!==row); S.rows.forEach(r=>{ if (r._row>row) r._row--; }); touchRows();
   const D=S.data[file]; if (D) { D.rows=D.rows.filter(a=>a[0]!==row).map(a=>a[0]>row ? [a[0]-1].concat(a.slice(1)) : a); cacheSet(file,D); }
   closeSheet(); S.edit=null; S.f={}; renderCurrent(true); setSync(true);
-  try { await call('deleteTrade', file, row, edit.check); toast('Trade eliminato da '+file); }
-  catch(e) { S.rows=snapRows.map(([r,n])=>{ r._row=n; return r; }); touchRows(); if (snapData) { S.data[file]=snapData; cacheSet(file,snapData); } renderCurrent(true); toast('Non eliminato: '+(e.message||e), true); }
+  try { await callW('deleteTrade', file, row, edit.check); toast('Trade eliminato da '+file); }
+  catch(e) { S.rows=snapRows.map(([r,n])=>{ r._row=n; return r; }); touchRows(); if (snapData) { S.data[file]=snapData; cacheSet(file,snapData); } renderCurrent(true); toast('Non eliminato: '+errTxt(e)+'. Ricarica e controlla.', true); }
   finally { setSync(false); }
 }
 
@@ -2745,7 +2764,9 @@ async function save() {
   S.flash=prov; S.flashT=performance.now(); closeSheet(); S.edit=null; S.f={}; renderCurrent(true); setSync(true);
   if (c.out==='Win' && !edit) setTimeout(confetti, 260);
   try {
-    const res = edit ? await call('updateTrade', file, edit.row, d, edit.check) : await call('addTrade', file, d);
+    let res;
+    try { res = edit ? await callW('updateTrade', file, edit.row, d, edit.check) : await callW('addTrade', file, d); }
+    catch(e) { if (!netErr(e)) throw e; res = await verifySaved(file, d, edit); if (!res) throw e; }
     const D=S.data[file];
     if (D && res.h) D.h=res.h;   // il foglio ha una colonna nuova (PnL $)
     if (D) { const k=D.rows.findIndex(a=>a[0]===res.row[0]); if (k>=0) D.rows[k]=res.row; else D.rows.push(res.row); cacheSet(file,D); }
@@ -2758,7 +2779,7 @@ async function save() {
     const i2=S.rows.indexOf(prov); if (i2>=0) { if (prev) S.rows[i2]=prev; else S.rows.splice(i2,1); touchRows(); }
     renderCurrent(true);
     if (S.file===file && !S.sheet) { S.sheet='form'; S.f=form; S.edit=edit; $('sh-title').textContent = edit?'Modifica trade':'Nuovo trade'; renderForm(); openSheet(); }
-    toast('Non salvato: '+(e.message||e), true);
+    toast('Non salvato: '+errTxt(e)+'. Riprova.', true);
   } finally { setSync(false); }
 }
 
@@ -2785,7 +2806,11 @@ document.addEventListener('click', e => {
     const c=b.closest('.bchk'), tot=CFG.check.length, done=CFG.check.filter((_,j)=>nk.includes(j)).length; c.querySelector('.chk-bar i').style.width=(100*done/tot)+'%'; $('chk-n').textContent=done+'/'+tot; c.classList.toggle('ok', done===tot);
     c.classList.remove('party'); if (on && done===tot) { void c.offsetWidth; c.classList.add('party'); setTimeout(()=>c.classList.remove('party'), 1600); } return; }
   if (b.dataset.cal) { const [y,mo]=S.calM.split('-').map(Number), d=new Date(y, mo-1+(+b.dataset.cal), 1); S.calM=d.getFullYear()+'-'+p2(d.getMonth()+1); S.calSel=null; renderCurrent(true); return; }
-  if (b.dataset.cday) { S.calSel = S.calSel===b.dataset.cday ? null : b.dataset.cday; renderCurrent(true); return; }
+  if (b.dataset.cday) { const k=b.dataset.cday, g=filtered(curModel()).filter(t=>iso(t.d)===k);
+    if (g.length===1) { S.calSel=k; renderCurrent(true); openForm(g[0].row); return; }   // un solo trade: si apre subito
+    S.calSel = S.calSel===k ? null : k; renderCurrent(true);
+    if (S.calSel) setTimeout(()=>{ const c=$('cal-day'); if (c) c.scrollIntoView({ behavior: reduceMotion()?'auto':'smooth', block:'start' }); }, 60);   // più trade: scende all'elenco
+    return; }
   if (b.closest('[data-seg="pcfg-view"]')) { CFG.prop.view=b.dataset.v; setSeg(b.closest('[data-seg]'),b.dataset.v); propChanged(); return; }
   if (b.dataset.act==='nacc') { CFG.prop.n=Math.min(50, Math.max(1, nAcc()+(+b.dataset.d))); propChanged(true); return; }
   if (b.dataset.act==='cfgapply') { S.filtBy={ EOW:FILT_DEF('EOW'), Journal:FILT_DEF('Journal') }; S.filt=S.filtBy[S.file]; saveFilt(); toast('Filtri aggiornati'); return; }
