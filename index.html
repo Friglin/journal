@@ -1102,7 +1102,7 @@ const L = {
   errs: ['FOMO','TP spostato','SL spostato','Ingresso anticipato','Uscita anticipata','Size sbagliata','Fuori piano','Altro'],
 };
 const APP = 'Edgebook';
-const BUILD = '2026-10-23.4';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
+const BUILD = '2026-10-23.5';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
 let updChk=0;
 function checkUpdate() {
   if (viaScript() || location.protocol==='file:' || Date.now()-updChk<60000) return; updChk=Date.now();
@@ -2237,20 +2237,28 @@ function propSet(fld2) {
   b+='<p class="hint" style="margin:12px 0 0">'+(S.noSync?'Aggiorna Code.gs alla versione nuova per avere le stesse impostazioni su telefono e PC.':viaScript()?'':'Rischio e numero di conti sono salvati anche nel foglio: li ritrovi uguali su telefono e PC.')+'</p>';
   return b;
 }
-function propChanged(rerender) { CFG.syncT=Date.now(); saveCfg(); pushSettings(); if (rerender && S.tab==='set') renderCurrent(true); }
-// rischio e conti uguali su tutti i dispositivi: salvati nello script (appSettings); vince la modifica più recente
+function propChanged(rerender) { syncTouch('prop'); if (rerender && S.tab==='set') renderCurrent(true); }
+// rischio e conti uguali su tutti i dispositivi, salvati nello script (appSettings). Ogni impostazione ha la sua data
+// di modifica e per ciascuna vince la più recente: cambiare il rischio sul PC non riporta indietro i conti cambiati sul telefono.
+// Prima di salvare si rilegge il server e si uniscono le due versioni.
 const SYNC_KEYS=['risk','prop']; let pushT=0;
-function pushSettings() { if (S.noSync) return; clearTimeout(pushT); pushT=setTimeout(()=>{ const o={ t:CFG.syncT||Date.now() }; SYNC_KEYS.forEach(k=>{ o[k]=CFG[k]; });
-  call('appSettings', o).catch(e=>{ if (/sconosciuta/i.test(e.message||'')) S.noSync=true; }); }, 600); }
+const syncTs = () => (CFG.syncTs = CFG.syncTs || {});
+function syncTouch(k) { syncTs()[k]=Date.now(); saveCfg(); pushSettings(); }
+function syncMerge(o) {
+  const T=syncTs(), oT=(o && o.ts) || {}; let changed=false, newer=!o;
+  SYNC_KEYS.forEach(k=>{ const st=o ? (oT[k] || 0) : 0, lt=T[k] || 0;
+    if (o && (k in o) && st>lt) { CFG[k]=o[k]; T[k]=st; changed=true; } else if (lt>st) newer=true; });
+  if (changed) { normProp(); saveCfg(); if (S.loaded && !S.sheet) renderCurrent(true); }
+  return newer;
+}
+function pushSettings() { if (S.noSync) return; clearTimeout(pushT); pushT=setTimeout(async ()=>{
+  try { syncMerge(await call('appSettings')); const out={ t:Date.now(), ts:Object.assign({}, syncTs()) }; SYNC_KEYS.forEach(k=>{ out[k]=CFG[k]; });
+    await call('appSettings', out); } catch(e) { if (/sconosciuta/i.test(e.message||'')) S.noSync=true; } }, 600); }
 async function pullSettings() {
-  try { const o=await call('appSettings');
-    if (o && o.t && o.t>(CFG.syncT||0)) { SYNC_KEYS.forEach(k=>{ if (k in o) CFG[k]=o[k]; }); normProp(); CFG.syncT=o.t; saveCfg();
-      if (S.loaded && !S.sheet) renderCurrent(true); }
-    else if (!o || (CFG.syncT||0)>o.t) { if (riskUsd() || nAcc()>1) { if (!CFG.syncT) { CFG.syncT=Date.now(); saveCfg(); } pushSettings(); } }
-  } catch(e) { if (/sconosciuta/i.test(e.message||'')) S.noSync=true; }
+  try { if (syncMerge(await call('appSettings'))) pushSettings(); } catch(e) { if (/sconosciuta/i.test(e.message||'')) S.noSync=true; }
 }
 function cfgChanged(k) {
-  if (k==='risk') { CFG.syncT=Date.now(); pushSettings(); }
+  if (k==='risk') syncTouch('risk');
   if (k==='name') USER=CFG.name.trim()||'trader';
   if (k==='s0'||k==='s1') SESS=[mins(CFG.s0), mins(CFG.s1)];
   if (k==='theme' || k==='motion') applyTheme();
