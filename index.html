@@ -1466,10 +1466,11 @@ const emptyState = (t, p, btn) => '<div class="card empty rise">'+logo(40)+'<div
 
 // ───────────────────────── FILTRI (condivisi da Home, Trade, Analisi e Simula) ─────────────────────────
 // All'apertura dell'app i filtri partono sempre da qui; poi ogni file (EOW / Journal) tiene i suoi finché l'app resta aperta
-const FILT_DEF = () => ({ asset:CFG.asset, plan:CFG.plan, tgt:2, idea:L.idea.filter(i=>!CFG.exIdea.includes(i)) });
-function loadFilt() { let v=null; try { v=JSON.parse(sessionStorage.getItem('tj.filtBy')||'null'); } catch(e) {}
-  return v && v.EOW && v.Journal ? v : { EOW:FILT_DEF(), Journal:FILT_DEF() }; }
-const saveFilt = () => { S.filtBy[S.file]=S.filt; try { sessionStorage.setItem('tj.filtBy', JSON.stringify(S.filtBy)); } catch(e) {} };
+// filtri di partenza: l'EOW segue le impostazioni (asset, piano, idee); il Journal parte senza filtri (ES e NQ, tutti i trade, tutte le idee)
+const FILT_DEF = f => (f||S.file)==='Journal' ? { asset:'', plan:'', tgt:2, idea:[] } : { asset:CFG.asset, plan:CFG.plan, tgt:2, idea:L.idea.filter(i=>!CFG.exIdea.includes(i)) };
+function loadFilt() { let v=null; try { v=JSON.parse(sessionStorage.getItem('tj.filtBy2')||'null'); } catch(e) {}
+  return v && v.EOW && v.Journal ? v : { EOW:FILT_DEF('EOW'), Journal:FILT_DEF('Journal') }; }
+const saveFilt = () => { S.filtBy[S.file]=S.filt; try { sessionStorage.setItem('tj.filtBy2', JSON.stringify(S.filtBy)); } catch(e) {} };
 const tgt = () => S.type==='EOW' ? (+S.filt.tgt || 2) : 2;
 const curModel = () => model(tgt());
 function plan(ts, rOf) { // max 2 trade al giorno, stop dopo il primo trade positivo
@@ -1902,7 +1903,7 @@ function rowsOf(f) { if (f===S.file && S.loaded) return all(); const d=S.data[f]
   const v=d.rows.map(a=>unpack(d.h,a)).filter(only1).map(norm).filter(t=>t.d).sort((x,y)=>(x.d-y.d)||(x.o-y.o)); normCache[f]={ d, v }; return v; }
 function expectations(dayName, cat) {
   const E=rowsOf('EOW'); if (!E || E.length<10) return null;
-  const F=FILT_DEF(), m=eModel(2);
+  const F=FILT_DEF('EOW'), m=eModel(2);
   const ts=plan(E.filter(t=>(!F.asset||t.a===F.asset) && (!F.idea.length || F.idea.includes(t.idea))), m.rOf);
   const byDay = g => { const o={}; g.forEach(t=>{ const k=iso(t.d); (o[k]=o[k]||[]).push(m.rOf(t)); }); return Object.values(o).map(a=>a.reduce((x,y)=>x+y,0)); };
   const dstat = g => { const d=byDay(g); return { n:d.length, avg:d.length?d.reduce((x,y)=>x+y,0)/d.length:NaN, pos:d.length?d.filter(x=>x>0).length/d.length:NaN }; };
@@ -1994,7 +1995,7 @@ function renderSet() {
   h+=sec('Sessione e piano','ora italiana','<div class="g2">'+fld2('Primo ingresso','<input class="inp" type="time" data-cfg="s0" value="'+esc(C.s0)+'">')+fld2('Ultimo ingresso','<input class="inp" type="time" data-cfg="s1" value="'+esc(C.s1)+'">')+'</div>'+
      '<div class="g2">'+fld2('Rischio per trade ($)','<input class="inp" inputmode="decimal" data-cfg="risk" value="'+esc(C.risk)+'" placeholder="es. 200">','Per vedere i risultati anche in dollari.')+
      fld2('Limite di perdita giornaliero (R)','<input class="inp" inputmode="decimal" data-cfg="lossR" value="'+esc(C.lossR)+'" placeholder="es. 2">','Oltre questo, la Panoramica ti dice di fermarti.')+'</div>',70);
-  h+=sec('Filtri all\'apertura','valgono ogni volta che apri l\'app','<div class="g2"><div class="field"><span class="flabel">Asset</span>'+seg('cfg-asset',[{v:'',l:'Tutti'},'ES','NQ'],C.asset)+'</div>'+
+  h+=sec('Filtri all\'apertura dell\'EOW','il Journal parte sempre senza filtri','<div class="g2"><div class="field"><span class="flabel">Asset</span>'+seg('cfg-asset',[{v:'',l:'Tutti'},'ES','NQ'],C.asset)+'</div>'+
      '<div class="field"><span class="flabel">Piano</span>'+seg('cfg-plan',[{v:'max2',l:'Max 2 al giorno'},{v:'',l:'Nessuno'}],C.plan)+'</div></div>'+
      '<div class="field"><span class="flabel">Idee da includere</span>'+chips('cfg-idea',L.idea,L.idea.filter(i=>!C.exIdea.includes(i)),true)+'</div>'+
      '<button type="button" class="btn sec sm" data-act="cfgapply">Applica subito ai filtri</button>',100);
@@ -2695,7 +2696,7 @@ document.addEventListener('click', e => {
     c.classList.remove('party'); if (on && done===tot) { void c.offsetWidth; c.classList.add('party'); setTimeout(()=>c.classList.remove('party'), 1600); } return; }
   if (b.dataset.cal) { const [y,mo]=S.calM.split('-').map(Number), d=new Date(y, mo-1+(+b.dataset.cal), 1); S.calM=d.getFullYear()+'-'+p2(d.getMonth()+1); S.calSel=null; renderCurrent(true); return; }
   if (b.dataset.cday) { S.calSel = S.calSel===b.dataset.cday ? null : b.dataset.cday; renderCurrent(true); return; }
-  if (b.dataset.act==='cfgapply') { S.filtBy={ EOW:FILT_DEF(), Journal:FILT_DEF() }; S.filt=S.filtBy[S.file]; saveFilt(); toast('Filtri aggiornati'); return; }
+  if (b.dataset.act==='cfgapply') { S.filtBy={ EOW:FILT_DEF('EOW'), Journal:FILT_DEF('Journal') }; S.filt=S.filtBy[S.file]; saveFilt(); toast('Filtri aggiornati'); return; }
   if (b.dataset.act==='cacheclear') { Object.keys(localStorage).filter(k=>/^tj\.(data\.|news)/.test(k)).forEach(k=>localStorage.removeItem(k)); toast('Dati salvati cancellati: ricarico'); setTimeout(()=>location.reload(), 900); return; }
   { const sgc=b.closest('[data-seg]');
     if (sgc && sgc.dataset.seg.indexOf('cfg-')===0) { const k=sgc.dataset.seg.slice(4); CFG[k]=b.dataset.v; setSeg(sgc,b.dataset.v); cfgChanged(k); return; }
@@ -2716,7 +2717,7 @@ document.addEventListener('click', e => {
   if (b.dataset.act==='del') { delClick(b); return; }
   if (b.closest('#sh-body')) { if (S.sheet==='form') formClick(b); else if (S.sheet==='filt') filtClick(b); return; }
   if (b.dataset.act==='save') { save(); return; }
-  if (b.dataset.act==='freset') { S.filt=FILT_DEF(); saveFilt(); renderFilters(); renderCurrent(true); return; }
+  if (b.dataset.act==='freset') { S.filt=FILT_DEF(S.file); saveFilt(); renderFilters(); renderCurrent(true); return; }
   if (b.dataset.rm) { removeFilter(b.dataset.rm); return; }
   if (b.dataset.act==='mc') { go('mc'); return; }
   if (b.dataset.act==='claude') { askClaude(); return; }
