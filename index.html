@@ -1010,6 +1010,8 @@ nav.bar button:active .pill { transform:scale(.88); }
 /* 10 · pulsanti flottanti e schede */
 .fab, .aifab { transition:transform 460ms var(--spring), opacity 220ms ease, padding 360ms var(--e-out), gap 360ms var(--e-out) !important; }
 .fab.hide { transform:translateY(10px) scale(.86) !important; }
+/* telefono: scorrendo verso il basso i pulsanti escono dallo schermo (non coprono i trade), tornano appena risali */
+@media (max-width:999px) { .fab.mini, .aifab.away { transform:translateY(calc(100% + 120px)) !important; opacity:0 !important; pointer-events:none; transition:transform 380ms var(--e-in), opacity 260ms ease !important; } }
 .fab:active, .aifab:active { transform:scale(.94) !important; transition-duration:120ms !important; }
 .sheet.open .fsec, .sheet.open .more button { animation:blkIn 520ms var(--e-out) backwards; animation-delay:calc(var(--k,0) * 45ms + 150ms); }
 .sheet.open .sheet-h .wr { display:inline-block; animation:wordIn 520ms var(--e-out) backwards; animation-delay:calc(var(--i,0) * 50ms + 90ms); }
@@ -1100,7 +1102,7 @@ const L = {
   errs: ['FOMO','TP spostato','SL spostato','Ingresso anticipato','Uscita anticipata','Size sbagliata','Fuori piano','Altro'],
 };
 const APP = 'Edgebook';
-const BUILD = '2026-10-23.3';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
+const BUILD = '2026-10-23.4';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
 let updChk=0;
 function checkUpdate() {
   if (viaScript() || location.protocol==='file:' || Date.now()-updChk<60000) return; updChk=Date.now();
@@ -2285,7 +2287,7 @@ function renderList() {
   if (!ts.length) html+=emptyState('Nessun trade', S.rows.length?'Nessun trade con questi filtri.':'Il foglio '+S.file+' è vuoto: inserisci il primo trade.', S.rows.length?null:'Nuovo trade');
   const shown=ts.slice(0,S.lmore); let day='', grp=[], i=0;
   const flush=()=>{ if (!grp.length) return; const R=grp.reduce((s,t)=>s+m.rOf(t),0), d=grp[0].d;
-    html+='<div class="rise dayg" style="--d:'+Math.min(60+i*30,400)+'ms"><div class="dayh"><span>'+GIORNI[d.getDay()].replace(/^./,c=>c.toUpperCase())+' '+d.getDate()+' '+MESI_F[d.getMonth()]+(d.getFullYear()!==new Date().getFullYear()?' '+d.getFullYear():'')+'</span>'+(grp.length>1?'<span class="dtot"><b class="num '+sgn(R)+'">'+fmtRc(R,E?0:2)+'</b>'+(usdOn()&&!E?'<span class="num">'+fmtU(usdSum(grp,m))+'</span>':'')+'</span>':'')+'</div><div class="dayc">'+grp.map(t=>trow(t,m,true)).join('')+'</div></div>'; grp=[]; i++; };
+    html+='<div class="rise dayg" style="--d:'+Math.min(60+i*30,400)+'ms"><div class="dayh"><span>'+GIORNI[d.getDay()].replace(/^./,c=>c.toUpperCase())+' '+d.getDate()+' '+MESI_F[d.getMonth()]+(d.getFullYear()!==new Date().getFullYear()?' '+d.getFullYear():'')+'</span>'+(grp.length?'<span class="dtot"><b class="num '+sgn(R)+'">'+fmtRc(R,E?0:2)+'</b>'+(usdOn()&&!E?'<span class="num">'+fmtU(usdSum(grp,m))+'</span>':'')+'</span>':'')+'</div><div class="dayc">'+grp.map(t=>trow(t,m,true)).join('')+'</div></div>'; grp=[]; i++; };
   shown.forEach(t=>{ const k=t.d.toDateString(); if (k!==day) { flush(); day=k; } grp.push(t); }); flush();
   if (ts.length>S.lmore) html+='<button type="button" class="btn sec more" data-act="more">Mostra altri '+Math.min(60,ts.length-S.lmore)+'</button>';
   enter(el, html);
