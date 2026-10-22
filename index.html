@@ -640,7 +640,14 @@ nav.bar { background:color-mix(in srgb,var(--surface) 76%,transparent); -webkit-
 .cd > * { position:relative; } .cd.p, .cd.n { color:#fff; border-color:transparent; }
 .cd:hover:not(:disabled):not(.wk) { transform:translateY(-2px); box-shadow:var(--shadow); }
 .cd.out { opacity:.3; cursor:default; } .cd.sel { box-shadow:0 0 0 2.5px var(--accent); } .cd.td .cn { background:var(--accent); color:var(--accent-ink); border-radius:99px; padding:0 6px; }
-#cal-day { scroll-margin-top:84px; }
+#cal-day.cd-in { animation:calIn 620ms var(--spring) both; will-change:transform, opacity, filter; }
+@keyframes calIn { 0% { opacity:0; transform:translate3d(0,36px,0) scale(.97); filter:blur(8px); } 55% { filter:blur(0); } 100% { opacity:1; transform:none; filter:none; } }
+#cal-day.cd-in .trow { animation:calRow 520ms var(--e-out) both; animation-delay:calc(160ms + var(--r,0) * 70ms); }
+#cal-day.cd-in .trow:nth-child(3) { --r:1; } #cal-day.cd-in .trow:nth-child(4) { --r:2; } #cal-day.cd-in .trow:nth-child(5) { --r:3; } #cal-day.cd-in .trow:nth-child(n+6) { --r:4; }
+@keyframes calRow { from { opacity:0; transform:translate3d(0,14px,0); } }
+#cal-day.cd-out { animation:calOut 200ms var(--e-in) both; } @keyframes calOut { to { opacity:0; transform:translate3d(0,12px,0) scale(.98); } }
+.cd.pick { animation:cdPick 460ms var(--spring-pop); } @keyframes cdPick { 0% { transform:scale(.9); } }
+.cd.sel { transition:box-shadow 220ms var(--e-out); }
 .cd .cn { font-size:12px; font-weight:650; opacity:.85; } .cd b { font-size:16px; font-weight:700; letter-spacing:-.03em; margin-top:auto; } .cd .ct { font-size:10.5px; opacity:.85; } .cd .cu { font-size:11px; font-weight:600; opacity:.9; font-variant-numeric:tabular-nums; }
 .cd.wk { background:transparent; border-style:dashed; cursor:default; } .cd.wk.p, .cd.wk.n { color:inherit; } .cd.wk::before { display:none; } .cd.wk.p b { color:var(--win); } .cd.wk.n b { color:var(--loss); }
 @media (max-width:640px) { .cd { min-height:58px; padding:6px; border-radius:11px; } .cd b { font-size:12.5px; } .cd .ct { display:none; } .cd .cu { font-size:9.5px; letter-spacing:-.02em; } .cal-g { gap:4px; } }
@@ -1059,7 +1066,7 @@ const L = {
   errs: ['FOMO','TP spostato','SL spostato','Ingresso anticipato','Uscita anticipata','Size sbagliata','Fuori piano','Altro'],
 };
 const APP = 'Edgebook';
-const BUILD = '2026-10-22.5';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
+const BUILD = '2026-10-22.6';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
 let updChk=0;
 function checkUpdate() {
   if (viaScript() || location.protocol==='file:' || Date.now()-updChk<60000) return; updChk=Date.now();
@@ -2026,9 +2033,37 @@ function renderCal() {
   h+='</div></div>';
   if (mt.length) h+='<div class="kgrid">'+kpi('Win rate', numEl(a.wr*100,0)+'<small>%</small>', a.w+' vinti su '+(a.w+a.l), 120)+kpi('Giorni verdi', numEl(ks.length?100*pos/ks.length:0,0)+'<small>%</small>', pos+' su '+ks.length+' giornate', 150)+
     kpi('Giorno migliore', best?fmtR(dayR(best)):'–', best?withU(dayLbl(best), U?dayU(best):NaN):'', 180, best?sgn(dayR(best)):'')+kpi('Giorno peggiore', worst&&dayR(worst)<0?fmtR(dayR(worst)):'–', worst&&dayR(worst)<0?withU(dayLbl(worst), U?dayU(worst):NaN):'Nessun giorno in perdita', 210, worst?sgn(dayR(worst)):'')+'</div>';
-  if (S.calSel && byDay[S.calSel]) h+='<div class="card wide rise" id="cal-day" style="--d:120ms"><div class="card-h"><div class="h2">'+dayLbl(S.calSel)+'</div><span class="sub '+sgn(dayR(S.calSel))+'">'+fmtR(dayR(S.calSel),2)+(U?' · '+fmtU(dayU(S.calSel)):'')+'</span></div>'+byDay[S.calSel].map(t=>trow(t,m,true)).join('')+'</div>';
-  else if (mt.length) h+='<p class="nsrc">'+ic('cal',14,2)+'Tocca un giorno: con un trade si apre, con più trade vedi l\'elenco qui sotto.</p>';
+  if (S.calSel && byDay[S.calSel]) h+=calDayCard(S.calSel, 'rise');
+  else if (mt.length) h+=calHint();
   enter(el,h);
+}
+
+// trade del giorno scelto nel calendario
+function calDayCard(k, cls) {
+  const m=curModel(), g=filtered(m).filter(t=>iso(t.d)===k); if (!g.length) return '';
+  const R=g.reduce((s,t)=>s+m.rOf(t),0), U=usdOn();
+  return '<div class="card wide '+(cls||'')+'" id="cal-day" style="--d:120ms"><div class="card-h"><div class="h2">'+dayLbl(k)+'</div><span class="sub '+sgn(R)+'">'+fmtR(R,2)+(U?' · '+fmtU(usdSum(g,m)):'')+'</span></div>'+g.map(t=>trow(t,m,true)).join('')+'</div>';
+}
+const calHint = () => '<p class="nsrc" id="cal-day">'+ic('cal',14,2)+'Tocca un giorno: con un trade si apre, con più trade vedi l\'elenco qui sotto.</p>';
+// scelta di un giorno senza ridisegnare la pagina: la card entra e la pagina scende fino a lei
+function calPick(k, scroll) {
+  S.calSel=k; document.querySelectorAll('#v-cal [data-cday]').forEach(b=>b.classList.toggle('sel', b.dataset.cday===k));
+  const cell=k && document.querySelector('#v-cal [data-cday="'+k+'"]'); if (cell) { cell.classList.remove('pick'); void cell.offsetWidth; cell.classList.add('pick'); }
+  const old=$('cal-day'), html=k ? calDayCard(k, 'cd-in') : calHint(); if (!old) { renderCurrent(true); return; }
+  const swap=()=>{ const w=document.createElement('div'); w.innerHTML=html; const el=w.firstElementChild; if (!el) return; old.replaceWith(el);
+    if (k && scroll) smoothScroll(el.getBoundingClientRect().top+scrollY-84); };
+  if (!k && old.classList.contains('card') && !reduceMotion()) { old.classList.add('cd-out'); setTimeout(swap, 200); } else swap();
+}
+// scorrimento morbido (ease-in-out, durata in base alla distanza); si ferma se tocchi lo schermo
+let scrAnim=0;
+const scrStop = () => cancelAnimationFrame(scrAnim);
+['touchstart','wheel','keydown'].forEach(ev=>addEventListener(ev, scrStop, { passive:true }));
+function smoothScroll(y) {
+  scrStop(); const max=document.documentElement.scrollHeight-innerHeight, y0=scrollY, dy=Math.max(0,Math.min(y,max))-y0; if (Math.abs(dy)<2) return;
+  if (reduceMotion()) { scrollTo({ top:y0+dy, behavior:'instant' }); return; }
+  const ms=Math.min(950, 480+Math.abs(dy)*0.45), t0=performance.now(), ease=t=>t<.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2;
+  const step=now=>{ const p=Math.min(1,(now-t0)/ms); scrollTo({ top:y0+dy*ease(p), behavior:'instant' }); if (p<1) scrAnim=requestAnimationFrame(step); };
+  scrAnim=requestAnimationFrame(step);
 }
 
 // ───────────────────────── IMPOSTAZIONI ─────────────────────────
@@ -2806,11 +2841,9 @@ document.addEventListener('click', e => {
     const c=b.closest('.bchk'), tot=CFG.check.length, done=CFG.check.filter((_,j)=>nk.includes(j)).length; c.querySelector('.chk-bar i').style.width=(100*done/tot)+'%'; $('chk-n').textContent=done+'/'+tot; c.classList.toggle('ok', done===tot);
     c.classList.remove('party'); if (on && done===tot) { void c.offsetWidth; c.classList.add('party'); setTimeout(()=>c.classList.remove('party'), 1600); } return; }
   if (b.dataset.cal) { const [y,mo]=S.calM.split('-').map(Number), d=new Date(y, mo-1+(+b.dataset.cal), 1); S.calM=d.getFullYear()+'-'+p2(d.getMonth()+1); S.calSel=null; renderCurrent(true); return; }
-  if (b.dataset.cday) { const k=b.dataset.cday, g=filtered(curModel()).filter(t=>iso(t.d)===k);
-    if (g.length===1) { S.calSel=k; renderCurrent(true); openForm(g[0].row); return; }   // un solo trade: si apre subito
-    S.calSel = S.calSel===k ? null : k; renderCurrent(true);
-    if (S.calSel) setTimeout(()=>{ const c=$('cal-day'); if (c) c.scrollIntoView({ behavior: reduceMotion()?'auto':'smooth', block:'start' }); }, 60);   // più trade: scende all'elenco
-    return; }
+  if (b.dataset.cday) { const k=b.dataset.cday, n=filtered(curModel()).filter(t=>iso(t.d)===k).length;
+    if (n===1) { calPick(k, false); const t=filtered(curModel()).find(t=>iso(t.d)===k); openForm(t.row); return; }   // un solo trade: si apre subito
+    calPick(S.calSel===k ? null : k, true); return; }   // più trade: la card entra e la pagina scende fino all'elenco
   if (b.closest('[data-seg="pcfg-view"]')) { CFG.prop.view=b.dataset.v; setSeg(b.closest('[data-seg]'),b.dataset.v); propChanged(); return; }
   if (b.dataset.act==='nacc') { CFG.prop.n=Math.min(50, Math.max(1, nAcc()+(+b.dataset.d))); propChanged(true); return; }
   if (b.dataset.act==='cfgapply') { S.filtBy={ EOW:FILT_DEF('EOW'), Journal:FILT_DEF('Journal') }; S.filt=S.filtBy[S.file]; saveFilt(); toast('Filtri aggiornati'); return; }
