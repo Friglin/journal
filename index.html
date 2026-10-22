@@ -662,7 +662,8 @@ nav.bar { background:color-mix(in srgb,var(--surface) 76%,transparent); -webkit-
 :focus-visible { outline:2.5px solid var(--accent); outline-offset:2px; border-radius:10px; }
 button:focus:not(:focus-visible) { outline:none; }
 .dayg, .nday { content-visibility:auto; contain-intrinsic-size:auto 260px; }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; scroll-behavior:auto !important; } }
+/* animazioni ridotte: solo se scelto nelle Impostazioni (o «Come il sistema» con «riduci movimento» attivo) → classe .rm */
+:root.rm *, :root.rm *::before, :root.rm *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; scroll-behavior:auto !important; }
 
 /* ═════════════ Regole da app (taste-skill · app screens) ═════════════
    Superfici piatte; colore sui dati, non sulla cornice; titoli da app (24–32px); etichette in frase normale;
@@ -973,7 +974,7 @@ nav.bar button:active .pill { transform:scale(.88); }
 @keyframes spLogo { from { opacity:0; transform:translate3d(0,10px,0); } }
 @keyframes spWord { 0% { opacity:0; transform:translate3d(0,12px,0); filter:blur(8px); } 65% { filter:blur(0); } 100% { opacity:1; transform:translate3d(0,0,0); filter:blur(0); } }
 @keyframes spFade { from { opacity:0; } }
-@media (prefers-reduced-motion: reduce) { #splash .logo, #splash .wr, #splash p { animation:spFade 300ms ease-out backwards !important; } }
+:root.rm #splash .logo, :root.rm #splash .wr, :root.rm #splash p { animation:spFade 300ms ease-out backwards !important; }
 /* 11 · palette: aperta col mouse/dito compare in 180ms; aperta da tastiera è istantanea */
 #pal.on.ptr { animation:mFade 160ms ease-out; }
 #pal.on.ptr .pl { animation:palIn 220ms var(--e-out); }
@@ -991,10 +992,8 @@ nav.bar button:active .pill { transform:scale(.88); }
 #lb .lb-top, #lb .lb-hint { transition:opacity 300ms 120ms ease, transform 420ms 80ms var(--e-out); }
 #lb:not(.on) .lb-top { opacity:0; transform:translateY(-8px); transition-delay:0s; } #lb:not(.on) .lb-hint { opacity:0; transition-delay:0s; }
 /* 15 · meno movimento: niente spostamenti, solo dissolvenze brevi che spiegano cosa è cambiato */
-@media (prefers-reduced-motion: reduce) {
-  .blk, .sheet.open .fsec, .sheet.open .more button { animation-name:mFade !important; animation-duration:220ms !important; animation-delay:0s !important; }
-  .toast, .toast.show { transform:translate(-50%,0) !important; filter:none !important; transition-duration:160ms !important; }
-}
+:root.rm .blk, :root.rm .sheet.open .fsec, :root.rm .sheet.open .more button { animation-name:mFade !important; animation-duration:220ms !important; animation-delay:0s !important; }
+:root.rm .toast, :root.rm .toast.show { transform:translate(-50%,0) !important; filter:none !important; transition-duration:160ms !important; }
 </style>
 </head>
 <body>
@@ -1079,13 +1078,14 @@ const fmtR = (x, dec=1) => fmtN(x, dec, true)+' R';
 const pct = x => isFinite(x) ? Math.round(x*100)+'%' : '–';
 const sgn = x => x>0 ? 'pos' : x<0 ? 'neg' : '';
 // impostazioni dell'utente (pagina Impostazioni), salvate su questo dispositivo
-const CFG_DEF = { name:'Gianmarco', theme:'auto', s0:'15:30', s1:'18:30', asset:'ES', plan:'max2', exIdea:['Open Play','Reversal Play'], risk:'', lossR:'2', newsImp:'high',
+const CFG_DEF = { name:'Gianmarco', theme:'auto', motion:'full', s0:'15:30', s1:'18:30', asset:'ES', plan:'max2', exIdea:['Open Play','Reversal Play'], risk:'', lossR:'2', newsImp:'high',
   check:['Ho controllato le news di oggi','Ho segnato livelli e LVN su ES e NQ','So quanto rischio su questo trade','Sono riposato e concentrato','Accetto la perdita prima di entrare'] };
 let CFG = (()=>{ let c={}; try { c=JSON.parse(localStorage.getItem('tj.cfg')||'{}')||{}; } catch(e) {} return Object.assign({}, CFG_DEF, c); })();
 const saveCfg = () => store.set('cfg', JSON.stringify(CFG));
 let USER = CFG.name.trim() || 'trader';
 let SESS = [mins(CFG.s0), mins(CFG.s1)];   // primo e ultimo ingresso, ora italiana
-function applyTheme() { if (CFG.theme==='light' || CFG.theme==='dark') document.documentElement.dataset.theme=CFG.theme; else delete document.documentElement.dataset.theme; }
+function applyTheme() { if (CFG.theme==='light' || CFG.theme==='dark') document.documentElement.dataset.theme=CFG.theme; else delete document.documentElement.dataset.theme;
+  document.documentElement.classList.toggle('rm', CFG.motion==='reduce' || (CFG.motion==='auto' && matchMedia('(prefers-reduced-motion: reduce)').matches)); }
 // colonne facoltative (Direzione, Esecuzione…): il modulo e le statistiche le usano solo se esistono nel foglio
 const hasCol = h => !!(S.data[S.file] && S.data[S.file].h.indexOf(h)>=0);
 const splitL = v => String(v||'').split(',').map(x=>x.trim()).filter(Boolean);
@@ -1354,7 +1354,8 @@ function moveInd() {
     if (act && act.offsetParent) { ind.style.setProperty('--y', (act.getBoundingClientRect().top-side.getBoundingClientRect().top)+'px'); ind.style.opacity=1; } else ind.style.opacity=0; });
 }
 let goTok=0;
-const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+// animazioni: «full» sempre complete (predefinito), «reduce» ridotte, «auto» come il sistema (riduci movimento)
+const reduceMotion = () => CFG.motion==='reduce' || (CFG.motion==='auto' && matchMedia('(prefers-reduced-motion: reduce)').matches);
 const hashOf = () => S.tab==='list' ? 'list/'+S.file : S.tab;
 function go(tab, o) {
   o=o||{};
@@ -1991,7 +1992,9 @@ function renderSet() {
   const fld2=(l,inp,hint)=>'<div class="field"><label>'+l+'</label>'+inp+(hint?'<span class="hint">'+hint+'</span>':'')+'</div>';
   let h='<div class="stat-h rise"><div><div class="eyebrow">'+APP+'</div><h1>'+words('Impostazioni')+'</h1></div></div>';
   h+=sec('Profilo','',fld2('Il tuo nome','<input class="inp" data-cfg="name" value="'+esc(C.name)+'" maxlength="30">')+
-     '<div class="field"><span class="flabel">Tema</span>'+seg('cfg-theme',[{v:'auto',l:'Automatico'},{v:'light',l:'Chiaro'},{v:'dark',l:'Scuro'}],C.theme)+'</div>',40);
+     '<div class="field"><span class="flabel">Tema</span>'+seg('cfg-theme',[{v:'auto',l:'Automatico'},{v:'light',l:'Chiaro'},{v:'dark',l:'Scuro'}],C.theme)+'</div>'+
+     '<div class="field"><span class="flabel">Animazioni</span>'+seg('cfg-motion',[{v:'full',l:'Complete'},{v:'auto',l:'Come il sistema'},{v:'reduce',l:'Ridotte'}],C.motion||'full')+
+     '<span class="hint">«Come il sistema» le riduce se nel PC o nel telefono è attivo «riduci movimento» (su Windows: effetti di animazione disattivati).</span></div>',40);
   h+=sec('Sessione e piano','ora italiana','<div class="g2">'+fld2('Primo ingresso','<input class="inp" type="time" data-cfg="s0" value="'+esc(C.s0)+'">')+fld2('Ultimo ingresso','<input class="inp" type="time" data-cfg="s1" value="'+esc(C.s1)+'">')+'</div>'+
      '<div class="g2">'+fld2('Rischio per trade ($)','<input class="inp" inputmode="decimal" data-cfg="risk" value="'+esc(C.risk)+'" placeholder="es. 200">','Per vedere i risultati anche in dollari.')+
      fld2('Limite di perdita giornaliero (R)','<input class="inp" inputmode="decimal" data-cfg="lossR" value="'+esc(C.lossR)+'" placeholder="es. 2">','Oltre questo, la Panoramica ti dice di fermarti.')+'</div>',70);
@@ -2008,7 +2011,7 @@ function renderSet() {
 function cfgChanged(k) {
   if (k==='name') USER=CFG.name.trim()||'trader';
   if (k==='s0'||k==='s1') SESS=[mins(CFG.s0), mins(CFG.s1)];
-  if (k==='theme') applyTheme();
+  if (k==='theme' || k==='motion') applyTheme();
   saveCfg();
 }
 
