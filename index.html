@@ -361,7 +361,6 @@ body::after { content:""; position:fixed; inset:-25%; z-index:-1; pointer-events
 @keyframes viewOut { to { opacity:0; transform:translate3d(calc(var(--dir,1) * -34px),0,0); } }
 /* titoli che compaiono parola per parola */
 .wr { display:inline-block; animation:wordIn .7s cubic-bezier(.2,.8,.2,1) both; animation-delay:calc(var(--i) * 70ms + 60ms); }
-@keyframes wordIn { from { opacity:0; transform:translateY(.45em) rotate(2deg); filter:blur(6px); } }
 .quiet .wr { animation:none; }
 /* schede del modulo e dei filtri in sequenza */
 .sheet.open .fsec { animation:rise .55s cubic-bezier(.2,.8,.2,1) both; animation-delay:calc(var(--k,0) * 55ms + 140ms); }
@@ -538,7 +537,6 @@ nav.bar { background:color-mix(in srgb,var(--surface) 76%,transparent); -webkit-
   .sb-i { position:relative; z-index:1; display:flex; align-items:center; gap:13px; height:42px; min-height:42px; padding:0 13px; border:0; background:none; border-radius:13px; color:var(--fg2);
     font:inherit; font-size:14.5px; font-weight:550; white-space:nowrap; text-align:left; cursor:pointer; transition:color .3s, background .25s, transform .18s;
     animation:sbIn .55s cubic-bezier(.23,1,.32,1) both; animation-delay:calc(var(--k,0) * 35ms + 80ms); }
-  @keyframes sbIn { from { opacity:0; transform:translateX(-14px); } }
   .sb-i:hover { background:color-mix(in srgb,var(--fg) 6%,transparent); color:var(--fg); }
   .sb-i:active { transform:scale(.97); }
   .sb-i .ic { flex:none; transition:transform .45s cubic-bezier(.23,1,.32,1); }
@@ -897,8 +895,9 @@ main:focus { outline:none; }
   --stg:45ms;
 }
 /* 1 · blocchi della pagina: entrano in sequenza; quelli più in basso quando ci arrivi scorrendo */
-.blk { animation:blkIn 520ms var(--e-out) backwards; animation-delay:calc(var(--k,0) * var(--stg) + var(--k0,0ms)); }
-@keyframes blkIn { from { opacity:0; transform:translate3d(0,14px,0); } }
+.blk { will-change:transform, opacity, filter; animation:blkIn 600ms var(--e-out) backwards; animation-delay:calc(var(--k,0) * var(--stg) + var(--k0,0ms)); }
+/* sfocatura che si scioglie prima della fine (al 65%): niente scatto verso il nitido; niente scala (sfocherebbe il testo) */
+@keyframes blkIn { 0% { opacity:0; transform:translate3d(0,16px,0); filter:blur(7px); } 65% { filter:blur(0); } 100% { opacity:1; transform:translate3d(0,0,0); filter:blur(0); } }
 /* 2 · grafici: la curva si disegna, l'area sfuma dopo, il punto finale arriva con una piccola molla; le barre crescono dalla linea dello zero */
 .blk .chart .line { animation:draw 1150ms var(--e-io) backwards; animation-delay:calc(var(--k,0) * var(--stg) + var(--k0,0ms) + 200ms); }
 .blk .chart .area { animation:mFade 800ms ease-out backwards; animation-delay:calc(var(--k,0) * var(--stg) + var(--k0,0ms) + 650ms); }
@@ -921,7 +920,7 @@ main:focus { outline:none; }
 /* 5 · barra laterale: comparsa all'avvio, indicatore a molla, icona che risponde */
 @media (min-width:1000px) {
   .boot .sb-i, .boot .sb-search, .boot .sb-brand { animation:sbIn 560ms var(--e-out) backwards; animation-delay:calc(var(--k,0) * 26ms + 80ms + var(--boot0,0ms)); }
-  @keyframes sbIn { from { opacity:0; transform:translateX(-12px); } }
+  @keyframes sbIn { 0% { opacity:0; transform:translate3d(-12px,0,0); filter:blur(4px); } 65% { filter:blur(0); } 100% { opacity:1; transform:translate3d(0,0,0); filter:blur(0); } }
   .sb-ind { transition:transform 560ms var(--spring), opacity 200ms ease !important; }
   .sb-i { transition:color 200ms ease, background-color 200ms ease, transform 140ms var(--e-out) !important; }
   .sb-i .ic { transition:transform 420ms var(--spring-pop) !important; }
@@ -964,15 +963,15 @@ nav.bar button:active .pill { transform:scale(.88); }
 .fab:active, .aifab:active { transform:scale(.94) !important; transition-duration:120ms !important; }
 .sheet.open .fsec, .sheet.open .more button { animation:blkIn 520ms var(--e-out) backwards; animation-delay:calc(var(--k,0) * 45ms + 150ms); }
 .sheet.open .sheet-h .wr { display:inline-block; animation:wordIn 520ms var(--e-out) backwards; animation-delay:calc(var(--i,0) * 50ms + 90ms); }
-@keyframes wordIn { from { opacity:0; transform:translateY(.35em); } }
+@keyframes wordIn { 0% { opacity:0; transform:translate3d(0,.35em,0); filter:blur(5px); } 65% { filter:blur(0); } 100% { opacity:1; transform:translate3d(0,0,0); filter:blur(0); } }
 /* benvenuto: logo, parole e sottotitolo entrano uno dopo l'altro con sola opacità e movimento (fluidi anche se l'app sta caricando) */
 #splash .logo { animation:spLogo 640ms var(--e-out) 60ms backwards; will-change:transform, opacity; }
-#splash .wr { display:inline-block; animation:spWord 620ms var(--e-out) backwards; animation-delay:calc(var(--i,0) * 90ms + 220ms); will-change:transform, opacity; }
+#splash .wr { display:inline-block; animation:spWord 700ms var(--e-out) backwards; animation-delay:calc(var(--i,0) * 90ms + 220ms); will-change:transform, opacity; }
 #splash p { animation:spFade 500ms ease-out 520ms backwards; }
 #splash.out { transition:opacity 380ms ease, visibility 380ms; }
 #splash.out .sp-in { transform:translateY(-6px) scale(.99); opacity:0; transition:transform 380ms var(--e-in), opacity 300ms ease; }
 @keyframes spLogo { from { opacity:0; transform:translate3d(0,10px,0); } }
-@keyframes spWord { from { opacity:0; transform:translate3d(0,12px,0); } }
+@keyframes spWord { 0% { opacity:0; transform:translate3d(0,12px,0); filter:blur(8px); } 65% { filter:blur(0); } 100% { opacity:1; transform:translate3d(0,0,0); filter:blur(0); } }
 @keyframes spFade { from { opacity:0; } }
 @media (prefers-reduced-motion: reduce) { #splash .logo, #splash .wr, #splash p { animation:spFade 300ms ease-out backwards !important; } }
 /* 11 · palette: aperta col mouse/dito compare in 180ms; aperta da tastiera è istantanea */
