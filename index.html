@@ -104,13 +104,26 @@ main { padding-bottom:calc(150px + env(safe-area-inset-bottom,0px)); }
 .stepper { display:flex; align-items:center; gap:14px; height:46px; } .stepper b { font-family:var(--display); font-size:22px; font-weight:600; min-width:24px; text-align:center; }
 .stepper .icon-btn { font-size:20px; font-weight:600; color:var(--fg); } .stepper .icon-btn:disabled { opacity:.35; }
 .prop-sum { display:flex; gap:10px; align-items:flex-start; padding:11px 13px; border-radius:14px; background:var(--accent-soft); color:var(--fg); font-size:13.5px; line-height:1.45; margin:4px 0 14px; } .prop-sum svg { color:var(--accent); flex:none; margin-top:1px; }
-.ex-g { grid-template-columns:repeat(4,minmax(0,1fr)); } @media (max-width:640px) { .ex-g { grid-template-columns:1fr 1fr; } .ex-g > div:first-child { grid-column:auto; } }
+.rr-cmp { display:flex; flex-direction:column; gap:14px; margin:4px 0 14px; }
+.rr-row { display:grid; grid-template-columns:minmax(150px,200px) minmax(0,1fr) auto; gap:14px; align-items:center; }
+.rr-l b { display:block; font-size:14.5px; } .rr-l span { font-size:12.5px; color:var(--fg3); }
+.rr-track { height:14px; border-radius:99px; background:var(--sunk); overflow:hidden; } .rr-track i { display:block; height:100%; border-radius:inherit; transform-origin:left; animation:grow 900ms var(--e-out) 200ms backwards; }
+.rr-track i.t { background:color-mix(in srgb,var(--fg) 30%,var(--sunk)); } .rr-track i.r { background:var(--win); } .rr-track i.neg { background:var(--loss); }
+.rr-v { font-family:var(--display); font-size:22px; font-weight:650; letter-spacing:-.02em; min-width:96px; text-align:right; }
+.rr-verdict { display:flex; gap:12px; align-items:flex-start; padding:12px 14px; border-radius:14px; background:var(--win-soft); color:var(--win); } .rr-verdict.ko { background:var(--loss-soft); color:var(--loss); }
+.rr-verdict b { display:block; font-size:14.5px; } .rr-verdict span { display:block; font-size:13px; color:var(--fg2); margin-top:2px; } .rr-verdict .ic { flex:none; margin-top:1px; }
+.rr-how { margin-top:12px; border-top:1px solid var(--line); padding-top:10px; } .rr-how summary { cursor:pointer; list-style:none; display:inline-flex; align-items:center; gap:6px; font-weight:600; font-size:13.5px; color:var(--accent); }
+.rr-how summary::-webkit-details-marker { display:none; } .rr-how summary .ic { transition:transform 260ms var(--e-out); } .rr-how[open] summary .ic { transform:rotate(90deg); }
+.rr-how p { font-size:13.5px; line-height:1.55; color:var(--fg2); margin:10px 0 0; } .rr-how b { color:var(--fg); } .rr-ex { background:var(--sunk); border-radius:12px; padding:10px 12px; }
+@media (max-width:640px) { .rr-row { grid-template-columns:minmax(0,1fr) auto; gap:6px 12px; } .rr-row .rr-track { grid-column:1 / -1; grid-row:2; } .rr-v { font-size:19px; min-width:0; } }
 .rk-bar { display:flex; height:10px; border-radius:99px; overflow:hidden; background:var(--sunk); margin:12px 0 8px; gap:2px; } .rk-bar i { display:block; height:100%; }
 .rk-bar .in, .rk-leg .in { background:var(--win); } .rk-bar .ov, .rk-leg .ov { background:var(--loss); } .rk-bar .un, .rk-leg .un { background:var(--accent); }
 .rk-leg { display:flex; gap:14px; flex-wrap:wrap; font-size:12.5px; color:var(--fg2); } .rk-leg i { display:inline-block; width:9px; height:9px; border-radius:3px; margin-right:6px; vertical-align:-1px; }
 svg .bar.ov { fill:var(--loss); } svg .bar.un { fill:var(--accent); } svg .bar.z { fill:var(--fg3); opacity:.5; }
 .ex-t td, .ex-t th { text-align:right; } .ex-t td:first-child, .ex-t th:first-child { text-align:left; }
-.dmini { text-align:left; font:inherit; color:inherit; cursor:pointer; display:block; width:100%; } .dmini .link { margin-top:10px; }
+.dmini { text-align:left; font:inherit; color:inherit; cursor:pointer; width:100%; }
+.dm-rules { display:flex; flex-direction:column; gap:2px; margin-top:12px; } .dm-rules span { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--fg2); padding:5px 0; border-bottom:1px solid var(--line); }
+.dm-rules span:last-child { border-bottom:0; } .dm-rules b { margin-left:auto; color:var(--fg); font-weight:600; } .dm-rules .ok .ic { color:var(--win); } .dm-rules .ko .ic { color:var(--warn); }
 .usd-g { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; } .usd-g span { display:block; font-size:12.5px; color:var(--fg3); } .usd-g b { display:block; font-family:var(--display); font-size:22px; font-weight:600; letter-spacing:-.02em; margin:2px 0; } .usd-g em { font-style:normal; font-size:12px; color:var(--fg3); line-height:1.35; display:block; }
 @media (max-width:640px) { .usd-g { grid-template-columns:1fr 1fr; } .usd-g > div:first-child { grid-column:1 / -1; } }
 #pnl-x { margin-top:6px; } #pnl-x b { font-weight:600; }
@@ -547,7 +560,11 @@ nav.bar { background:color-mix(in srgb,var(--surface) 76%,transparent); -webkit-
     background:radial-gradient(closest-side, color-mix(in srgb,var(--accent) 18%,transparent), transparent); transition:background .6s; animation:float 12s ease-in-out infinite alternate; }
   .sb-brand { display:flex; align-items:center; gap:11px; padding:2px 9px 20px; font-size:20px; font-weight:650; letter-spacing:-.03em; white-space:nowrap; }
   .sb-brand .logo { flex:none; filter:drop-shadow(0 6px 12px color-mix(in srgb,var(--accent) 40%,transparent)); }
-  .sb-nav { display:flex; flex-direction:column; gap:2px; flex:1; min-height:0; }
+  .sb-nav { display:flex; flex-direction:column; gap:2px; flex:1; min-height:0; overflow-y:auto; overflow-x:hidden; scrollbar-width:none; }
+  .sb-nav::-webkit-scrollbar { display:none; }
+  .side { --sbh:42px; } .sb-i { height:var(--sbh) !important; min-height:var(--sbh) !important; } .sb-ind { height:var(--sbh) !important; }
+  @media (max-height:860px) { .side { --sbh:38px; padding-top:14px; } .sb-g { height:28px !important; padding:10px 13px 4px !important; } .sb-brand { padding-bottom:14px !important; } }
+  @media (max-height:740px) { .side { --sbh:34px; padding-top:10px; padding-bottom:8px; } .sb-g { height:22px !important; padding:6px 13px 2px !important; font-size:10px !important; } .sb-brand { padding-bottom:8px !important; font-size:18px; } .sb-search { margin-bottom:4px; } .sb-foot { padding-top:6px; margin-top:4px; } }
   .sb-g { font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--fg3); font-weight:650; padding:14px 13px 6px; white-space:nowrap; height:34px; transition:opacity .3s, height .4s, padding .4s; }
   .sb-i { position:relative; z-index:1; display:flex; align-items:center; gap:13px; height:42px; min-height:42px; padding:0 13px; border:0; background:none; border-radius:13px; color:var(--fg2);
     font:inherit; font-size:14.5px; font-weight:550; white-space:nowrap; text-align:left; cursor:pointer; transition:color .3s, background .25s, transform .18s;
@@ -588,7 +605,8 @@ nav.bar { background:color-mix(in srgb,var(--surface) 76%,transparent); -webkit-
 .brief { display:flex; flex-direction:column; gap:14px; }
 .bcol { display:contents; }
   .bexp { order:3; } .bchk { order:4; } 
-@media (min-width:1000px) { .brief { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; align-items:start; } .bcol { display:flex; flex-direction:column; gap:16px; min-width:0; } }
+@media (min-width:1000px) { .brief { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; align-items:stretch; } .bcol > .card:last-child { flex:1; }
+  .brief .today { display:flex; flex-direction:column; } .brief .today .td-foot { margin-top:auto; padding-top:12px; } .bcol { display:flex; flex-direction:column; gap:16px; min-width:0; } }
 .brief .card { margin:0; }
 .brief .eyebrow { display:flex; align-items:center; gap:6px; }
 
@@ -743,6 +761,9 @@ header.top::before { display:none; } header.top { border-top:0; }
 .pgrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; align-items:start; }
 .prow { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; align-items:stretch; } .prow > .card { min-width:0; }
 .prow.one { grid-template-columns:minmax(0,1fr); }
+.mcols.eq { align-items:stretch; } .mcols.eq > .mcol > :last-child { flex:1; }
+@media (max-width:999px) { .mcols.eq { grid-template-columns:minmax(0,1fr); gap:14px; } .mcols.eq > .mcol { gap:14px; } }
+.dmini { display:flex !important; flex-direction:column; } .dmini .link { margin-top:auto; padding-top:12px; }
 .ds-bar { height:8px; border-radius:99px; background:color-mix(in srgb,var(--loss) 25%,var(--sunk)); overflow:hidden; margin-top:12px; } .ds-bar i { display:block; height:100%; background:var(--win); border-radius:99px; }
 
 .empty-row { padding:16px; border:1px dashed var(--line); border-radius:12px; color:var(--fg3); font-size:14px; text-align:center; }
@@ -1076,7 +1097,7 @@ const L = {
   errs: ['FOMO','TP spostato','SL spostato','Ingresso anticipato','Uscita anticipata','Size sbagliata','Fuori piano','Altro'],
 };
 const APP = 'Edgebook';
-const BUILD = '2026-10-23.1';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
+const BUILD = '2026-10-23.2';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
 let updChk=0;
 function checkUpdate() {
   if (viaScript() || location.protocol==='file:' || Date.now()-updChk<60000) return; updChk=Date.now();
@@ -1411,7 +1432,9 @@ function moveInd() {
   const bi=BAR.findIndex(t=>t[0]===S.tab), el=$('navInd'); if (el) el.style.setProperty('--i', bi<0?BAR.length-1:bi);
   if (innerWidth<1000 || indRaf) return;   // la barra laterale c'è solo su PC; la misura aspetta il frame (un solo calcolo del layout)
   indRaf=requestAnimationFrame(()=>{ indRaf=0; const side=$('side'), act=side && side.querySelector('.sb-i.on'), ind=$('sbInd'); if (!ind) return;
-    if (act && act.offsetParent) { ind.style.setProperty('--y', (act.getBoundingClientRect().top-side.getBoundingClientRect().top)+'px'); ind.style.opacity=1; } else ind.style.opacity=0; });
+    const nav=side.querySelector('.sb-nav'); if (nav && !nav._sc) { nav._sc=1; nav.addEventListener('scroll', moveInd, { passive:true }); }
+    const vis = act && nav && nav.contains(act) ? (()=>{ const r=act.getBoundingClientRect(), n=nav.getBoundingClientRect(); return r.bottom>n.top+4 && r.top<n.bottom-4; })() : true;
+    if (act && act.offsetParent && vis) { ind.style.setProperty('--y', (act.getBoundingClientRect().top-side.getBoundingClientRect().top)+'px'); ind.style.opacity=1; } else ind.style.opacity=0; });
 }
 let goTok=0;
 // animazioni: «full» sempre complete (predefinito), «reduce» ridotte, «auto» come il sistema (riduci movimento)
@@ -1695,12 +1718,13 @@ function renderHome() {
       '<div class="kpi"><div class="eyebrow">Max drawdown</div><div class="v">'+numEl(a.dd,1)+'<small>R</small></div><div class="h">'+(U?usd(usdDD(ts,m))+' dal picco':'Calo massimo dal picco')+'</div></div></div>';
   }
   h += briefing();      // la giornata: piano e news di oggi, checklist, cosa aspettarsi
+  const colL=[], colR=[];   // sotto il riepilogo: due colonne che finiscono alla stessa altezza
   const last=ALL.slice(-10);
   if (last.length) {
     let st=0, kind=null; for (let i=ALL.length-1;i>=0;i--) { const k=m.isWin(ALL[i])?'w':m.isLoss(ALL[i])?'l':'b'; if (kind===null) kind=k; if (k!==kind) break; st++; }
     const stTxt = kind==='w' ? st+(st===1?' trade vinto':' vinti di fila') : kind==='l' ? st+(st===1?' trade perso':' persi di fila') : st+' in pareggio';
-    h += '<div class="card"><div class="card-h"><div class="h2">Ultimi '+last.length+' trade</div><span class="sub">'+stTxt+'</span></div><div class="dots">'+
-      last.map((t,i)=>'<i class="'+(m.isWin(t)?'w':m.isLoss(t)?'l':'b')+'" style="--d:'+(i*40)+'ms" title="'+esc(t.raw.Data+' '+t.a)+'"></i>').join('')+'</div></div>';
+    colL.push('<div class="card"><div class="card-h"><div class="h2">Ultimi '+last.length+' trade</div><span class="sub">'+stTxt+'</span></div><div class="dots">'+
+      last.map((t,i)=>'<i class="'+(m.isWin(t)?'w':m.isLoss(t)?'l':'b')+'" style="--d:'+(i*40)+'ms" title="'+esc(t.raw.Data+' '+t.a)+'"></i>').join('')+'</div></div>');
   }
   if (ts.length>=6) {
     const best=bestGroup(ts,m,t=>t.idea,L.idea,1), band=bestGroup(ts,m,t=>bandOf(t),L.bands.map(b=>b[0]),1), worst=bestGroup(ts,m,t=>bandOf(t),L.bands.map(b=>b[0]),-1);
@@ -1708,11 +1732,12 @@ function renderHome() {
     if (best && best.a.R>0) ins+=insRow('target','Setup migliore', best.k, best);
     if (band && band.a.R>0) ins+=insRow('clock','Fascia oraria migliore', band.k, band);
     if (worst && worst.a.R<0 && (!band || worst.k!==band.k)) ins+=insRow('alert','Fascia da rivedere', worst.k, worst, true);
-    if (ins) h += '<div class="card"><div class="card-h"><div class="h2">Cosa funziona</div><span class="sub">'+perLbl+'</span></div><div class="ins">'+ins+'</div></div>';
+    if (ins) colR.push('<div class="card"><div class="card-h"><div class="h2">Cosa funziona</div><span class="sub">'+perLbl+'</span></div><div class="ins">'+ins+'</div></div>');
   }
   const mi=monthItems(ALL,m,6);
-  if (mi.length>1) h += '<div class="card"><div class="card-h"><div class="h2">Ultimi mesi</div><span class="sub">R per mese</span></div><div class="chart" id="c-mon"></div></div>';
-  h += '<div class="pgrid">'+discMini()+lastCard()+'</div>';
+  if (mi.length>1) colL.push('<div class="card"><div class="card-h"><div class="h2">Ultimi mesi</div><span class="sub">R per mese</span></div><div class="chart" id="c-mon"></div></div>');
+  colL.push(discMini()); colR.push(lastCard());
+  h += cols2(colL, colR);
   enter(el, h, ()=>{ if ($('c-spark')) lineChart($('c-spark'), equityPts(ts,m), { axes:false, h: innerWidth<640 ? 92 : 104 }); if ($('c-mon')) barChart($('c-mon'), mi, { h:150 }); });
 }
 // note della giornata: cambio dell'ora a New York, com'è andato questo giorno della settimana nel backtest
@@ -1740,7 +1765,10 @@ function discMini() {
   let run=0; for (let i=D.length-1;i>=0 && D[i].ok;i--) run++;
   return '<button type="button" class="card disc dmini" data-nav="disc"><div class="card-h"><h2 class="h2">Disciplina</h2><span class="sub">Journal · '+MESI_F[now.getMonth()]+'</span></div>'+
     (D.length ? '<div class="ds-lead"><b class="num">'+okN+' su '+D.length+'</b><span>giornate in regola</span></div><div class="ds-bar"><i style="width:'+(100*okN/D.length)+'%"></i></div>'+
-      '<p class="ds-note">'+(run>1?'Sei a <b>'+run+' giornate in regola di fila</b>. ':'')+'Regole, errori ed esecuzione nella pagina Disciplina.</p>'
+      '<div class="dm-rules">'+[['Solo trade validi',D.filter(d=>d.valid).length,D.length],['Max 2 trade al giorno',D.filter(d=>d.max2).length,D.length],
+        ['Stop dopo il TP',D.filter(d=>d.hadWin&&d.tp).length,D.filter(d=>d.hadWin).length]].concat(isFinite(num(CFG.lossR))&&num(CFG.lossR)>0?[['Perdita max −'+fmtN(num(CFG.lossR),1)+' R',D.filter(d=>d.loss).length,D.length]]:[])
+        .map(([l,o,t])=>'<span class="'+(o===t?'ok':'ko')+'">'+ic(o===t?'check':'alert',14,2.2)+l+'<b class="num">'+(t?o+'/'+t:'–')+'</b></span>').join('')+'</div>'+
+      '<p class="ds-note">'+(run>1?'Sei a <b>'+run+' giornate in regola di fila</b>.':'Errori ed esecuzione nella pagina Disciplina.')+'</p>'
     : '<div class="empty-row">Nessun trade reale questo mese.</div>')+'<span class="link">Apri Disciplina'+ic('chev',15,2)+'</span></button>';
 }
 function lastCard() {
@@ -2125,11 +2153,20 @@ function discExec(ts) {
   const avR=RK.length ? RK.reduce((s,x)=>s+x.r,0)/RK.length : NaN;
   const Ls=P.filter(t=>t.rr<=-0.95 && t.rr>=-1.05), Ws=P.filter(t=>t.rr>0), Bs=P.filter(t=>t.rr===0);
   const lossR=Ls.length ? -sum(Ls,rp)/Ls.length : NaN, winG=Ws.length ? sum(Ws,gap)/Ws.length : NaN, beU=Bs.length ? sum(Bs,t=>t.pnl)/Bs.length : NaN;
-  const kv=(l,v,e,c)=>'<div><span>'+l+'</span><b class="num '+(c||'')+'">'+v+'</b><em>'+e+'</em></div>';
-  let h=dcard('RR teorico e RR dal PnL', P.length+' trade con PnL'+(miss?' · '+miss+' senza, esclusi':''),
-    '<div class="usd-g ex-g">'+kv('R teorici', fmtN(Rt,2,true)+' R', 'la somma degli RR che scrivi', sgn(Rt))+kv('R dal PnL', fmtN(Rp,2,true)+' R', 'PnL ÷ '+usd(k)+' a trade', sgn(Rp))+
-      kv('Differenza', fmtN(G,2,true)+' R', (G<0?'persi ':'in più: ')+fmtU(G*k)+' su un conto', sgn(G))+kv('Per trade', fmtN(G/P.length,2,true)+' R', 'in media, '+fmtU(G/P.length*k), sgn(G))+'</div>'+
-    '<p class="ds-note">L\'RR teorico è quello che avresti con '+usd(k)+' esatti di rischio. L\'RR dal PnL è quello che è entrato davvero sul conto: la differenza sono slippage, commissioni e size diversa dal previsto.</p>', 'wide');
+  // esempio preso dai tuoi trade: l'ultimo con PnL e RR di almeno ±0,5
+  const exT=P.slice().reverse().find(t=>Math.abs(t.rr)>=0.5), exR=exT&&rp(exT), exRisk=exT&&Math.abs(exT.pnl/exT.rr);
+  const mx=Math.max(Math.abs(Rt),Math.abs(Rp),1e-9), bar=(v,cls)=>'<div class="rr-track"><i class="'+cls+(v<0?' neg':'')+'" style="width:'+(100*Math.abs(v)/mx).toFixed(1)+'%"></i></div>';
+  const good=G>=0, ver = Math.abs(G)<0.05*Math.max(1,Math.abs(Rt)) ? 'quasi uguali' : good ? 'il conto ha fatto meglio del previsto' : 'il conto ha fatto peggio del previsto';
+  let h=dcard('RR teorico e RR reale', P.length+' trade con PnL'+(miss?' · '+miss+' senza, esclusi':''),
+    '<div class="rr-cmp">'+
+      '<div class="rr-row"><div class="rr-l"><b>RR teorico</b><span>quello che scrivi nel trade</span></div>'+bar(Rt,'t')+'<b class="num rr-v '+sgn(Rt)+'">'+fmtN(Rt,1,true)+' R</b></div>'+
+      '<div class="rr-row"><div class="rr-l"><b>RR reale</b><span>il PnL diviso '+usd(k)+'</span></div>'+bar(Rp,'r')+'<b class="num rr-v '+sgn(Rp)+'">'+fmtN(Rp,1,true)+' R</b></div></div>'+
+    '<div class="rr-verdict '+(good?'ok':'ko')+'">'+ic(good?'trendUp':'trendDn',18,2.2)+'<div><b>'+(G>=0?'+':'−')+fmtN(Math.abs(G),2)+' R di differenza · '+fmtU(G*k)+' su un conto</b><span>'+ver+': in media '+fmtN(G/P.length,2,true)+' R ('+fmtU(G/P.length*k)+') per trade.</span></div></div>'+
+    '<details class="rr-how"><summary>'+ic('chev',15,2.2)+'Come si legge</summary><div>'+
+      '<p><b>RR teorico</b> è l\'RR che scrivi tu: −1 se prendi lo stop, +2 se chiudi a 2R. È quello che avresti se il rischio fosse sempre esattamente '+usd(k)+'.</p>'+
+      '<p><b>RR reale</b> è quanto è entrato davvero sul conto, misurato in R: PnL ÷ '+usd(k)+'. Una loss da −$230 vale −1,15 R, non −1.</p>'+
+      (exT?'<p class="rr-ex"><b>Esempio dal tuo Journal</b> · '+exT.d.getDate()+' '+MESI[exT.d.getMonth()]+' '+esc(exT.a)+': hai scritto <b>'+fmtN(exT.rr,2,true)+' R</b>, il PnL è '+fmtU(exT.pnl)+' → '+fmtU(exT.pnl)+' ÷ '+usd(k)+' = <b>'+fmtN(exR,2,true)+' R</b>. Il rischio vero era '+usd(exRisk)+' invece di '+usd(k)+'.</p>':'')+
+      '<p>La differenza viene da <b>slippage</b>, <b>commissioni</b> e <b>size</b> diversa dal previsto. Più è vicina a 0, più la tua esecuzione è precisa.</p></div></details>', 'wide');
   const side=[];
   side.push(dcard('Rischio reale', 'obiettivo '+usd(k)+' ± 10%',
     (RK.length ? '<div class="ds-lead"><b class="num">'+pct(inB/RK.length)+'</b><span>dei trade nel range '+usd(k*(1-band))+'–'+usd(k*(1+band))+'</span></div>'+
@@ -2140,13 +2177,13 @@ function discExec(ts) {
   side.push(dcard('Loss e trade vincenti', 'quanto pesano davvero',
     '<div class="ds-cost">'+
       '<div><span>Una loss piena (−1 R)</span><b class="num '+(lossR>1.02?'neg':'')+'">'+(isFinite(lossR)?'−'+fmtN(lossR,2)+' R':'–')+'</b><em>'+(isFinite(lossR)?'in media '+usd(lossR*k)+' · '+Ls.length+' loss':'nessuna loss con PnL')+'</em></div>'+
-      '<div><span>Un trade vincente</span><b class="num '+sgn(winG)+'">'+(isFinite(winG)?fmtN(winG,2,true)+' R':'–')+'</b><em>'+(isFinite(winG)?'rispetto all\'RR scritto · '+Ws.length+' trade':'nessun trade vincente con PnL')+'</em></div></div>'+
+      '<div><span>Un trade vincente</span><b class="num '+sgn(winG)+'">'+(isFinite(winG)?fmtN(winG,2,true)+' R':'–')+'</b><em>'+(isFinite(winG)?'RR reale meno teorico · '+Ws.length+' trade':'nessun trade vincente con PnL')+'</em></div></div>'+
     (Bs.length ? '<p class="ds-note">I pareggi (RR 0) ti lasciano in media <b class="'+sgn(beU)+'">'+fmtU(beU)+'</b> ('+Bs.length+' trade): sono le commissioni.</p>' : '')+
     '<p class="ds-note">'+(isFinite(lossR)&&lossR>1.05?'Le loss ti costano più di 1 R: controlla lo stop e la size prima di entrare.':isFinite(lossR)?'Le loss restano vicine a 1 R: la size è sotto controllo.':'')+'</p>'));
   h+=rows2(side);
   // andamento mese per mese: si vede se stai migliorando
   const ms=[...new Set(P.map(t=>t.ym))].sort();
-  if (ms.length>1) { let tb='<div class="tbl-wrap"><table class="ex-t"><tr><th>Mese</th><th>Trade</th><th>R teorici</th><th>R dal PnL</th><th>Differenza</th><th>Rischio medio</th></tr>';
+  if (ms.length>1) { let tb='<div class="tbl-wrap"><table class="ex-t"><tr><th>Mese</th><th>Trade</th><th>RR teorico</th><th>RR reale</th><th>Differenza</th><th>Rischio medio</th></tr>';
     ms.slice().reverse().forEach(ym=>{ const g=P.filter(t=>t.ym===ym), a=sum(g,t=>t.rr), b2=sum(g,rp), rk=g.filter(t=>Math.abs(t.rr)>=0.5).map(t=>Math.abs(t.pnl/t.rr)), mo=+ym.slice(5)-1;
       tb+='<tr><td>'+MESI_F[mo].replace(/^./,c=>c.toUpperCase())+'</td><td class="num">'+g.length+'</td><td class="num">'+fmtN(a,1,true)+'</td><td class="num">'+fmtN(b2,1,true)+'</td><td class="num '+sgn(b2-a)+'"><b>'+fmtN(b2-a,2,true)+'</b></td><td class="num">'+(rk.length?usd(rk.reduce((x,y)=>x+y,0)/rk.length):'–')+'</td></tr>'; });
     h+=dcard('Mese per mese', 'più la differenza è vicina a 0, più l\'esecuzione è precisa', tb+'</table></div>', 'wide'); }
@@ -2155,7 +2192,7 @@ function discExec(ts) {
   if (last.length>=3) h+=dcard('Rischio reale trade per trade', 'ultimi '+last.length+' · barra = differenza da '+usd(k), '<div class="chart" id="c-rk"></div>', 'wide');
   // trade da rivedere: quelli che hanno perso più R rispetto all'RR scritto
   const worst=P.filter(t=>gap(t)<-0.1).sort((a,b)=>gap(a)-gap(b)).slice(0,5);
-  if (worst.length) h+=dcard('Trade da rivedere', 'quelli che ti sono costati di più', worst.map(t=>'<button type="button" class="trow" data-open="Journal:'+t.row+'"><span class="badge '+(t.out==='Win'?'w':t.out==='Loss'?'l':'')+'">'+esc(t.a)+'</span><span style="min-width:0"><span class="t1">'+t.d.getDate()+' '+MESI[t.d.getMonth()]+'<span>'+esc(String(t.raw.Ora).slice(0,5))+'</span></span><span class="t2" style="display:block">RR scritto '+fmtN(t.rr,2,true)+' · dal PnL '+fmtN(rp(t),2,true)+(Math.abs(t.rr)>=0.5?' · rischio '+usd(Math.abs(t.pnl/t.rr)):'')+'</span></span><span class="tres"><b class="neg">'+fmtN(gap(t),2,true)+' R</b><span>'+fmtU(gap(t)*k)+'</span></span>'+ic('chev',16,2)+'</button>').join(''), 'wide');
+  if (worst.length) h+=dcard('Trade da rivedere', 'quelli che ti sono costati di più', worst.map(t=>'<button type="button" class="trow" data-open="Journal:'+t.row+'"><span class="badge '+(t.out==='Win'?'w':t.out==='Loss'?'l':'')+'">'+esc(t.a)+'</span><span style="min-width:0"><span class="t1">'+t.d.getDate()+' '+MESI[t.d.getMonth()]+'<span>'+esc(String(t.raw.Ora).slice(0,5))+'</span></span><span class="t2" style="display:block">teorico '+fmtN(t.rr,2,true)+' · reale '+fmtN(rp(t),2,true)+(Math.abs(t.rr)>=0.5?' · rischio '+usd(Math.abs(t.pnl/t.rr)):'')+'</span></span><span class="tres"><b class="neg">'+fmtN(gap(t),2,true)+' R</b><span>'+fmtU(gap(t)*k)+'</span></span>'+ic('chev',16,2)+'</button>').join(''), 'wide');
   const after = () => { const c=$('c-rk'); if (!c) return;
     barChart(c, last.map(x=>{ const d=x.r-k, o=d>k*band, u=d<-k*band; return { v:d, l:x.t.d.getDate()+' '+MESI[x.t.d.getMonth()], cls:(d>=0?'p':'n')+(o?' ov':u?' un':' z'), tip:' · '+x.t.d.getDate()+' '+MESI[x.t.d.getMonth()]+' '+x.t.a+' · rischio reale '+usd(x.r)+' (RR '+fmtN(x.t.rr,2,true)+', PnL '+fmtU(x.t.pnl)+')' }; }),
       { h:170, fmt:v=>(v>=0?'+':'')+usd(v), tickFmt:v=>(v>0?'+':'')+fmtN(v,0), aria:'Rischio reale per trade rispetto al rischio impostato' }); };
@@ -2260,6 +2297,9 @@ function dayNews(ts, m) {
   return h+'</table></div>';
 }
 // card affiancate a due a due nell'ordine dato; se restano dispari l'ultima prende tutta la riga
+// due colonne di card: su PC finiscono alla stessa altezza (l'ultima card di ogni colonna si allunga), sul telefono una sotto l'altra
+const cols2 = (A, B) => { A=A.filter(Boolean); B=B.filter(Boolean); if (!A.length || !B.length) return A.concat(B).join('');
+  return '<div class="mcols eq"><div class="mcol">'+A.join('')+'</div><div class="mcol">'+B.join('')+'</div></div>'; };
 const rows2 = cards => { let h=''; for (let i=0;i<cards.length;i+=2) h+='<div class="prow'+(i+1<cards.length?'':' one')+'">'+cards[i]+(cards[i+1]||'')+'</div>'; return h; };
 const card = (title, sub, body, d) => '<div class="card rise" style="--d:'+(d||0)+'ms"><div class="card-h"><h2 class="h2">'+title+'</h2>'+(sub?'<span class="sub">'+sub+'</span>':'')+'</div>'+body+'</div>';
 const kpi = (lbl, v, hint, d, cls) => '<div class="kpi rise" style="--d:'+(d||0)+'ms"><div class="eyebrow">'+lbl+'</div><div class="v '+(cls||'')+'">'+v+'</div>'+(hint?'<div class="h">'+hint+'</div>':'')+'</div>';
