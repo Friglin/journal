@@ -306,10 +306,10 @@ body::after { content:""; position:fixed; inset:-25%; z-index:-1; pointer-events
 /* benvenuto */
 #splash { position:fixed; inset:0; z-index:90; display:grid; place-items:center; background:var(--bg); transition:opacity .55s ease, visibility .55s; }
 #splash.out { opacity:0; visibility:hidden; }
-.sp-in { display:flex; flex-direction:column; align-items:center; gap:14px; text-align:center; animation:spIn .8s cubic-bezier(.2,.8,.2,1) both; }
+.sp-in { display:flex; flex-direction:column; align-items:center; gap:14px; text-align:center; }
 .sp-in h1 { font-family:var(--display); font-size:32px; font-weight:600; letter-spacing:-.04em; margin:6px 0 0; }
 .sp-in p { margin:0; color:var(--fg2); font-size:15px; }
-@keyframes spIn { from { opacity:0; transform:translateY(16px) scale(.96); } }
+
 /* filtri condivisi */
 .fbar { display:flex; flex-wrap:wrap; gap:7px; align-items:center; }
 .fchip { display:inline-flex; align-items:center; gap:5px; border:0; background:var(--accent-soft); color:var(--accent); font-weight:600; font-size:12.5px; padding:7px 9px 7px 12px; border-radius:99px; animation:pop .35s cubic-bezier(.23,1,.32,1) both; }
@@ -470,7 +470,7 @@ nav.bar { background:color-mix(in srgb,var(--surface) 76%,transparent); -webkit-
 
 /* logo */
 .logo .bar { transform-box:fill-box; transform-origin:0 50%; }
-.sp-in .logo .bar { animation:barIn .7s cubic-bezier(.23,1,.32,1) both; } .sp-in .logo .b2 { animation-delay:.1s; } .sp-in .logo .b3 { animation-delay:.2s; }
+
 .brand.sync .logo .bar { animation:barPulse 1s ease-in-out infinite; } .brand.sync .logo .b2 { animation-delay:.15s; } .brand.sync .logo .b3 { animation-delay:.3s; }
 @keyframes barIn { from { transform:scaleX(0); } } @keyframes barPulse { 50% { transform:scaleX(.55); } }
 /* colonne affiancate su PC (vedi masonry) */
@@ -901,7 +901,7 @@ main:focus { outline:none; }
 }
 /* 1 · blocchi della pagina: entrano in sequenza; quelli più in basso quando ci arrivi scorrendo */
 .blk { animation:blkIn 620ms var(--e-out) backwards; animation-delay:calc(var(--k,0) * var(--stg) + var(--k0,0ms)); }
-@keyframes blkIn { from { opacity:0; transform:translateY(18px) scale(.985); filter:blur(5px); } }
+@keyframes blkIn { from { opacity:0; transform:translateY(18px) scale(.985); } }
 .pre { opacity:0; }
 /* 2 · grafici: la curva si disegna, l'area sfuma dopo, il punto finale arriva con una piccola molla; le barre crescono dalla linea dello zero */
 .blk .chart .line { animation:draw 1150ms var(--e-io) backwards; animation-delay:calc(var(--k,0) * var(--stg) + var(--k0,0ms) + 200ms); }
@@ -925,12 +925,12 @@ main:focus { outline:none; }
 /* 4 · passaggio tra le pagine (View Transitions): la cornice resta ferma, la pagina vecchia esce verso il lato da cui arrivi */
 ::view-transition-old(root) { animation:vtOut 210ms var(--e-in) both; }
 ::view-transition-new(root) { animation:vtIn 240ms var(--e-out) both; }
-@keyframes vtOut { to { opacity:0; transform:translateX(calc(var(--vt-dir,1) * -32px)); filter:blur(3px); } }
+@keyframes vtOut { to { opacity:0; transform:translateX(calc(var(--vt-dir,1) * -32px)); } }
 @keyframes vtIn { from { opacity:0; } }
 /* 5 · barra laterale: comparsa all'avvio, indicatore a molla, icona che risponde */
 @media (min-width:1000px) {
   .boot .sb-i, .boot .sb-search, .boot .sb-brand { animation:sbIn 560ms var(--e-out) backwards; animation-delay:calc(var(--k,0) * 26ms + 80ms + var(--boot0,0ms)); }
-  @keyframes sbIn { from { opacity:0; transform:translateX(-12px); filter:blur(3px); } }
+  @keyframes sbIn { from { opacity:0; transform:translateX(-12px); } }
   .sb-ind { transition:transform 560ms var(--spring), opacity 200ms ease !important; }
   .sb-i { transition:color 200ms ease, background-color 200ms ease, transform 140ms var(--e-out) !important; }
   .sb-i .ic { transition:transform 420ms var(--spring-pop) !important; }
@@ -972,8 +972,17 @@ nav.bar button:active .pill { transform:scale(.88); }
 .fab:active, .aifab:active { transform:scale(.94) !important; transition-duration:120ms !important; }
 .sheet.open .fsec, .sheet.open .more button { animation:blkIn 520ms var(--e-out) backwards; animation-delay:calc(var(--k,0) * 45ms + 150ms); }
 .sheet.open .sheet-h .wr { display:inline-block; animation:wordIn 520ms var(--e-out) backwards; animation-delay:calc(var(--i,0) * 50ms + 90ms); }
-@keyframes wordIn { from { opacity:0; transform:translateY(.35em); filter:blur(4px); } }
-#splash .wr { display:inline-block; animation:wordIn 700ms var(--e-out) backwards; animation-delay:calc(var(--i,0) * 80ms + 200ms); }
+@keyframes wordIn { from { opacity:0; transform:translateY(.35em); } }
+/* benvenuto: logo, parole e sottotitolo entrano uno dopo l'altro con sola opacità e movimento (fluidi anche se l'app sta caricando) */
+#splash .logo { animation:spLogo 640ms var(--e-out) 60ms backwards; will-change:transform, opacity; }
+#splash .wr { display:inline-block; animation:spWord 620ms var(--e-out) backwards; animation-delay:calc(var(--i,0) * 90ms + 220ms); will-change:transform, opacity; }
+#splash p { animation:spFade 500ms ease-out 520ms backwards; }
+#splash.out { transition:opacity 380ms ease, visibility 380ms; }
+#splash.out .sp-in { transform:translateY(-6px) scale(.99); opacity:0; transition:transform 380ms var(--e-in), opacity 300ms ease; }
+@keyframes spLogo { from { opacity:0; transform:scale(.86); } }
+@keyframes spWord { from { opacity:0; transform:translateY(12px); } }
+@keyframes spFade { from { opacity:0; } }
+@media (prefers-reduced-motion: reduce) { #splash .logo, #splash .wr, #splash p { animation:spFade 300ms ease-out backwards !important; } }
 /* 11 · palette: aperta col mouse/dito compare in 180ms; aperta da tastiera è istantanea */
 #pal.on.ptr { animation:mFade 160ms ease-out; }
 #pal.on.ptr .pl { animation:palIn 220ms var(--e-out); }
@@ -1387,7 +1396,11 @@ function openMore() {
 }
 function newsBadge() { const b=$('nb-news'); if (!b || !S.news) return; const now=Date.now(), t=todayIso();
   const n=newsEvents().filter(e=>e.day===t && !e.tbd && e.t>now-60000 && (e.imp==='High' || e.trump)).length; b.textContent=n; b.classList.toggle('on', n>0); b.title=n+' news ad alto impatto ancora da uscire oggi'; }
-function renderCurrent(quiet) { S.quiet=!!quiet; ({ home:renderHome, news:renderNews, list:renderList, stats:renderStats, cal:renderCal, mc:renderMC, coach:renderCoach, set:renderSet })[S.tab](); S.quiet=false; }
+let introRT=0;
+function renderCurrent(quiet) {
+  // durante il benvenuto non si disegna (ogni disegno ferma l'animazione): un solo disegno, quando il saluto è finito
+  const wait=(S.introAt||0)-260-performance.now(); if (wait>0) { if (!introRT) introRT=setTimeout(()=>{ introRT=0; renderCurrent(false); }, wait); return; }
+  S.quiet=!!quiet; ({ home:renderHome, news:renderNews, list:renderList, stats:renderStats, cal:renderCal, mc:renderMC, coach:renderCoach, set:renderSet })[S.tab](); S.quiet=false; }
 function enter(el, html, after) {
   const user = S.quiet && performance.now()-(S.userT||0) < 450 && !reduceMotion(), prev = user ? numSnap(el) : null;
   el.innerHTML = html; el.classList.toggle('quiet', S.quiet);
@@ -2775,7 +2788,7 @@ try { S.cust=JSON.parse(store.get('cust','{}'))||{}; } catch(e) { S.cust={}; }
   if (seen) { sp.remove(); return; }
   S.introAt=performance.now()+1150;
   sp.innerHTML='<div class="sp-in">'+logo(68)+'<h1>'+words(greeting())+'</h1><p>Preparo i tuoi trade…</p></div>';
-  setTimeout(()=>{ sp.classList.add('out'); setTimeout(()=>sp.remove(), 600); }, 1150);
+  setTimeout(()=>{ sp.classList.add('out'); setTimeout(()=>sp.remove(), 420); }, 1150);
 })();
 function showSetup(msg) {
   const el=$('setup'); $('setupLogo').innerHTML=logo(52); $('su-url').value=store.get('api',''); $('su-key').value=store.get('key','');
