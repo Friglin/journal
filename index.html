@@ -769,14 +769,6 @@ h1, h2, h3, .h2, .bp-t, .nt-next b { text-wrap:balance; } p { text-wrap:pretty; 
 main:focus { outline:none; }
 /* hover solo dove c'è un puntatore vero */
 @media not ((hover:hover) and (pointer:fine)) { .sb-i:hover, .trow:hover, .nrow:hover, .lnk:hover { background:none; } }
-/* passaggio tra le pagine: dissolvenza breve, la cornice resta ferma */
-.side { view-transition-name:side; } header.top { view-transition-name:topbar; } nav.bar { view-transition-name:tabbar; }
-.fab { view-transition-name:fab; } .aifab { view-transition-name:aifab; } .toast { view-transition-name:toast; }
-::view-transition { pointer-events:none; }
-::view-transition-group(side), ::view-transition-group(topbar), ::view-transition-group(tabbar), ::view-transition-group(fab), ::view-transition-group(aifab), ::view-transition-group(toast) { animation:none; z-index:100; }
-::view-transition-old(side), ::view-transition-new(side), ::view-transition-old(topbar), ::view-transition-new(topbar), ::view-transition-old(tabbar), ::view-transition-new(tabbar),
-::view-transition-old(fab), ::view-transition-new(fab), ::view-transition-old(aifab), ::view-transition-new(aifab), ::view-transition-old(toast), ::view-transition-new(toast) { animation:none; }
-@media (prefers-reduced-motion: reduce) { ::view-transition-old(*), ::view-transition-new(*), ::view-transition-group(*) { animation-duration:0s !important; animation-delay:0s !important; } }
 /* palette comandi: si apre e si chiude senza animazione (si usa molte volte al giorno) */
 #pal { position:fixed; inset:0; z-index:90; display:none; align-items:flex-start; justify-content:center; padding:min(14vh,120px) 16px 16px; background:rgba(0,0,0,.32); }
 #pal.on { display:flex; }
@@ -888,6 +880,11 @@ main:focus { outline:none; }
 @keyframes ringIn { from { stroke-dashoffset:94.25; } }
 .redraw .dots i { animation:mPop 380ms var(--spring-pop) backwards; animation-delay:var(--d,0ms); }
 
+/* telefono: le card fuori dallo schermo non si calcolano né si disegnano finché non ci arrivi (pagine più rapide da aprire) */
+@media (max-width:999px) {
+  .view > .card:not(.hero):not(.wide), .view > .kgrid, .view > .pgrid, .view > .brief, .view > .card.wide:not(.ntoday):not(.hero) { content-visibility:auto; contain-intrinsic-size:auto 360px; }
+}
+
 /* ═════════════ Movimento ═════════════
    Pesi (design-motion-principles): Jakub per le entrate e le rifiniture, Emil per frequenza e tastiera, Jhey solo nei momenti rari.
    · cambio pagina: la vecchia scivola via nella direzione opposta, i blocchi della nuova salgono in sequenza (opacità + 18px + sfocatura)
@@ -897,12 +894,11 @@ main:focus { outline:none; }
   --e-out:cubic-bezier(.16,1,.3,1); --e-in:cubic-bezier(.55,0,1,.45); --e-io:cubic-bezier(.65,0,.35,1); --e-drawer:cubic-bezier(.32,.72,0,1);
   --spring:linear(0, 0.025, 0.09, 0.178, 0.277, 0.381, 0.481, 0.575, 0.66, 0.735, 0.799, 0.853, 0.897, 0.932, 0.959, 0.98, 0.995, 1.006, 1.013, 1.017, 1.019, 1.02, 1.019, 1.018, 1.016, 1.014, 1.012, 1.01, 1.008, 1.007, 1.005, 1.004, 1.003, 1.002, 1.001, 1.001, 1, 1, 1, 1, 1);
   --spring-pop:linear(0, 0.062, 0.213, 0.408, 0.61, 0.795, 0.946, 1.055, 1.124, 1.157, 1.162, 1.146, 1.118, 1.086, 1.053, 1.025, 1.002, 0.987, 0.977, 0.974, 0.974, 0.977, 0.982, 0.988, 0.993, 0.997, 1.001, 1.003, 1.004, 1.004, 1.004, 1.003, 1.003, 1.002, 1.001, 1, 1, 0.999, 0.999, 0.999, 1);
-  --stg:55ms;
+  --stg:45ms;
 }
 /* 1 · blocchi della pagina: entrano in sequenza; quelli più in basso quando ci arrivi scorrendo */
-.blk { animation:blkIn 620ms var(--e-out) backwards; animation-delay:calc(var(--k,0) * var(--stg) + var(--k0,0ms)); }
-@keyframes blkIn { from { opacity:0; transform:translateY(18px) scale(.985); } }
-.pre { opacity:0; }
+.blk { animation:blkIn 520ms var(--e-out) backwards; animation-delay:calc(var(--k,0) * var(--stg) + var(--k0,0ms)); }
+@keyframes blkIn { from { opacity:0; transform:translate3d(0,14px,0); } }
 /* 2 · grafici: la curva si disegna, l'area sfuma dopo, il punto finale arriva con una piccola molla; le barre crescono dalla linea dello zero */
 .blk .chart .line { animation:draw 1150ms var(--e-io) backwards; animation-delay:calc(var(--k,0) * var(--stg) + var(--k0,0ms) + 200ms); }
 .blk .chart .area { animation:mFade 800ms ease-out backwards; animation-delay:calc(var(--k,0) * var(--stg) + var(--k0,0ms) + 650ms); }
@@ -922,11 +918,6 @@ main:focus { outline:none; }
 .redraw .chart .endpt { animation:mPop 460ms 700ms var(--spring-pop) backwards; }
 .redraw .bar { animation:barIn 520ms var(--e-out) backwards; animation-delay:calc(var(--bi,0) * 26ms); }
 .redraw .track i, .redraw .ds-bar i { transform-origin:left center; animation:grow 620ms var(--e-out) backwards; animation-delay:calc(var(--d,0ms) / 2); }
-/* 4 · passaggio tra le pagine (View Transitions): la cornice resta ferma, la pagina vecchia esce verso il lato da cui arrivi */
-::view-transition-old(root) { animation:vtOut 210ms var(--e-in) both; }
-::view-transition-new(root) { animation:vtIn 240ms var(--e-out) both; }
-@keyframes vtOut { to { opacity:0; transform:translateX(calc(var(--vt-dir,1) * -32px)); } }
-@keyframes vtIn { from { opacity:0; } }
 /* 5 · barra laterale: comparsa all'avvio, indicatore a molla, icona che risponde */
 @media (min-width:1000px) {
   .boot .sb-i, .boot .sb-search, .boot .sb-brand { animation:sbIn 560ms var(--e-out) backwards; animation-delay:calc(var(--k,0) * 26ms + 80ms + var(--boot0,0ms)); }
@@ -941,7 +932,8 @@ main:focus { outline:none; }
 }
 @keyframes icPop { from { transform:scale(.7); } }
 /* 6 · telefono: pillola della barra in basso a molla, icona che si posa, pressione */
-.ind { transition:left 520ms var(--spring) !important; }
+.ind { left:0 !important; width:20% !important; background:none !important; transform:translate3d(calc(var(--i,0) * 100%),0,0); transition:transform 480ms var(--spring) !important; }
+.ind::before { content:""; position:absolute; top:0; left:50%; width:58px; height:30px; margin-left:-29px; border-radius:99px; background:var(--accent-soft); }
 nav.bar button.on .pill .ic { animation:icPop 520ms var(--spring-pop) !important; }
 nav.bar button .pill { transition:transform 140ms var(--e-out), color 200ms ease, background-color 200ms ease; }
 nav.bar button:active .pill { transform:scale(.88); }
@@ -979,8 +971,8 @@ nav.bar button:active .pill { transform:scale(.88); }
 #splash p { animation:spFade 500ms ease-out 520ms backwards; }
 #splash.out { transition:opacity 380ms ease, visibility 380ms; }
 #splash.out .sp-in { transform:translateY(-6px) scale(.99); opacity:0; transition:transform 380ms var(--e-in), opacity 300ms ease; }
-@keyframes spLogo { from { opacity:0; transform:scale(.86); } }
-@keyframes spWord { from { opacity:0; transform:translateY(12px); } }
+@keyframes spLogo { from { opacity:0; transform:translate3d(0,10px,0); } }
+@keyframes spWord { from { opacity:0; transform:translate3d(0,12px,0); } }
 @keyframes spFade { from { opacity:0; } }
 @media (prefers-reduced-motion: reduce) { #splash .logo, #splash .wr, #splash p { animation:spFade 300ms ease-out backwards !important; } }
 /* 11 · palette: aperta col mouse/dito compare in 180ms; aperta da tastiera è istantanea */
@@ -1003,7 +995,6 @@ nav.bar button:active .pill { transform:scale(.88); }
 @media (prefers-reduced-motion: reduce) {
   .blk, .sheet.open .fsec, .sheet.open .more button { animation-name:mFade !important; animation-duration:220ms !important; animation-delay:0s !important; }
   .toast, .toast.show { transform:translate(-50%,0) !important; filter:none !important; transition-duration:160ms !important; }
-  ::view-transition-old(root), ::view-transition-new(root) { animation:none !important; }
 }
 </style>
 </head>
@@ -1365,19 +1356,16 @@ function moveInd() {
 }
 let goTok=0;
 const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
-// avvolge un cambio dell'interfaccia in una View Transition quando il browser la supporta
-function withVT(fn, instant) { if (!instant && document.startViewTransition && !reduceMotion() && !document.hidden) document.startViewTransition(fn); else fn(); }
-const NAV_ORDER = ['home','news','list:Journal','list:EOW','stats','cal','mc','coach','set'];
 const hashOf = () => S.tab==='list' ? 'list/'+S.file : S.tab;
 function go(tab, o) {
   o=o||{};
   if (tab===(S.goingTo||S.tab)) { window.scrollTo({ top:0, behavior: o.instant||reduceMotion() ? 'auto' : 'smooth' }); navState(); syncHash(o); return; }
-  const tok=++goTok, a=NAV_ORDER.indexOf(o.fromK||curNavKey()), b=NAV_ORDER.indexOf(o.toK||tab);
-  document.documentElement.style.setProperty('--vt-dir', b<a ? -1 : 1);
-  S.goingTo=tab;   // la View Transition aggiorna al frame dopo: un secondo tocco nel frattempo deve vedere la pagina di arrivo
-  withVT(()=>{ if (tok!==goTok) return; S.tab=tab; S.goingTo=null; navState();
-    VIEWS.forEach(v=>{ $('v-'+v).hidden = v!==tab; });
-    window.scrollTo({ top:0 }); renderCurrent(!!o.instant); syncHash(o); }, o.instant);
+  // niente View Transition: congelava lo schermo finché la pagina nuova non era pronta.
+  // Gli indicatori si spostano subito (sulla scheda grafica); la pagina nuova si disegna al frame dopo ed entra a blocchi.
+  const tok=++goTok; S.goingTo=tab; S.tab=tab; navState(); syncHash(o);
+  const show = () => { if (tok!==goTok) return; S.goingTo=null; VIEWS.forEach(v=>{ $('v-'+v).hidden = v!==tab; }); if (window.scrollY) window.scrollTo({ top:0 });
+    renderCurrent(!!(o.instant || o.fromPop)); };   // da tastiera o col gesto Indietro: niente entrate
+  if (o.instant) show(); else requestAnimationFrame(()=>setTimeout(show, 0));
 }
 // l'indirizzo segue la pagina: il tasto Indietro e i link diretti funzionano (#news, #list/Journal…)
 function syncHash(o) { const h='#'+hashOf(); if (location.hash===h) return; if (o && o.fromPop) return; history.pushState(null, '', h); }
@@ -1386,7 +1374,7 @@ window.addEventListener('popstate', () => {
   if (lbOn || PAL.on || S.sheet) { if (lbOn) lbClose(); else if (PAL.on) palToggle(false); else closeSheet(); history.pushState(null, '', '#'+hashOf()); return; }
   const [t,f]=location.hash.slice(1).split('/'); if (f && (f==='EOW'||f==='Journal')) switchFile(f); go(VIEWS.includes(t)?t:'home', { fromPop:true }); });
 function switchFile(f) { if (f===S.file) return; setSeg($('fileSeg'),f); S.file=f; S.lo=''; S.type=f==='EOW'?'EOW':'JOURNAL'; S.filt=S.filtBy[f]; S.lmore=60; store.set('file',f); fileLook(); load(); }
-function navTo(key, o) { const [id,f]=key.split(':'), fromK=curNavKey(); if (S.sheet) closeSheet(); if (f) switchFile(f); o=Object.assign({ fromK, toK:key }, o); go(id, o); if (f && id==='list') syncHash(o); }
+function navTo(key, o) { const [id,f]=key.split(':'); if (S.sheet) closeSheet(); if (f) switchFile(f); o=o||{}; go(id, o); if (f && id==='list') syncHash(o); }
 function openMore() {
   S.sheet='more'; $('sh-sub').textContent=APP; $('sh-title').innerHTML=words('Altro');
   const it=[['list:Journal','Journal','book','Trade reali'],['list:EOW','EOW','list','Backtest della settimana'],['cal','Calendario','cal','R giorno per giorno'],
@@ -1404,28 +1392,23 @@ function renderCurrent(quiet) {
 function enter(el, html, after) {
   const user = S.quiet && performance.now()-(S.userT||0) < 450 && !reduceMotion(), prev = user ? numSnap(el) : null;
   el.innerHTML = html; el.classList.toggle('quiet', S.quiet);
-  masonry(el, after);
+  // sul telefono (una colonna, niente bilanciamento) i grafici si disegnano al frame dopo: la pagina compare prima
+  const later = !S.quiet && after && innerWidth<1000;
+  masonry(el, later ? null : after);
   if (!S.quiet) blkStagger(el);
+  if (later) requestAnimationFrame(()=>{ if (el.isConnected && !el.hidden) after(); });
   else if (user) { numFrom(el, prev); el.classList.remove('redraw'); void el.offsetWidth; el.classList.add('redraw'); clearTimeout(el._rd); el._rd=setTimeout(()=>el.classList.remove('redraw'), 1400); }
 }
-// I blocchi visibili entrano uno dopo l'altro nell'ordine in cui si leggono; gli altri quando ci arrivi scorrendo
-let revealIO=null;
-// (le posizioni arrivano dall'IntersectionObserver: nessuna misura sincrona del layout)
+// I blocchi entrano subito, nell'ordine in cui si leggono (nelle due colonne su PC: riga per riga); oltre il settimo stessa partenza
 function blkStagger(el) {
-  if (revealIO) revealIO.disconnect(); revealIO=null;
-  if (!('IntersectionObserver' in window)) return;
-  const blocks=[]; [...el.children].forEach(n=>{ if (n.classList.contains('mcols')) [...n.children].forEach(c=>blocks.push(...c.children)); else blocks.push(n); });
-  const k0=Math.max(0, (S.introAt||0)-performance.now()); let first=true, bt=0, bn=0;
-  const io=revealIO=new IntersectionObserver(es=>{ const now=performance.now();
-    const vis=es.filter(e=>e.isIntersecting).sort((a,b)=>(a.boundingClientRect.top-b.boundingClientRect.top)||(a.boundingClientRect.left-b.boundingClientRect.left));
-    if (now-bt>160) { bt=now; bn=0; }
-    vis.forEach(e=>{ io.unobserve(e.target); e.target.classList.remove('pre'); blkMark(e.target, first ? Math.min(bn++, 9) : bn++, first ? k0 : 0); });
-    first=false; }, { rootMargin:'0px 0px -24px 0px' });
-  blocks.forEach(b=>{ b.classList.add('pre'); io.observe(b); });
+  const k0=Math.max(0, (S.introAt||0)-performance.now()); let base=0;
+  [...el.children].forEach(n=>{
+    if (!n.classList.contains('mcols')) { blkMark(n, Math.min(base++, 7), k0); return; }
+    let rows=0; [...n.children].forEach(c=>{ [...c.children].forEach((b,i)=>blkMark(b, Math.min(base+i, 7), k0)); rows=Math.max(rows, c.children.length); }); base+=rows; });
 }
 function blkMark(b, k, k0) {
   b.style.setProperty('--k', k); if (k0) b.style.setProperty('--k0', Math.round(k0)+'ms');
-  b.classList.add('blk'); const ms=k*55+k0; countUp(b, ms+140);
+  b.classList.add('blk'); const ms=k*45+k0; countUp(b, ms+120);
   setTimeout(()=>{ b.classList.remove('blk'); b.style.removeProperty('--k'); b.style.removeProperty('--k0'); }, ms+2000);
 }
 // Su PC le card consecutive vanno in due colonne di altezza simile (senza buchi); sul telefono resta una colonna
@@ -1756,7 +1739,8 @@ function tzDate(t, tz) { const f=TZF[tz]||(TZF[tz]=new Intl.DateTimeFormat('en-U
 const romeDate = t => tzDate(t, 'Europe/Rome');
 const nyHM = t => tzDate(t, 'America/New_York');
 const p2 = n => String(n).padStart(2,'0');
-const todayIso = () => iso(romeDate(Date.now()));
+let TDY={ t:0, v:'' };   // la data di oggi a Roma: ricalcolata al massimo ogni 20 secondi (serve in ogni riga del calendario)
+const todayIso = () => { const n=Date.now(); if (n-TDY.t>20000) TDY={ t:n, v:iso(romeDate(n)) }; return TDY.v; };
 // nomi in italiano degli eventi principali (il nome originale di ForexFactory resta sempre visibile sotto)
 const NEWS_IT = [
   [/^Non-Farm Employment Change/i,'Buste paga non agricole (NFP)'], [/^ADP Non-Farm/i,'Occupazione privata ADP'], [/^Unemployment Rate/i,'Tasso di disoccupazione'],
