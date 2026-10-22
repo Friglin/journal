@@ -607,10 +607,6 @@ nav.bar { background:color-mix(in srgb,var(--surface) 76%,transparent); -webkit-
 .sect::after { content:""; flex:1; height:1px; background:var(--line); }
 
 /* ───── News ───── */
-.nhero { padding:20px; }
-.nh-t { font-size:26px; font-weight:700; letter-spacing:-.035em; margin:8px 0 6px; position:relative; }
-.nh-m { display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:14px; color:var(--fg2); font-weight:550; }
-.nh-cd { font-size:32px; font-weight:700; letter-spacing:-.03em; margin:10px 0 4px; font-variant-numeric:tabular-nums; color:var(--fg); }
 .nimp { display:inline-flex; gap:2px; align-items:flex-end; flex:none; }
 .nimp i { width:4px; border-radius:2px; background:var(--line); } .nimp i:nth-child(1) { height:7px; } .nimp i:nth-child(2) { height:11px; } .nimp i:nth-child(3) { height:15px; }
 .nimp.lo i:nth-child(1) { background:#E3B400; } .nimp.md i:nth-child(-n+2) { background:#FF8A00; } .nimp.hi i { background:var(--loss); } .nimp.ho i { background:var(--fg3); }
@@ -639,7 +635,6 @@ nav.bar { background:color-mix(in srgb,var(--surface) 76%,transparent); -webkit-
 @media (max-width:640px) {
   .nrow { grid-template-columns:52px 16px minmax(0,1fr); }
   .nv { grid-column:3; justify-content:flex-start; } .nv span { align-items:flex-start; }
-  .nh-cd { font-size:36px; } .nh-t { font-size:22px; }
 }
 
 /* ───── Calendario ───── */
@@ -704,7 +699,6 @@ header.top::before { display:none; } header.top { border-top:0; }
 .sb-ind { background:var(--active) !important; box-shadow:none !important; transition:transform var(--t-ui) var(--ease-io), opacity var(--t-hover) ease !important; }
 .sb-i.on { color:var(--fg) !important; font-weight:600; } .sb-i.on .ic { color:var(--accent); }
 .aifab { background:var(--fg) !important; color:var(--bg) !important; box-shadow:0 8px 20px rgba(0,0,0,.18) !important; }
-.nh-cd { background:none !important; -webkit-text-fill-color:currentColor; color:var(--fg) !important; font-size:32px !important; }
 .chk-bar i { background:var(--accent) !important; } .bchk.ok .chk-bar i { background:var(--win) !important; }
 .logo > rect:first-of-type { fill:var(--accent); }
 .filebar b { background:none !important; color:var(--fg2) !important; padding:0 !important; letter-spacing:0 !important; font-size:12.5px !important; }
@@ -712,7 +706,7 @@ header.top::before { display:none; } header.top { border-top:0; }
 .filebar { font-size:12.5px; }
 /* titoli e cifre da app */
 .stat-h h1, .hello h1 { font-size:28px !important; line-height:1.15 !important; letter-spacing:-.02em !important; font-weight:650 !important; }
-.bp-t { font-size:22px !important; } .nh-t { font-size:22px !important; } .be-big b { font-size:28px !important; }
+.bp-t { font-size:22px !important; } .be-big b { font-size:28px !important; }
 .h2 { font-size:17px !important; font-weight:650 !important; margin:0; }
 /* etichette in frase normale: niente maiuscoletto spaziato */
 .eyebrow, .sb-g, .cw, .sect, .nv em, .tag, .ftag, .ncat { text-transform:none !important; letter-spacing:0 !important; }
@@ -784,7 +778,7 @@ input, textarea { caret-color:var(--accent); } input[type=checkbox], input[type=
 * { scrollbar-width:thin; scrollbar-color:color-mix(in srgb,var(--fg) 22%,transparent) transparent; }
 button, a, [role=button], .chip, .seg button { touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
 .sheet-b, #pal .pl-list { overscroll-behavior:contain; }
-h1, h2, h3, .h2, .bp-t, .nh-t { text-wrap:balance; } p { text-wrap:pretty; }
+h1, h2, h3, .h2, .bp-t, .nt-next b { text-wrap:balance; } p { text-wrap:pretty; }
 @media (max-width:999px) { input.inp, select.inp, textarea.inp, .chat-in textarea, #pal input { font-size:16px; } }   /* sotto i 16px iOS ingrandisce la pagina */
 .skip { position:fixed; left:12px; top:-60px; z-index:100; padding:10px 14px; border-radius:10px; background:var(--fg); color:var(--bg); font-weight:600; text-decoration:none; transition:top .2s var(--ease-ui); }
 .skip:focus { top:12px; }
@@ -833,6 +827,44 @@ main:focus { outline:none; }
 .td-foot .link { padding:0; }
 @media (max-width:640px) {
   .today .bp-t { font-size:19px !important; } .td-r b { font-size:22px; }
+}
+
+/* ───── News: oggi in cima, settimana a colpo d'occhio ───── */
+.nweek { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; }
+.nwd { display:flex; flex-direction:column; align-items:center; gap:2px; padding:10px 4px 9px; border:1px solid var(--line); border-radius:16px; background:var(--surface); color:var(--fg); font:inherit; cursor:pointer;
+  transition:background-color 200ms ease, border-color 200ms ease, transform 140ms var(--e-out); }
+.nwd span { font-size:11.5px; font-weight:600; color:var(--fg3); text-transform:uppercase; letter-spacing:.06em; }
+.nwd b { font-size:20px; font-weight:700; letter-spacing:-.03em; font-variant-numeric:tabular-nums; line-height:1.15; }
+.nwd i { width:7px; height:7px; border-radius:50%; background:var(--line); margin:3px 0 2px; } .nwd i.hi { background:var(--loss); } .nwd i.md { background:#FF8A00; }
+.nwd em { font-style:normal; font-size:11px; color:var(--fg3); white-space:nowrap; }
+.nwd.on { border-color:color-mix(in srgb,var(--accent) 65%,transparent); background:color-mix(in srgb,var(--accent) 10%,var(--surface)); } .nwd.on span { color:var(--accent); }
+.nwd.past { opacity:.5; } .nwd:active { transform:scale(.96); }
+@media (hover:hover) and (pointer:fine) { .nwd:not(.on):hover { border-color:color-mix(in srgb,var(--fg) 22%,transparent); } }
+.ntoday { padding:18px 18px 8px !important; }
+.nt-h { display:flex; justify-content:space-between; align-items:center; gap:10px; }
+.nt-next { display:flex; justify-content:space-between; align-items:flex-end; gap:12px 18px; flex-wrap:wrap; margin:14px 0 4px; }
+.nt-next span { display:block; font-size:12.5px; color:var(--fg3); font-weight:550; }
+.nt-next b { display:block; font-size:22px; font-weight:700; letter-spacing:-.03em; line-height:1.2; margin-top:2px; }
+.nt-next em { display:block; font-style:normal; font-size:13px; color:var(--fg2); margin-top:3px; }
+.nt-cd { font-size:34px; font-weight:700; letter-spacing:-.035em; color:var(--accent); font-variant-numeric:tabular-nums; line-height:1; white-space:nowrap; }
+.ntoday .nh-i { margin:8px 0 4px; }
+.nt-list { margin:10px -6px 0; border-top:1px solid var(--line); padding-top:4px; }
+.nt-list .nrow:first-of-type { border-top:0; }
+.nt-none { display:flex; align-items:center; gap:8px; margin:14px 0 10px; font-size:14.5px; font-weight:600; color:var(--win); }
+.nday .card-h { margin-bottom:6px; }
+.npast { margin-top:4px; }
+.npast summary { display:flex; align-items:center; gap:8px; list-style:none; cursor:pointer; padding:12px 4px; font-size:14px; font-weight:650; color:var(--fg2); }
+.npast summary::-webkit-details-marker { display:none; }
+.npast summary .ic { transition:transform 260ms var(--e-out); } .npast[open] summary .ic { transform:rotate(90deg); }
+.npast summary em { margin-left:auto; font-style:normal; font-size:12.5px; font-weight:500; color:var(--fg3); }
+.npast .nday { margin-top:12px; opacity:.85; }
+@media (max-width:640px) {
+  .nweek { gap:5px; } .nwd { padding:8px 2px 7px; border-radius:13px; } .nwd b { font-size:17px; } .nwd em { font-size:10px; }
+  .ntoday { padding:16px 14px 6px !important; } .nt-next b { font-size:19px; } .nt-cd { font-size:28px; }
+  .nt-list { margin:10px -4px 0; }
+  .nrow { grid-template-columns:56px 14px minmax(0,1fr); gap:9px; padding:11px 4px; }
+  .nv { gap:4px 12px; flex-wrap:wrap; margin-top:-4px; } .nv span { flex-direction:row; align-items:baseline; gap:4px; } .nv em { font-size:10px; }
+  .nt span { white-space:nowrap; }
 }
 
 /* Panoramica e Analisi: risultato e riquadri con il carattere della versione del 20 ottobre */
@@ -1752,6 +1784,8 @@ const inSess = e => !e.tbd && e.mm>=SESS[0]-15 && e.mm<=SESS[1];   // dentro la 
 const when = e => e.tbd ? 'orario da definire' : e.mm<SESS[0]-15 ? 'prima della sessione' : e.mm<=SESS[1] ? 'in sessione' : 'dopo la sessione';
 const ffDay = d => 'https://www.forexfactory.com/calendar?day='+['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'][d.getMonth()]+d.getDate()+'.'+d.getFullYear();
 const TRUMP_LINKS = [['Diretta Casa Bianca','https://www.youtube.com/@WhiteHouse/streams']];
+// versione corta per le righe del calendario: «tra 1 h 59 min» → «1h 59m»
+const cdS = ms => cdTxt(ms).replace(/^tra /,'').replace(/ h /,'h ').replace(/ min\b/,'m').replace(/ giorn[oi]/,' g');
 function cdTxt(ms) { const a=Math.abs(ms), s=Math.floor(a/1000)%60, m=Math.floor(a/60000)%60, h=Math.floor(a/3600000), d=Math.floor(h/24);
   if (ms<0) return a<60000 ? 'adesso' : 'uscita '+(h ? (d ? d+' g' : h+' h '+p2(m)+' min') : m+' min')+' fa';
   if (d>=1) return 'tra '+d+(d===1?' giorno':' giorni'); if (h) return 'tra '+h+' h '+p2(m)+' min'; return 'tra '+m+':'+p2(s); }
@@ -1777,19 +1811,23 @@ function nrow(e, now, nextT) {
   const past = !e.tbd && e.t<now-60000, nx = e.t===nextT;
   const vals = [['Prev.',e.fc],['Prec.',e.pv],['Reale',e.ac]].filter(v=>v[1]).map(v=>'<span'+(v[0]==='Reale'?' class="ac"':'')+'><em>'+v[0]+'</em>'+esc(v[1])+'</span>').join('');
   const tag = e.url ? 'a href="'+esc(e.url)+'" target="_blank" rel="noopener"' : 'div';
-  return '<'+tag+' class="nrow '+e.imp2+(past?' past':'')+(nx?' next':'')+(e.trump?' tr':'')+'"><div class="nt"><b>'+e.hm+'</b>'+(e.tbd||past?'':'<span data-cd="'+e.t+'">'+cdTxt(e.t-now)+'</span>')+'</div>'+
+  return '<'+tag+' class="nrow '+e.imp2+(past?' past':'')+(nx?' next':'')+(e.trump?' tr':'')+'"><div class="nt"><b>'+e.hm+'</b>'+(e.tbd||past?'':'<span data-cd="'+e.t+'" data-cds="1">'+cdS(e.t-now)+'</span>')+'</div>'+
     '<span class="nimp '+e.imp2+'" title="Impatto '+esc(e.impL.toLowerCase())+'"><i></i><i></i><i></i></span>'+
     '<div class="nx"><b>'+esc(newsIt(e.title))+(nx?'<em class="tag">Prossima</em>':'')+(inSess(e)&&!past?'<em class="tag s">In sessione</em>':'')+'</b><span>'+esc(e.title)+' · '+e.cur+'</span></div>'+
     (vals?'<div class="nv">'+vals+'</div>':'')+'</'+tag.split(' ')[0]+'>';
 }
-function newsHero(ev, now) {
-  const nx=ev.find(e=>!e.tbd && e.t>now-60000 && (e.imp==='High' || e.trump));
-  if (!nx) return '<div class="hero nhero rise"><div class="hero-glow"></div><div class="eyebrow">Prossima news ad alto impatto</div><div class="nh-t">Nessuna in calendario</div><p class="mut">Non ci sono altre news USD ad alto impatto nelle settimane disponibili.</p></div>';
-  const im=implOf(nx.title);
-  return '<div class="hero nhero rise"><div class="hero-glow"></div><div class="eyebrow">Prossima news ad alto impatto</div>'+
-    '<div class="nh-t">'+esc(newsIt(nx.title))+'</div><div class="nh-m"><span class="nimp hi"><i></i><i></i><i></i></span>'+dayLbl(nx.day)+' alle '+nx.hm+' · '+when(nx)+(inSess(nx)?'<em class="tag s">In sessione</em>':'')+'</div>'+
-    '<div class="nh-cd" data-cd="'+nx.t+'">'+cdTxt(nx.t-now)+'</div><div class="mut" style="font-size:12.5px">'+esc(nx.title)+(nx.fc?' · previsione '+esc(nx.fc):'')+(nx.pv?' · precedente '+esc(nx.pv):'')+'</div>'+
-    (im?'<p class="nh-i">'+esc(im[3])+'</p>':'')+'</div>';
+// Oggi: in cima alla pagina, con il conto alla rovescia della prossima news importante (anche se non è oggi)
+function newsToday(g, all, now, nextT) {
+  const t=todayIso(), rn=romeDate(now), wdN=rn.getDay(), cat=wdN===0||wdN===6 ? '' : newsCat(t);
+  const nx=all.find(e=>!e.tbd && e.t>now-60000 && (e.imp==='High' || e.trump)), im=nx && implOf(nx.title);
+  let h='<div class="card wide hero ntoday" id="nd-'+t+'"><div class="hero-glow"></div><div class="nt-h"><div class="eyebrow">Oggi · '+GIORNI[rn.getDay()]+' '+rn.getDate()+' '+MESI_F[rn.getMonth()]+'</div>'+
+    (cat?'<span class="ncat '+(cat==='Red News'?'hi':cat==='Orange News'?'md':'')+'">'+cat+'</span>':'')+'</div>';
+  if (nx) h+='<div class="nt-next"><div><span>Prossima ad alto impatto'+(nx.day===t?'':' · '+dayLbl(nx.day).toLowerCase()+' alle '+nx.hm)+'</span><b>'+esc(newsIt(nx.title))+'</b>'+
+    (nx.day===t?'<em>'+nx.hm+' · '+when(nx)+'</em>':'')+'</div><div class="nt-cd" data-cd="'+nx.t+'">'+cdTxt(nx.t-now)+'</div></div>'+(im && nx.day===t?'<p class="nh-i">'+esc(im[3])+'</p>':'');
+  if (wdN===0 || wdN===6) h+='<p class="nt-none">Mercati chiusi: nessuna news da seguire oggi.</p>';
+  else if (!g.length) h+='<p class="nt-none">'+ic('check',16,2.2)+'Nessuna news USD di impatto medio o alto oggi.</p>';
+  else h+='<div class="nt-list">'+g.map(e=>nrow(e,now,nextT)).join('')+'</div>';
+  return h+'</div>';
 }
 // sunto del periodo: le news importanti raggruppate per tipo, quando escono rispetto alla sessione e cosa possono comportare
 function newsSummary(ev, per) {
@@ -1819,32 +1857,38 @@ function askNewsAI(b) {
 }
 function renderNews() {
   const el=$('v-news'); loadNews().catch(()=>{});
-  let h='<div class="stat-h rise"><div><div class="eyebrow">Calendario economico · USD · ora italiana</div><h1>'+words('News')+'</h1></div>'+
+  let h='<div class="stat-h rise"><div><div class="eyebrow">Calendario USD · ora italiana</div><h1>'+words('News')+'</h1></div>'+
     '<button type="button" class="btn sec sm" data-act="newsref"'+(newsP?' disabled':'')+'>'+(newsP?'<span class="spin"></span>Aggiorno…':ic('refresh',16,2)+'Aggiorna')+'</button></div>';
   if (!S.news) {
     h += newsErr==='OLD' ? emptyState('Aggiorna lo script', 'Per le news serve il nuovo Code.gs: sostituiscilo nel progetto Apps Script e fai un nuovo deployment (Gestisci deployment → modifica → Nuova versione).')
        : newsErr && !newsRetry && !newsP ? emptyState('News non disponibili', esc(newsErr)+'. Tocca Aggiorna per riprovare.') : skeleton();
     enter(el,h); return;
   }
+  // ordine: oggi in cima, poi i prossimi giorni e la settimana prossima; i giorni già passati in fondo, chiusi
   const now=Date.now(), all=newsEvents(), t=todayIso(), wk=weekOf(t), nwk=iso(addDays(pdIso(wk),7));
   const keep = e => e.trump || e.imp==='Holiday' || e.imp==='High' || e.imp==='Medium';
-  const inPer = e => weekOf(e.day)===wk || weekOf(e.day)===nwk;
-  const pev=all.filter(e=>weekOf(e.day)===wk), ev=all.filter(inPer).filter(keep), nextT=(all.find(e=>!e.tbd && e.t>now-60000 && keep(e))||{}).t;
-  h += newsHero(all, now);
+  const pev=all.filter(e=>weekOf(e.day)===wk), ev=all.filter(e=>weekOf(e.day)===wk || weekOf(e.day)===nwk).filter(keep), nextT=(all.find(e=>!e.tbd && e.t>now-60000 && keep(e))||{}).t;
+  const byDay = d => ev.filter(e=>e.day===d);
+  // la settimana a colpo d'occhio: tocca un giorno per andarci
+  h += '<div class="nweek">'+[0,1,2,3,4].map(i=>{ const d=iso(addDays(pdIso(wk),i)), g=byDay(d), cat=newsCat(d), hi=g.filter(e=>e.imp==='High').length, dt=pdIso(d);
+    return '<button type="button" class="nwd'+(d===t?' on':'')+(d<t?' past':'')+'" data-nday="'+d+'"><span>'+GIORNI[dt.getDay()].slice(0,3)+'</span><b>'+dt.getDate()+'</b>'+
+      '<i class="'+(cat==='Red News'?'hi':cat==='Orange News'?'md':'')+'"></i><em>'+(hi?hi+' alte':g.length?g.length+' medie':'nessuna')+'</em></button>'; }).join('')+'</div>';
+  h += newsToday(byDay(t), all, now, nextT);
   h += trumpCard(all.filter(e=>e.trump && (e.tbd || e.t>now-4*3600000)).slice(0,4));
+  const dayCard = d => { const g=byDay(d), hi=g.filter(e=>e.imp==='High').length, cat=newsCat(d);
+    return '<div class="card wide nday" id="nd-'+d+'"><div class="card-h"><h3 class="h2">'+dayLbl(d)+'</h3><span class="ncat '+(cat==='Red News'?'hi':cat==='Orange News'?'md':'')+'">'+(hi?hi+' alto impatto':cat)+'</span></div>'+g.map(e=>nrow(e,now,nextT)).join('')+'</div>'; };
+  const days=[...new Set(ev.map(e=>e.day))], next=days.filter(d=>d>t && weekOf(d)===wk), nw=days.filter(d=>weekOf(d)===nwk), past=days.filter(d=>d<t);
+  if (next.length) h += '<h2 class="sect">Prossimi giorni</h2>'+next.map(dayCard).join('');
   h += newsSummary(pev, 'w');
-  const days=[...new Set(ev.map(e=>e.day))];
-  if (!days.length) h += '<div class="card wide"><div class="empty-row">Nessuna news USD con questo impatto questa settimana.</div></div>';
-  let nxt=false;
-  days.forEach(d=>{ const g=ev.filter(e=>e.day===d), hi=g.filter(e=>e.imp==='High').length;
-    if (!nxt && weekOf(d)===nwk) { nxt=true; h += '<h2 class="sect">Settimana prossima</h2>'; }
-    h += '<div class="card wide nday'+(d===t?' today':'')+'"><div class="card-h"><h3 class="h2">'+dayLbl(d)+'</h3><span class="sub">'+(hi?hi+' ad alto impatto':'nessuna ad alto impatto')+' · '+newsCat(d)+'</span></div>'+g.map(e=>nrow(e,now,nextT)).join('')+'</div>'; });
+  if (nw.length) h += '<h2 class="sect">Settimana prossima</h2>'+nw.map(dayCard).join('');
+  else if (S.news.weeks && S.news.weeks.next && S.news.weeks.next!=='ok') h += '<div class="card wide"><div class="empty-row">Il calendario della settimana prossima non è ancora disponibile su ForexFactory.</div></div>';
+  if (past.length) h += '<details class="npast" id="npast"><summary>'+ic('chev',16,2)+'<span>Già uscite questa settimana</span><em>'+past.length+(past.length===1?' giorno':' giorni')+'</em></summary>'+past.map(dayCard).join('')+'</details>';
   const at=S.news.at?romeDate(S.news.at):null;
   h += '<p class="nsrc rise">'+ic('clock',14,2)+'<span>Fonte: calendario ForexFactory'+(at?', aggiornato alle '+p2(at.getHours())+':'+p2(at.getMinutes()):'')+
     (S.news.stale?' · <b>ForexFactory non risponde: sto mostrando l\'ultimo calendario salvato</b>':'')+'. Orari, impatto e valori sono quelli di ForexFactory; tocca una news per aprirla sul sito. La fine dei discorsi non viene mai annunciata.</span></p>';
   enter(el,h);
 }
-setInterval(()=>{ if (document.hidden) return; const now=Date.now(); document.querySelectorAll('[data-cd]').forEach(x=>{ const v=cdTxt(+x.dataset.cd-now); if (x.textContent!==v) x.textContent=v; }); }, 1000);
+setInterval(()=>{ if (document.hidden) return; const now=Date.now(); document.querySelectorAll('[data-cd]').forEach(x=>{ const v=(x.dataset.cds?cdS:cdTxt)(+x.dataset.cd-now); if (x.textContent!==v) x.textContent=v; }); }, 1000);
 
 // ───────────────────────── OGGI: riepilogo della giornata ─────────────────────────
 const normCache={};
@@ -2654,6 +2698,8 @@ document.addEventListener('click', e => {
   if (b.dataset.newf) { switchFile(b.dataset.newf); openForm(); return; }
   if (b.dataset.open) { const [f,row]=b.dataset.open.split(':'); if (!(+row>1)) { toast('Il trade si sta ancora salvando: riprova tra un attimo'); return; } switchFile(f); openForm(+row); return; }
   if (b.dataset.act==='nsai') { askNewsAI(b); return; }
+  if (b.dataset.nday) { const el=$('nd-'+b.dataset.nday); if (!el) { toast('Nessuna news di impatto medio o alto quel giorno'); return; } const d=el.closest('details'); if (d) d.open=true;
+    const y=el.getBoundingClientRect().top+scrollY-(innerWidth<1000?78:16); window.scrollTo({ top:y, behavior:reduceMotion()?'auto':'smooth' }); return; }
   if (b.id==='sh-close' || b.dataset.act==='close') { closeSheet(); return; }
   if (b.closest('[data-seg=coach-scope]')) { S.coachScope=b.dataset.v; try { sessionStorage.setItem('tj.cscope', S.coachScope); } catch(e) {} renderCoach(); return; }
   if (b.dataset.q) { sendChat(b.dataset.q); return; }
