@@ -413,8 +413,8 @@ header.top { border-top:3px solid var(--accent); transition:border-color .3s; }
   .kgrid { grid-template-columns:repeat(4,minmax(0,1fr)); }
   nav.bar .in { max-width:640px; }
   .sheet { max-width:760px; }
-  .sheet.side { overflow:hidden; left:auto; right:24px; top:96px; bottom:24px; width:460px; max-width:none; border-radius:24px; transform:translateX(110%); }
-  .sheet.side.open { transform:none; }
+  .sheet.panel { overflow:hidden; left:auto; right:24px; top:96px; bottom:24px; width:460px; max-width:none; border-radius:24px; transform:translateX(110%); }
+  .sheet.panel.open { transform:none; }
   .aifab, .fab { bottom:96px; }
 }
 .confetti { position:fixed; inset:0; width:100%; height:100%; pointer-events:none; z-index:70; }
@@ -2676,7 +2676,8 @@ async function save() {
 }
 
 // ───────────────────────── scheda: apertura e chiusura ─────────────────────────
-function openSheet(side) { $('sheet').classList.toggle('side', !!side); $('sheet').classList.add('open'); $('scrim').classList.add('open'); $('fab').classList.add('hide'); $('aifab').classList.add('hide'); document.body.style.overflow='hidden'; $('sh-body').scrollTop=0; }
+function openSheet(panel) { $('sheet').classList.toggle('panel', !!panel);   // «panel»: su PC la scheda è un pannello a destra (non «side», che è la barra laterale)
+  $('sheet').classList.add('open'); $('scrim').classList.add('open'); $('fab').classList.add('hide'); $('aifab').classList.add('hide'); document.body.style.overflow='hidden'; $('sh-body').scrollTop=0; }
 function closeSheet() { if (S.sheet==='chat') setTimeout(()=>{ if (!S.sheet) { $('sh-body').innerHTML=''; $('sh-foot').innerHTML=''; } }, 520);
   $('sheet').classList.remove('open'); $('scrim').classList.remove('open'); $('fab').classList.toggle('hide', ['mc','coach','news','set'].includes(S.tab)); $('aifab').classList.toggle('hide', S.tab==='coach'); document.body.style.overflow=''; S.sheet=null; }
 
