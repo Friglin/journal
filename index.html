@@ -1050,6 +1050,17 @@ const L = {
   errs: ['FOMO','TP spostato','SL spostato','Ingresso anticipato','Uscita anticipata','Size sbagliata','Fuori piano','Altro'],
 };
 const APP = 'Edgebook';
+const BUILD = '2026-10-22.1';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
+let updChk=0;
+function checkUpdate() {
+  if (viaScript() || location.protocol==='file:' || Date.now()-updChk<60000) return; updChk=Date.now();
+  fetch(location.pathname+'?u='+Date.now(), { cache:'no-store' }).then(r=>r.ok?r.text():'').then(t=>{
+    const m=/const BUILD = '([^']+)'/.exec(t||''); if (!m || m[1]===BUILD || S.sheet==='form') return;   // un trade in scrittura non si interrompe
+    try { if (sessionStorage.getItem('tj.upd')===m[1]) return; sessionStorage.setItem('tj.upd', m[1]); } catch(e) {}
+    toast('Nuova versione di '+APP+': aggiorno…');
+    setTimeout(()=>location.replace(location.pathname+'?v='+encodeURIComponent(m[1])+location.hash), 900);   // indirizzo nuovo: niente copia vecchia in cache
+  }).catch(()=>{});
+}
 const EM1 = '1° EMA';   // unico entry model: sempre scritto così, mai chiesto
 const MESI = ['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
 const MESI_F = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
@@ -2791,13 +2802,14 @@ $('setupForm').addEventListener('submit', async e => {
   catch(x) { if ($('setup').hidden) showSetup(); $('su-err').innerHTML=ic('alert',15,2)+'<span>'+esc(x.message==='Chiave non valida'?'La chiave non è valida: controllala e riprova.':x.message==='NETWORK'?'Lo script non risponde: apri l\'URL nel browser e controlla che il deployment sia «Chiunque» con il Code.gs nuovo.':'Non riesco a collegarmi: '+x.message)+'</span>'; }
   finally { b.disabled=false; b.textContent='Collega'; }
 });
-document.addEventListener('visibilitychange', () => { if (document.visibilityState==='visible' && S.loaded && !S.sheet && Date.now()-(fetchedAt[S.file]||0) > FRESH_MS) load(true); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState==='visible') checkUpdate(); if (document.visibilityState==='visible' && S.loaded && !S.sheet && Date.now()-(fetchedAt[S.file]||0) > FRESH_MS) load(true); });
 applyTheme(); if (store.get('sbc','')==='1') document.documentElement.classList.add('sbc');
 { const [t,f]=location.hash.slice(1).split('/'); if (f==='EOW'||f==='Journal') { S.file=f; S.type=f==='EOW'?'EOW':'JOURNAL'; S.filt=S.filtBy[f]; }
   if (VIEWS.includes(t) && t!=='home') { S.tab=t; VIEWS.forEach(v=>{ $('v-'+v).hidden = v!==t; }); } }
 { const b0=Math.max(0,(S.introAt||0)-performance.now()); document.documentElement.style.setProperty('--boot0', Math.round(b0)+'ms'); document.documentElement.classList.add('boot'); setTimeout(()=>document.documentElement.classList.remove('boot'), b0+1600); }
 renderChrome();
 window.addEventListener('load', moveInd);
+setTimeout(checkUpdate, 4000);
 if (!viaScript() && !(store.get('api','') && store.get('key',''))) showSetup(); else { load(); loadNews().then(newsBadge).catch(()=>{}); }
 </script>
 </body>
