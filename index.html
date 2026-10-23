@@ -224,8 +224,16 @@ svg .bar.ov { fill:var(--loss); } svg .bar.un { fill:var(--accent); } svg .bar.z
 .tip.show { opacity:1; }
 .tip b { display:block; font-size:14px; font-family:var(--display); font-weight:500; }
 .bd { display:grid; grid-template-columns:minmax(0,1.9fr) minmax(0,1fr) 40px 60px; gap:10px; align-items:center; padding:9px 0; border-top:1px solid var(--line); font-size:13.5px; }
+.bd.tap { width:100%; font:inherit; color:inherit; text-align:left; background:none; border:0; border-top:1px solid var(--line); cursor:pointer; border-radius:10px; transition:background-color 160ms ease, transform 140ms var(--e-out); }
+@media (hover:hover) and (pointer:fine) { .bd.tap:hover { background:color-mix(in srgb,var(--fg) 4%,transparent); } }
+.bd.tap:active { transform:scale(.985); }
+.hmb { all:unset; display:block; width:100%; cursor:pointer; text-align:center; border-radius:8px; } .hmb:focus-visible { outline:2px solid var(--accent); }
+td.hm { padding:0 !important; } td.hm .hmb { padding:8px 4px; } @media (hover:hover) and (pointer:fine) { td.hm .hmb:hover { background:color-mix(in srgb,var(--fg) 6%,transparent); } }
+.bd-sum { display:grid; grid-template-columns:repeat(auto-fit,minmax(68px,1fr)); gap:10px; padding:4px 0 14px; border-bottom:1px solid var(--line); }
+.bd-sum span { display:block; font-size:12px; color:var(--fg3); } .bd-sum b { font-family:var(--display); font-size:22px; font-weight:600; letter-spacing:-.02em; } @media (max-width:640px) { .bd-sum b { font-size:18px; } }
+.bd-list .trow { border-top:1px solid var(--line); } .bd-list .trow:first-child { border-top:0; }
 .bd.hd { border-top:0; padding:0 0 4px; font-size:11px; color:var(--fg3); text-transform:uppercase; letter-spacing:.06em; font-weight:600; }
-.bd-l { min-width:0; } .bd-l span { display:block; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .bd-l small { color:var(--fg3); font-size:11.5px; }
+.bd-l { min-width:0; } .bd-l > span { display:block; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .bd-l small { color:var(--fg3); font-size:11.5px; }
 .track { height:8px; border-radius:99px; background:var(--sunk); overflow:hidden; }
 .track i { display:block; height:100%; border-radius:99px; background:var(--accent); transform-origin:left; animation:grow .9s cubic-bezier(.2,.8,.2,1) both; animation-delay:var(--d,0ms); }
 @keyframes grow { from { transform:scaleX(0); } }
@@ -1127,7 +1135,7 @@ const L = {
   errs: ['FOMO','TP spostato','SL spostato','Ingresso anticipato','Uscita anticipata','Size sbagliata','Fuori piano','Altro'],
 };
 const APP = 'Edgebook';
-const BUILD = '2026-10-23.13';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
+const BUILD = '2026-10-23.14';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
 let updChk=0;
 function checkUpdate() {
   if (viaScript() || location.protocol==='file:' || Date.now()-updChk<60000) return; updChk=Date.now();
@@ -2231,7 +2239,7 @@ function discErr(ts) {
   if (val.length && er.length) { const dv=av(val)-av(er);
     b+='<div class="ds-cost"><div><span>Trade valido</span><b class="'+sgn(av(val))+' num">'+fmtN(av(val),2,true)+' R</b><em>in media · '+val.length+' trade</em></div><div><span>Trade con errori</span><b class="'+sgn(av(er))+' num">'+fmtN(av(er),2,true)+' R</b><em>in media · '+er.length+' trade</em></div></div>'+
       '<p class="ds-note">'+(dv>0?'Ogni errore ti costa in media <b>'+fmtN(dv,2)+' R</b> rispetto a un trade fatto bene.':'In questo periodo i trade con errori sono andati bene lo stesso: è fortuna, non un motivo per ripeterli.')+'</p>'; }
-  if (er.length) b+='<div style="height:6px"></div>'+bdRows(er, jModel, t=>t.errs.length?t.errs:['Non specificato'], [...L.errs,'Non specificato']);
+  if (er.length) b+='<div style="height:6px"></div>'+bdRows(er, jModel, t=>t.errs.length?t.errs:['Non specificato'], [...L.errs,'Non specificato'], 0, 'Journal');
   else b+='<p class="ds-note">Nessun errore nel periodo.</p>';
   return dcard('Trade validi ed errori', 'esecuzione del piano', b);
 }
@@ -2392,11 +2400,25 @@ function renderList() {
 }
 
 // ───────────────────────── ANALISI ─────────────────────────
-function bdRows(ts, m, keyFn, keys, d0) {
+// righe per categoria (idea, SMT, fascia…): ogni riga si tocca e apre l'elenco dei suoi trade
+const BDG=new Map(); let bdId=0;
+function bdReg(g, m, k, f) { const id=++bdId; BDG.set(id, { g, m, k, f:f||S.file }); if (BDG.size>400) BDG.delete(BDG.keys().next().value); return id; }
+function bdRows(ts, m, keyFn, keys, d0, f) {
   let h='<div class="bd hd"><span></span><span>Win rate</span><span></span><span style="text-align:right">R</span></div>', j=0;
   keys.forEach(k=>{ const g=ts.filter(t=>{ const v=keyFn(t); return Array.isArray(v) ? v.includes(k) : v===k; }); if (!g.length) return; const a=agg(g,m);
-    h+='<div class="bd"><div class="bd-l"><span>'+esc(k)+'</span><small>'+a.n+' trade</small></div><div class="track"><i style="width:'+((a.wr||0)*100)+'%;--d:'+((d0||0)+j++*60)+'ms"></i></div><div class="p2 num">'+pct(a.wr)+'</div><div class="r '+sgn(a.R)+'">'+fmtR(a.R)+'</div></div>'; });
+    h+='<button type="button" class="bd tap" data-bd="'+bdReg(g,m,k,f)+'" aria-label="'+esc(k)+': vedi i '+a.n+' trade"><div class="bd-l"><span>'+esc(k)+'</span><small>'+a.n+' trade</small></div><div class="track"><i style="width:'+((a.wr||0)*100)+'%;--d:'+((d0||0)+j++*60)+'ms"></i></div><div class="p2 num">'+pct(a.wr)+'</div><div class="r '+sgn(a.R)+'">'+fmtR(a.R)+'</div></button>'; });
   return h;
+}
+// elenco dei trade di una categoria, in un pannello: riepilogo in cima, poi i trade dal più recente
+function openBd(b) {
+  const x=BDG.get(+b.dataset.bd); if (!x) return;
+  const cat=(b.closest('.card')||{}).querySelector ? (b.closest('.card').querySelector('.h2')||{}).textContent||'' : '';
+  const a=agg(x.g, x.m), E=x.f==='EOW', U=usdOn(E), list=x.g.slice().reverse();
+  S.sheet='bd'; $('sh-sub').textContent=(cat?cat+' · ':'')+x.f; $('sh-title').innerHTML=words(x.k);
+  $('sh-body').innerHTML='<div class="bd-sum"><div><span>Trade</span><b class="num">'+a.n+'</b></div><div><span>Win rate</span><b class="num">'+pct(a.wr)+'</b></div>'+
+      '<div><span>Risultato</span><b class="num '+sgn(a.R)+'">'+fmtR(a.R)+'</b></div>'+(U?'<div><span>Dollari</span><b class="num '+sgn(usdSum(x.g,x.m))+'">'+fmtU(usdSum(x.g,x.m))+'</b></div>':'')+'</div>'+
+    '<div class="bd-list">'+list.map(t=>'<button type="button" class="trow" data-open="'+x.f+':'+t.row+'">'+tline(t, x.f, { r:x.m.rOf(t), w:x.m.isWin(t), l:x.m.isLoss(t), date:true })+'</button>').join('')+'</div>';
+  $('sh-foot').innerHTML=''; openSheet(innerWidth>=1000);
 }
 function levelRows(rows) { // [{l, p, right, sub}]
   return rows.map((r,j)=>'<div class="bd"><div class="bd-l"><span>'+r.l+'</span>'+(r.sub?'<small>'+r.sub+'</small>':'')+'</div><div class="track"><i style="width:'+((r.p||0)*100)+'%;--d:'+(j*70)+'ms"></i></div><div class="p2 num">'+pct(r.p)+'</div><div class="r '+(r.cls||'')+'">'+r.right+'</div></div>').join('');
@@ -2404,8 +2426,9 @@ function levelRows(rows) { // [{l, p, right, sub}]
 function dayNews(ts, m) {
   let h='<div class="tbl-wrap"><table><tr><th></th><th>Tutti</th><th>Red</th><th>Orange</th><th>No news</th></tr>';
   L.days.forEach(d=>{ const g=ts.filter(t=>t.day===d); if (!g.length) return;
-    const c=f=>{ const x=g.filter(f); if (!x.length) return '<td>–</td>'; const a=agg(x,m); return '<td class="hm" style="--p:'+Math.round((a.wr||0)*55)+'%"><b class="num">'+pct(a.wr)+'</b><small>'+x.length+' trade</small></td>'; };
-    h+='<tr><td>'+d.slice(0,3)+'</td>'+c(()=>true)+c(t=>t.news==='Red News')+c(t=>t.news==='Orange News')+c(t=>t.news==='No News Day')+'</tr>'; });
+    const c=(f,lbl)=>{ const x=g.filter(f); if (!x.length) return '<td>–</td>'; const a=agg(x,m);
+      return '<td class="hm" style="--p:'+Math.round((a.wr||0)*55)+'%"><button type="button" class="hmb" data-bd="'+bdReg(x,m,d+(lbl?' · '+lbl:''))+'" aria-label="'+esc(d+' '+(lbl||''))+': vedi i '+x.length+' trade"><b class="num">'+pct(a.wr)+'</b><small>'+x.length+' trade</small></button></td>'; };
+    h+='<tr><td>'+d.slice(0,3)+'</td>'+c(()=>true,'')+c(t=>t.news==='Red News','Red news')+c(t=>t.news==='Orange News','Orange news')+c(t=>t.news==='No News Day','No news')+'</tr>'; });
   return h+'</table></div>';
 }
 // card affiancate a due a due nell'ordine dato; se restano dispari l'ultima prende tutta la riga
@@ -3101,6 +3124,7 @@ document.addEventListener('click', e => {
   if (b.id==='fab' || b.dataset.act==='new') { if (NOFILE.includes(S.tab)) openNewPick(); else openForm(); return; }
   if (b.dataset.newf) { switchFile(b.dataset.newf); openForm(); return; }
   if (b.dataset.open) { const [f,row]=b.dataset.open.split(':'); if (!(+row>1)) { toast('Il trade si sta ancora salvando: riprova tra un attimo'); return; } switchFile(f); openForm(+row); return; }
+  if (b.dataset.bd) { openBd(b); return; }
   if (b.dataset.act==='nsai') { askNewsAI(b); return; }
   if (b.dataset.act==='trretry') { trTry=0; trErr=''; loadTrump(true).catch(()=>{}); renderCurrent(true); return; }
   if (b.dataset.nday) { const el=$('nd-'+b.dataset.nday); if (!el) { toast('Nessuna news di impatto medio o alto quel giorno'); return; } const d=el.closest('details'); if (d) d.open=true;
