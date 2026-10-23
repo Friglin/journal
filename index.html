@@ -136,7 +136,16 @@ svg .bar.ov { fill:var(--loss); } svg .bar.un { fill:var(--accent); } svg .bar.z
 .kpi { background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:14px; display:flex; flex-direction:column; gap:4px; min-width:0; }
 .kpi .v { font-family:var(--display); font-size:29px; line-height:1.1; letter-spacing:-.02em; display:flex; align-items:center; gap:8px; }
 .kpi .v small { font-size:15px; color:var(--fg3); }
-.kpi .h { font-size:12.5px; color:var(--fg2); line-height:1.35; }
+.kpi .h { font-size:12.5px; color:var(--fg3); line-height:1.4; }
+/* valori dentro i testi secondari: più scuri e in grassetto, + verde e − rosso; puntini al posto dei «·» */
+.mv { color:var(--fg); font-weight:600; font-variant-numeric:tabular-nums; letter-spacing:-.01em; white-space:nowrap; }
+.mv.p { color:var(--win); } .mv.n { color:var(--loss); }
+.sep { display:inline-block; width:3px; height:3px; border-radius:50%; background:currentColor; opacity:.45; margin:0 7px; vertical-align:.22em; }
+.hero-usd small { display:inline-flex; align-items:center; height:20px; padding:0 8px; border:1px solid var(--line); border-radius:99px; font-size:11.5px !important; vertical-align:.3em; background:color-mix(in srgb,var(--fg) 4%,transparent); }
+.hero-meta > span:not(.delta) { color:var(--fg3); }
+/* il contesto entra subito dopo il numero grande, solo all'apertura della pagina */
+.blk .kpi .h, .blk.kpi .h, .blk .hero-meta, .blk .hero-usd, .blk .be-row em, .blk .bd-l small { animation:metaIn 420ms var(--e-out) backwards; animation-delay:calc(var(--k,0) * var(--stg,45ms) + var(--k0,0ms) + 300ms); }
+@keyframes metaIn { from { opacity:0; transform:translate3d(0,4px,0); } }
 .ring { width:34px; height:34px; transform:rotate(-90deg); flex:none; }
 .ring circle { fill:none; stroke-width:4.5; }
 .ring .bgc { stroke:var(--sunk); } .ring .fgc { stroke:var(--accent); stroke-linecap:round; animation:ring 1.2s cubic-bezier(.3,.8,.3,1) both .15s; }
@@ -1118,7 +1127,7 @@ const L = {
   errs: ['FOMO','TP spostato','SL spostato','Ingresso anticipato','Uscita anticipata','Size sbagliata','Fuori piano','Altro'],
 };
 const APP = 'Edgebook';
-const BUILD = '2026-10-23.11';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
+const BUILD = '2026-10-23.12';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
 let updChk=0;
 function checkUpdate() {
   if (viaScript() || location.protocol==='file:' || Date.now()-updChk<60000) return; updChk=Date.now();
@@ -1495,9 +1504,23 @@ function renderCurrent(quiet) {
   // durante il benvenuto non si disegna (ogni disegno ferma l'animazione): un solo disegno, quando il saluto è finito
   const wait=(S.introAt||0)-260-performance.now(); if (wait>0) { if (!introRT) introRT=setTimeout(()=>{ introRT=0; renderCurrent(false); }, wait); return; }
   S.quiet=!!quiet; ({ home:renderHome, news:renderNews, list:renderList, stats:renderStats, cal:renderCal, mc:renderMC, disc:renderDisc, coach:renderCoach, set:renderSet })[S.tab](); S.quiet=false; }
+// testi secondari (sotto i numeri e accanto ai titoli): dentro la frase i valori in evidenza e i segni +/− colorati,
+// i «·» diventano puntini; le parole restano grigie. Una passata dopo ogni disegno, solo sui nodi di testo.
+const META_SEL='.kpi .h, .hero-meta > span:not(.delta), .be-row em, .be-big span, .bd-l small, .card-h .sub, .td-r span, .ds-cost em, .usd-g em, .rk-leg span, .ds-note';
+const META_RE=/(\d{1,2}:\d{2}(?:\s?[–-]\s?\d{1,2}:\d{2})?)|([+−-]?\$\s?\d[\d.,]*k?|[+−-]?\d[\d.,]*(?:\s?(?:R|%|rr)(?![\wà-ù]))?)|(\s·\s)/g;
+function richMeta(root) {
+  root.querySelectorAll(META_SEL).forEach(el=>{ if (el.dataset.rich) return; el.dataset.rich='1';
+    const tw=document.createTreeWalker(el, NodeFilter.SHOW_TEXT), nodes=[]; let n;
+    while ((n=tw.nextNode())) if (!n.parentElement.closest('b,strong,[data-num],.mv,.num,a,button')) nodes.push(n);
+    nodes.forEach(t=>{ const v=t.nodeValue; if (!/\d|\s·\s/.test(v)) return;
+      const html=esc(v).replace(META_RE,(m,tm,val,sep)=> sep ? '<i class="sep"></i>' : tm ? '<span class="mv">'+tm+'</span>'
+        : '<span class="mv'+(/^\+/.test(val)?' p':/^[−-]\s?\$?\d/.test(val)&&/^[−-]/.test(val)?' n':'')+'">'+val+'</span>');
+      const box=document.createElement('span'); box.innerHTML=html; t.replaceWith(...box.childNodes); });
+  });
+}
 function enter(el, html, after) {
   const user = S.quiet && performance.now()-(S.userT||0) < 450 && !reduceMotion(), prev = user ? numSnap(el) : null;
-  el.innerHTML = html; el.classList.toggle('quiet', S.quiet);
+  el.innerHTML = html; el.classList.toggle('quiet', S.quiet); richMeta(el);
   // sul telefono (una colonna, niente bilanciamento) i grafici si disegnano al frame dopo: la pagina compare prima
   const later = !S.quiet && after && innerWidth<1000;
   masonry(el, later ? null : after);
@@ -2401,7 +2424,7 @@ function renderStats() {
   html+='<div class="kgrid">'+
     kpi('Trade', numEl(a.n,0), E?'Esito calcolato a '+T+'R':(a.be?a.be+' in pareggio':'Nessun pareggio'), 60)+
     kpi('Win rate', '<svg class="ring" viewBox="0 0 36 36"><circle class="bgc" cx="18" cy="18" r="15"/><circle class="fgc" cx="18" cy="18" r="15" stroke-dasharray="94.25" stroke-dashoffset="'+ringOff+'"/></svg>'+numEl(a.wr*100,0)+'<small>%</small>', a.w+' vinti su '+(a.w+a.l)+(!E&&a.be?' · con BE '+pct(a.wrAll):''), 90)+
-    kpi('R totali', numEl(a.R,1,true)+'<small>R</small>', U?fmtU(uT)+(usdWhat()?' '+usdWhat():E?' a '+usd(riskUsd())+' per trade':''):E?'Vinto '+T+'R, perso 1R':'Somma degli RR reali', 120, sgn(a.R))+
+    kpi('R totali', numEl(a.R,1,true)+'<small>R</small>', U?fmtU(uT)+(usdWhat()?' · '+usdWhat():E?' a '+usd(riskUsd())+' per trade':''):E?'Vinto '+T+'R, perso 1R':'Somma degli RR reali', 120, sgn(a.R))+
     kpi('Profit factor', a.pf===Infinity?'∞':numEl(a.pf,2), isFinite(a.pf)?fmtN(a.pf,1)+' R guadagnati per R perso':'', 150)+
     kpi('Expectancy', numEl(a.exp,2,true)+'<small>R</small>', U?fmtU(uT/ts.length)+' in media a trade':'Resa media per trade', 180, sgn(a.exp))+
     kpi('Max drawdown', numEl(a.dd,1)+'<small>R</small>', U?usd(usdDD(ts,m))+' dal picco':'Calo massimo dal picco', 210);
