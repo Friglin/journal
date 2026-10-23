@@ -384,13 +384,6 @@ body::after { content:""; position:fixed; inset:-25%; z-index:-1; pointer-events
 .inwrap i { position:absolute; left:12px; top:50%; transform:translateY(-50%); font-style:normal; color:var(--fg3); font-weight:600; pointer-events:none; }
 .inwrap i.r { left:auto; right:12px; }
 .inwrap i:first-child + .inp { padding-left:26px; }
-.band { animation:fade .9s .2s both; } .band.b1 { fill:var(--accent); fill-opacity:.12; } .band.b2 { fill:var(--accent); fill-opacity:.22; }
-.mcpath { fill:none; stroke:var(--fg3); stroke-width:1; stroke-opacity:.35; animation:fade .6s both; }
-.ruinl { stroke:var(--loss); stroke-dasharray:4 4; stroke-width:1.2; } .tick.ruint { fill:var(--loss); }
-.legend { display:flex; flex-wrap:wrap; gap:8px 14px; margin-top:12px; font-size:12px; color:var(--fg2); }
-.legend span { display:inline-flex; align-items:center; gap:6px; }
-.lg { display:inline-block; width:14px; height:10px; border-radius:3px; }
-.lg.b1 { background:color-mix(in srgb,var(--accent) 16%,transparent); } .lg.b2 { background:color-mix(in srgb,var(--accent) 34%,transparent); } .lg.md { height:3px; background:var(--accent); } .lg.pt { height:2px; background:var(--fg3); }
 
 #setup { position:fixed; inset:0; z-index:95; background:var(--bg); display:grid; place-items:center; overflow-y:auto;
   padding:max(24px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px)); }
@@ -399,6 +392,14 @@ body::after { content:""; position:fixed; inset:-25%; z-index:-1; pointer-events
 .setup-in p { margin:0; color:var(--fg2); font-size:14.5px; line-height:1.5; }
 .setup-in .ferr:not(:empty) { display:flex; }
 
+.g3 { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; } @media (max-width:640px) { .g3 { grid-template-columns:1fr 1fr; } .g3 > :last-child:nth-child(odd) { grid-column:1/-1; } }
+.pf-sec { font-size:12px; font-weight:650; color:var(--fg3); text-transform:uppercase; letter-spacing:.06em; margin:6px 0 -4px; }
+.pf-set .field { margin:0; } .pf-set .hint { font-size:11.5px; }
+.pf-h { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:650; color:var(--fg2); margin:14px 2px 2px; } .pf-h .ic { color:var(--accent); }
+.pf-verdict .h2 { display:flex; align-items:center; gap:8px; } .pf-verdict .h2 .ic { color:var(--accent); }
+.pf-verdict ul { margin:4px 0 0; padding:0; list-style:none; display:flex; flex-direction:column; gap:9px; } .pf-verdict li { position:relative; padding-left:18px; font-size:14.5px; line-height:1.5; color:var(--fg2); }
+.pf-verdict li::before { content:""; position:absolute; left:2px; top:.6em; width:6px; height:6px; border-radius:50%; background:var(--accent); } .pf-verdict li b { color:var(--fg); }
+.pf-verdict li.ok::before { background:var(--win); } .pf-verdict li.ko::before { background:var(--loss); } .pf-verdict li.ok b { color:var(--win); } .pf-verdict li.ko b { color:var(--loss); }
 .mc-note { font-size:12.5px; color:var(--fg3); margin:0; line-height:1.55; }
 #v-mc .warn { margin:0; }
 
@@ -1132,7 +1133,7 @@ const L = {
   errs: ['FOMO','TP spostato','SL spostato','Ingresso anticipato','Uscita anticipata','Size sbagliata','Fuori piano','Altro'],
 };
 const APP = 'Edgebook';
-const BUILD = '2026-10-23.16';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
+const BUILD = '2026-10-23.17';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
 let updChk=0;
 function checkUpdate() {
   if (viaScript() || location.protocol==='file:' || Date.now()-updChk<60000) return; updChk=Date.now();
@@ -1148,7 +1149,7 @@ const MESI = ['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov',
 const MESI_F = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
 const GIORNI = ['domenica','lunedì','martedì','mercoledì','giovedì','venerdì','sabato'];
 const store = { get(k,d){ try { const v=localStorage.getItem('tj.'+k); return v===null?d:v; } catch(e){ return d; } }, set(k,v){ try { localStorage.setItem('tj.'+k,v); } catch(e){} } };
-let S = { touched:{}, tried:false, file: store.get('file','EOW'), type:'EOW', rows:[], loaded:false, edit:null, f:{}, filt:{}, cust:{}, mc:{}, mcLast:null, tab:'home', per: store.get('per','m'), data:{}, quiet:false,
+let S = { touched:{}, tried:false, file: store.get('file','EOW'), type:'EOW', rows:[], loaded:false, edit:null, f:{}, filt:{}, cust:{}, pf:{}, pfLast:null, tab:'home', per: store.get('per','m'), data:{}, quiet:false,
           lo:'', lmore:60, sheet:null };
 S.type = S.file==='EOW' ? 'EOW' : 'JOURNAL';
 const $ = id => document.getElementById(id);
@@ -1375,7 +1376,7 @@ function lineChart(el, pts, o={}) {
   const base=y(ax?lo:lo), id='g'+(++uid);
   let g='';
   tk.forEach(t=>{ g+='<line class="grid'+(t===0?' zero':'')+'" x1="'+padL+'" x2="'+(W-padR)+'" y1="'+y(t)+'" y2="'+y(t)+'"/><text class="tick" x="'+(padL-8)+'" y="'+(y(t)+3.5)+'" text-anchor="end">'+fmtTick(t)+'</text>'; });
-  if (ax && n>1) { g+='<text class="tick" x="'+padL+'" y="'+(H-6)+'">'+esc(pts[1]?.x||pts[0].x||'')+'</text><text class="tick" x="'+(W-padR)+'" y="'+(H-6)+'" text-anchor="end">'+esc(pts[n-1].x||'')+'</text>'; }
+  if (ax && n>1) { g+='<text class="tick" x="'+padL+'" y="'+(H-6)+'">'+esc((o.x0?pts[0].x:pts[1]?.x)||pts[0].x||'')+'</text><text class="tick" x="'+(W-padR)+'" y="'+(H-6)+'" text-anchor="end">'+esc(pts[n-1].x||'')+'</text>'; }
   if (!ax) g+='<line class="grid zero" x1="0" x2="'+W+'" y1="'+y(0)+'" y2="'+y(0)+'" stroke-dasharray="2 4"/>';
   el.innerHTML = '<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(o.aria||'Curva dei risultati in R')+'">'+
     '<defs><linearGradient id="'+id+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--accent);stop-opacity:.24"/><stop offset="1" style="stop-color:var(--accent);stop-opacity:0"/></linearGradient></defs>'+g+
@@ -1386,7 +1387,7 @@ function lineChart(el, pts, o={}) {
   const show = e => { const r=svg.getBoundingClientRect(), px=e.clientX-r.left; const i=Math.max(0,Math.min(n-1,Math.round((px-padL)/((W-padL-padR)/Math.max(1,n-1)))));
     const cx=x(i), cy=y(pts[i].y); xh.setAttribute('opacity',1); xh.querySelector('line').setAttribute('x1',cx); xh.querySelector('line').setAttribute('x2',cx);
     xh.querySelector('circle').setAttribute('cx',cx); xh.querySelector('circle').setAttribute('cy',cy);
-    tip.innerHTML='<b>'+fmtR(pts[i].y)+'</b>'+esc(pts[i].tip||''); tip.classList.add('show');
+    tip.innerHTML='<b>'+(o.fmt?o.fmt(pts[i].y):fmtR(pts[i].y))+'</b>'+esc(pts[i].tip||''); tip.classList.add('show');
     const tw=tip.offsetWidth; tip.style.left=Math.max(tw/2, Math.min(W-tw/2, cx))+'px'; tip.style.top=Math.max(cy-10, 40)+'px'; };
   const hide = () => { xh.setAttribute('opacity',0); tip.classList.remove('show'); };
   svg.addEventListener('pointermove', show); svg.addEventListener('pointerdown', show); svg.addEventListener('pointerleave', hide);
@@ -1497,7 +1498,7 @@ function navTo(key, o) { const [id,f]=key.split(':'); if (S.sheet) closeSheet();
 function openMore() {
   S.sheet='more'; $('sh-sub').textContent=APP; $('sh-title').innerHTML=words('Altro');
   const it=[['list:Journal','Journal','book','Trade reali'],['list:EOW','EOW','list','Backtest della settimana'],['cal','Calendario','cal','R giorno per giorno'],
-            ['disc','Disciplina','shield','Regole, errori ed esecuzione'],['coach','Coach','spark','Consigli e chat con Claude'],['mc','Simula','dice','Monte Carlo'],['set','Impostazioni','gear','Profilo, sessione, filtri']];
+            ['disc','Disciplina','shield','Regole, errori ed esecuzione'],['coach','Coach','spark','Consigli e chat con Claude'],['mc','Simula','dice','Prop firm: valutazioni e payout'],['set','Impostazioni','gear','Profilo, sessione, filtri']];
   $('sh-body').innerHTML='<div class="more">'+it.map((x,k)=>'<button type="button" data-nav="'+x[0]+'" style="--k:'+k+'" class="'+(curNavKey()===x[0]?'on':'')+'">'+ic(x[2],24,1.8)+'<b>'+x[1]+'</b><span>'+x[3]+'</span></button>').join('')+'</div>';
   $('sh-foot').innerHTML=''; openSheet();
 }
@@ -2478,7 +2479,7 @@ function renderStats() {
   }
   const order = E ? ['eq','mo','tg','cv','fo','gn','id','smt','lvn','sp','as','dir','cc'] : ['eq','mo','pr','fo','id','smt','gn','lvn','as','dir'];
   html+=rows2(order.filter(k=>C[k]).map(k=>C[k]));
-  html+='<button type="button" class="mc-cta rise" style="--d:560ms" data-act="mc"><span class="mc-ic">'+ic('dice',24,1.8)+'</span><span><b>Simula con Monte Carlo</b><span>Migliaia di futuri possibili con questi '+ts.length+' trade e questi filtri</span></span>'+ic('chev',18,2)+'</button>';
+  html+='<button type="button" class="mc-cta rise" style="--d:560ms" data-act="mc"><span class="mc-ic">'+ic('dice',24,1.8)+'</span><span><b>Simula la prop firm</b><span>Valutazione, payout e conti con questi '+ts.length+' trade e questi filtri</span></span>'+ic('chev',18,2)+'</button>';
   enter(el, html, ()=>{ lineChart($('c-eq'), equityPts(ts,m), { h:200 }); barChart($('c-mo'), monthItems(ts,m), { h:170 }); });
 }
 
@@ -2645,7 +2646,7 @@ function ctxNow() {
     trade_filtrati:ts.length, riepilogo_filtrati:{ winrate:r2(a.wr), R_totali:r2(a.R), expectancy:r2(a.exp), profit_factor:isFinite(a.pf)?r2(a.pf):null, max_drawdown_R:r2(a.dd) },
     statistiche_tutti_i_trade:coachData('all'), statistiche_con_filtri:coachData('filt'), tutti_i_trade:tableCtx(all(), m) };
   if (tab==='home') { const p=inRange(ts, periodRange(S.per,0)), pa=agg(p,m); c.periodo_home={ periodo:S.per, trade:p.length, R:r2(pa.R), winrate:r2(pa.wr) }; c.trade_del_periodo=p.slice(-20).map(t=>tradeCtx(t,m)); }
-  else if (tab==='mc') { c.simulazione={ parametri:S.mc, risultati:S.mcLast ? Object.fromEntries(Object.entries(S.mcLast.res).filter(([k,v])=>typeof v==='number')) : 'non ancora eseguita' }; }
+  else if (tab==='mc') { const r=S.pfLast && S.pfLast.res; c.simulazione_prop_firm={ parametri:S.pf, risultati: r ? { prob_passare:r2(r.pr), giornate_mediane_per_passare:r.passQ[1], prob_primo_payout:r2(r.firstPr), payout_medi:r2(r.paysMean), prelevato_medio_per_conto:Math.round(r.paidMean), conto_vivo_a_fine:r2(r.aliveEnd), giornate:r.p.horizon } : 'non ancora eseguita' }; }
   else if (tab==='list') c.trade_visibili_in_pagina=ts.slice(-30).map(t=>tradeCtx(t,m));
   return c;
 }
@@ -2678,11 +2679,14 @@ async function delTrade() {
   finally { setSync(false); }
 }
 
-// ───────────────────────── SIMULA (Monte Carlo) ─────────────────────────
-// Ogni simulazione estrae a caso (con reinserimento) i risultati in R dei trade filtrati e costruisce una curva del conto.
-const MC_DEF = { cap:'50000', mode:'usd', riskUsd:'500', riskPct:'1', n:'100', sims:'2000', ruin:'10', comm:'0' };
-function loadMC() { try { return Object.assign({}, MC_DEF, JSON.parse(store.get('mc','{}'))); } catch(e) { return Object.assign({}, MC_DEF); } }
-const saveMC = () => store.set('mc', JSON.stringify(S.mc));
+// ───────────────────────── SIMULA: prop firm ─────────────────────────
+// Le giornate di trading filtrate (EOW o Journal) vengono ripescate a caso, con reinserimento e con i trade nell'ordine
+// in cui sono stati presi, e giocate sulle regole della prop firm: prima la valutazione, poi il conto finanziato.
+// Valori predefiniti: Topstep (da verificare sul sito, cambiano nel tempo); si possono modificare tutti.
+const PF_PRE = { '50K':{ target:'3000', mll:'2000', fee:'49' }, '100K':{ target:'6000', mll:'3000', fee:'99' }, '150K':{ target:'9000', mll:'4500', fee:'149' } };
+const PF_DEF = { size:'50K', target:'3000', mll:'2000', cons:'50', fee:'49', act:'149', win:'150', winN:'5', cap:'2000', capPct:'50', keep:'2000', split:'100', split2:'90', after:'5', horizon:'120', risk:'', comm:'5', acc:'', sims:'3000' };
+function loadPF() { try { return Object.assign({}, PF_DEF, JSON.parse(store.get('pf','{}'))); } catch(e) { return Object.assign({}, PF_DEF); } }
+const savePF = () => store.set('pf', JSON.stringify(S.pf));
 const usd = (x, dec=0) => isFinite(x) ? (x<0?'−':'')+'$'+Math.abs(x).toLocaleString('it-IT',{ maximumFractionDigits:dec, minimumFractionDigits:dec }) : '–';
 // ───── dollari e conti prop ─────
 // Ogni trade del Journal ha il suo PnL in $ per conto (colonna «PnL $»); se manca vale RR × rischio delle Impostazioni.
@@ -2703,108 +2707,139 @@ const fmtUk = v => isFinite(v) ? (v<=-0.5?'−':v>=0.5?'+':'')+'$'+usdK(Math.abs
 const withU = (txt, v, est) => { const u=fmtU(v, est); return u ? u+(txt?' · '+txt:'') : txt; };
 const usdWhat = () => nAcc()>1 ? (totView() ? nAcc()+' conti' : 'un conto') : '';
 const usdK = x => { const a=Math.abs(x); return (x<0?'−':'')+(a>=1e6 ? fmtN(a/1e6,a>=1e7?0:1)+'M' : a>=1e3 ? fmtN(a/1e3,a>=1e5?0:a%1000?1:0)+'k' : fmtN(a,0)); };
-function mcErrors(p) { const e={};
-  const chk=(k,min,max,lbl)=>{ const v=numS(S.mc[k]); if (empty(S.mc[k])) e[k]='Inserisci '+lbl+'.'; else if (!isFinite(v)) e[k]='Solo numeri, es. 50000.'; else if (v<min||v>max) e[k]='Valore fuori scala ('+fmtN(min,0)+'–'+fmtN(max,0)+').'; };
-  chk('cap',100,1e9,'il capitale'); if (S.mc.mode==='usd') chk('riskUsd',1,1e8,'il rischio in $'); else chk('riskPct',0.01,100,'il rischio in %');
-  chk('n',5,2000,'il numero di trade'); chk('ruin',1,100,'il drawdown massimo'); chk('comm',0,1e6,'le commissioni');
+// giornate dei trade filtrati: ogni giornata è l'elenco degli R nell'ordine in cui sono stati presi
+function pfDays(ts, m) { const by={}; ts.forEach(t=>{ const k=iso(t.d); (by[k]=by[k]||[]).push(m.rOf(t)); }); return Object.values(by); }
+// quante giornate di trading a settimana (per tradurre i giorni simulati in settimane e mesi)
+function pfPace(ts) { if (ts.length<2) return 3; const days=new Set(ts.map(t=>iso(t.d))).size, wk=Math.max(1, (ts[ts.length-1].d-ts[0].d)/(7*dayMs)); return Math.min(5, Math.max(.5, days/wk)); }
+const pfNum = k => numS(S.pf[k]);
+function pfParams() { const P=S.pf, n=k=>numS(P[k]);
+  return { risk: isFinite(n('risk'))&&n('risk')>0 ? n('risk') : (riskUsd()||200), comm:n('comm')||0, acc: Math.max(1, Math.round(n('acc')||nAcc())),
+    target:n('target'), mll:n('mll'), cons:n('cons')||100, fee:n('fee')||0, act:n('act')||0, win:n('win')||0, winN:Math.max(1,Math.round(n('winN')||1)),
+    cap:n('cap')||Infinity, capPct:n('capPct')||100, keep:n('keep')||0, split:n('split')||100, split2:n('split2')||n('split')||100, after:Math.round(n('after')||0),
+    horizon:Math.max(10, Math.round(n('horizon')||120)), sims:+P.sims||3000 }; }
+function pfErrors() { const e={}, P=S.pf;
+  const chk=(k,min,max,lbl,opt)=>{ if (empty(P[k])) { if (!opt) e[k]='Inserisci '+lbl+'.'; return; } const v=numS(P[k]); if (!isFinite(v)) e[k]='Solo numeri, es. 2000.'; else if (v<min||v>max) e[k]='Valore fuori scala ('+fmtN(min,0)+'–'+fmtN(max,0)+').'; };
+  chk('risk',1,1e6,'il rischio',true); chk('comm',0,1e4,'le commissioni',true); chk('acc',1,50,'i conti',true);
+  chk('target',100,1e7,'il target'); chk('mll',100,1e7,'il limite di perdita'); chk('cons',1,100,'la consistenza',true); chk('fee',0,1e5,'il prezzo',true); chk('act',0,1e5,'l\'attivazione',true);
+  chk('win',0,1e6,'il giorno vincente',true); chk('winN',1,60,'i giorni vincenti'); chk('cap',1,1e7,'il payout massimo',true); chk('capPct',1,100,'la percentuale',true); chk('keep',0,1e7,'il saldo da lasciare',true);
+  chk('split',1,100,'lo split',true); chk('split2',1,100,'lo split',true); chk('after',0,100,'il numero di payout',true); chk('horizon',10,1000,'i giorni');
   return e; }
+// ── simulazione ──
+function pfSimulate(D, p) {
+  const K=D.length, M=p.sims, MAXD=300, pick=()=>D[(Math.random()*K)|0], tv=r=>r*p.risk-p.comm;
+  // valutazione: target raggiunto con il giorno migliore entro la consistenza; il limite di perdita (saldo di fine giornata
+  // meno il limite) sale col saldo e si ferma al saldo iniziale; se il saldo lo tocca anche durante il giorno, è persa
+  const pass=[], fail=[]; let tout=0;
+  for (let s=0;s<M;s++) { let bal=0, peak=0, floor=-p.mll, best=0, d=0, res=0;
+    while (!res) { d++; const day=pick(); let dp=0;
+      for (let i=0;i<day.length;i++) { const v=tv(day[i]); bal+=v; dp+=v; if (bal<=floor) { res=-1; break; } }
+      if (res) break;
+      if (dp>best) best=dp; if (bal>peak) peak=bal; floor=Math.min(peak-p.mll, 0);
+      if (bal>=p.target && best<=p.cons/100*bal+1e-9) res=1; else if (d>=MAXD) res=-2; }
+    if (res===1) pass.push(d); else { fail.push(d); if (res===-2) tout++; } }
+  // conto finanziato: si parte da 0; giorni vincenti da «win»; payout quando ce ne sono winN, lasciando «keep» sul conto;
+  // dopo il primo payout il limite di perdita resta a 0
+  const H=p.horizon, alive=new Float64Array(H+1), paysN=[], paidL=[], first=[], blown=[]; let firstN=0;
+  for (let s=0;s<M;s++) { let bal=0, peak=0, floor=-p.mll, lock=false, wd=0, pays=0, paid=0, d=0, dead=false;
+    alive[0]++;
+    for (d=1; d<=H; d++) { const day=pick(); let dp=0;
+      for (let i=0;i<day.length;i++) { const v=tv(day[i]); bal+=v; dp+=v; if (bal<=floor) { dead=true; break; } }
+      if (dead) { blown.push(d); break; }
+      alive[d]++; if (dp>=p.win && dp>0) wd++;
+      if (bal>peak) peak=bal; if (!lock) floor=Math.min(peak-p.mll, 0);
+      if (wd>=p.winN) { const amt=Math.min(p.cap, bal*p.capPct/100, bal-p.keep);
+        if (amt>=100) { bal-=amt; pays++; paid+=amt*(pays<=p.after?p.split:p.split2)/100; wd=0; lock=true; floor=0; peak=bal; if (pays===1) { first.push(d); firstN++; } } } }
+    paysN.push(pays); paidL.push(paid); }
+  const q=(a,f)=>{ if (!a.length) return NaN; const b=Float64Array.from(a).sort(); return b[Math.min(b.length-1, Math.max(0, Math.round(f*(b.length-1))))]; };
+  const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:NaN;
+  const pr=pass.length/M, attDays=mean(pass.concat(fail));
+  return { p, M, K, pr, tout:tout/M, pass, passQ:[q(pass,.25),q(pass,.5),q(pass,.75)], failMed:q(fail,.5), attDays,
+    alive:Array.from(alive).map(v=>v/M), aliveEnd:alive[H]/M, firstPr:firstN/M, firstQ:q(first,.5), paysN, paidMean:mean(paidL), paidMed:q(paidL,.5), paysMean:mean(paysN),
+    zeroPay:paysN.filter(x=>!x).length/M, blownMed:q(blown,.5), expDay:mean(D.map(day=>day.reduce((s,r)=>s+tv(r),0))) };
+}
+// costi: ogni valutazione si paga a mesi (abbonamento) per la durata del tentativo, più l'attivazione quando la passi
+function pfEcon(res, pace) {
+  const p=res.p, months=d=>Math.max(1, Math.ceil(d/pace*7/30)), att=res.pr>0 ? 1/res.pr : Infinity;
+  const costAtt=p.fee*months(res.attDays||1), costFunded = res.pr>0 ? att*costAtt + p.act : Infinity;
+  const net = res.paidMean - costFunded;
+  return { att, costAtt, costFunded, net, weeks:d=>d/pace, months:d=>d/pace*7/30.4 };
+}
+// ── pagina ──
 function renderMC() {
   const el=$('v-mc'); if (!S.loaded) { el.innerHTML=skeleton(); return; }
-  const m=curModel(), ts=filtered(m), Rs=ts.map(m.rOf), a=agg(ts,m), P=S.mc, E=S.type==='EOW';
-  let html='<div class="stat-h rise"><div><h1>'+words('Simula')+'</h1></div><span class="mut num">Monte Carlo</span></div>'+fbar(20);
-  html+='<div class="card mc-src rise" style="--d:40ms"><div class="mc-src-ic">'+logo(30)+'</div><div><b>'+ts.length+' trade di '+S.file+'</b><span>WR '+pct(a.wr)+' · expectancy '+fmtR(a.exp,2)+(E?' · esito a '+tgt()+'R':' · RR reale')+'</span></div></div>';
-  if (ts.length<20) html+='<div class="warn rise">'+ic('alert',17,2)+'<span>'+(ts.length?'Solo '+ts.length+' trade: la simulazione sarà poco affidabile. Allarga i filtri se puoi.':'Nessun trade con questi filtri: togli qualche filtro per simulare.')+'</span></div>';
-  const f=(k,lbl,ph,suf)=>'<div class="field" data-f="mc-'+k+'"><label for="mc-'+k+'">'+lbl+'</label><div class="inwrap">'+(suf==='$'?'<i>$</i>':'')+'<input class="inp" id="mc-'+k+'" data-mc="'+k+'" type="text" inputmode="decimal" autocomplete="off" value="'+esc(P[k])+'" placeholder="'+ph+'">'+(suf==='%'?'<i class="r">%</i>':'')+'</div><div class="ferr" id="err-mc-'+k+'"></div></div>';
-  html+='<div class="card rise" style="--d:80ms"><div class="card-h"><div class="h2">Parametri</div></div><div class="mc-form">'+
-    '<div class="g2">'+f('cap','Capitale iniziale','50000','$')+f('ruin','Drawdown massimo','10','%')+'</div>'+
-    '<div class="field"><span class="flabel">Rischio per trade</span>'+seg('mc-mode',[{v:'usd',l:'Fisso in $'},{v:'pct',l:'% del conto'}],P.mode)+'</div>'+
-    '<div class="g2">'+(P.mode==='usd'?f('riskUsd','Rischio per trade (1R)','500','$'):f('riskPct','Rischio per trade (1R)','1','%'))+f('comm','Commissioni per trade','0','$')+'</div>'+
-    '<div class="g2">'+f('n','Trade da simulare','100','')+'<div class="field"><span class="flabel">Simulazioni</span>'+seg('mc-sims',['500','2000','5000'],P.sims)+'</div></div>'+
-    '<button type="button" class="btn" id="mc-run" data-act="mcrun"'+(ts.length?'':' disabled')+'>'+ic('dice',18,2)+'Avvia simulazione</button></div></div>';
+  const m=curModel(), ts=filtered(m), D=pfDays(ts,m), P=S.pf, E=S.type==='EOW', pace=pfPace(ts), pp=pfParams();
+  const dayR=D.map(d=>d.reduce((x,y)=>x+y,0)), avgR=dayR.length?dayR.reduce((x,y)=>x+y,0)/dayR.length:NaN, posD=dayR.filter(x=>x>0).length/Math.max(1,dayR.length);
+  let html='<div class="stat-h rise"><div><div class="eyebrow">Prop firm · Monte Carlo</div><h1>'+words('Simula')+'</h1></div></div>'+fbar(20);
+  html+='<div class="card wide mc-src rise" style="--d:40ms"><div class="mc-src-ic">'+logo(30)+'</div><div><b>'+D.length+' giornate di trading · '+ts.length+' trade di '+S.file+'</b>'+
+    '<span>'+(D.length?'una giornata rende in media '+fmtR(avgR,2)+' · '+pct(posD)+' positive · circa '+fmtN(pace,1)+' giornate a settimana'+(E?' · esito a '+tgt()+'R':''):'nessuna giornata con questi filtri')+'</span></div></div>';
+  if (D.length<15) html+='<div class="warn rise">'+ic('alert',17,2)+'<span>'+(D.length?'Solo '+D.length+' giornate: la simulazione sarà poco affidabile. Allarga i filtri se puoi.':'Nessun trade con questi filtri: togli qualche filtro per simulare.')+'</span></div>';
+  const f=(k,lbl,ph,suf,hint)=>'<div class="field" data-f="pf-'+k+'"><label for="pf-'+k+'">'+lbl+'</label><div class="inwrap">'+(suf==='$'?'<i>$</i>':'')+'<input class="inp" id="pf-'+k+'" data-pf="'+k+'" type="text" inputmode="decimal" autocomplete="off" value="'+esc(P[k])+'" placeholder="'+esc(ph)+'">'+(suf==='%'?'<i class="r">%</i>':'')+'</div>'+(hint?'<span class="hint">'+hint+'</span>':'')+'<div class="ferr" id="err-pf-'+k+'"></div></div>';
+  html+='<div class="card wide rise pf-set" style="--d:80ms"><div class="card-h"><div class="h2">Regole e piano</div><span class="sub">Topstep · verifica i valori sul sito</span></div><div class="mc-form">'+
+    '<div class="pf-sec">Il tuo piano</div><div class="g3">'+f('risk','Rischio a trade',String(riskUsd()||200),'$')+f('comm','Commissioni a trade','5','$')+f('acc','Conti in copy',String(nAcc()),'')+'</div>'+
+    '<div class="pf-sec">Valutazione</div><div class="field"><span class="flabel">Taglia</span>'+seg('pf-size',['50K','100K','150K'],P.size)+'</div>'+
+    '<div class="g3">'+f('target','Target di profitto','3000','$')+f('mll','Limite di perdita','2000','$','sale col saldo di fine giornata, si ferma all\'iniziale')+f('cons','Consistenza','50','%','giorno migliore sul profitto')+'</div>'+
+    '<div class="g2">'+f('fee','Prezzo valutazione (al mese)','49','$')+f('act','Attivazione','149','$')+'</div>'+
+    '<div class="pf-sec">Conto finanziato</div><div class="g3">'+f('win','Giorno vincente da','150','$')+f('winN','Giorni vincenti per payout','5','')+f('keep','Lascia sul conto','2000','$','dopo ogni payout')+'</div>'+
+    '<div class="g3">'+f('cap','Payout massimo','2000','$','per richiesta')+f('capPct','Payout massimo sul saldo','50','%')+f('horizon','Giorni di trading','120','','da simulare sul conto')+'</div>'+
+    '<div class="g3">'+f('split','Split','100','%','primi payout')+f('after','Per i primi','5','','payout')+f('split2','Split dopo','90','%')+'</div>'+
+    '<div class="field"><span class="flabel">Simulazioni</span>'+seg('pf-sims',['1000','3000','10000'],P.sims)+'</div>'+
+    '<button type="button" class="btn" id="mc-run" data-act="mcrun"'+(D.length?'':' disabled')+'>'+ic('dice',18,2)+'Simula</button></div></div>';
   html+='<div id="mc-res"></div>';
-  enter(el, html, ()=>{ if (ts.length && S.mcLast && S.mcLast.key===mcKey(Rs)) drawMC(S.mcLast.res, true); });
-  S._mcRs=Rs;
+  enter(el, html, ()=>{ if (D.length && S.pfLast && S.pfLast.key===pfKey(D)) drawPF(S.pfLast.res, S.pfLast.pace, true); });
+  S._pfD=D; S._pfPace=pace;
 }
-const mcKey = Rs => JSON.stringify([S.file, Rs.length, Rs.reduce((x,y)=>x+y,0), S.mc]);
+const pfKey = D => JSON.stringify([S.file, D.length, D.reduce((s,d)=>s+d.reduce((x,y)=>x+y,0),0), S.pf, riskUsd(), nAcc()]);
 function runMCClick() {
-  const errs=mcErrors(); document.querySelectorAll('#v-mc [data-f]').forEach(w=>{ const k=w.dataset.f.slice(3), m=errs[k]; w.classList.toggle('bad',!!m); const e=w.querySelector('.ferr'); if (e) e.innerHTML=m?ic('alert',15,2)+'<span>'+esc(m)+'</span>':''; });
-  if (Object.keys(errs).length) { toast('Controlla i parametri in rosso', true); return; }
-  const Rs=S._mcRs||[]; if (!Rs.length) return;
+  const errs=pfErrors(); document.querySelectorAll('#v-mc [data-f]').forEach(w=>{ const k=w.dataset.f.slice(3), m=errs[k]; w.classList.toggle('bad',!!m); const e=w.querySelector('.ferr'); if (e) e.innerHTML=m?ic('alert',15,2)+'<span>'+esc(m)+'</span>':''; });
+  if (Object.keys(errs).length) { toast('Controlla i valori in rosso', true); return; }
+  const D=S._pfD||[]; if (!D.length) return;
   const b=$('mc-run'); b.disabled=true; b.innerHTML='<span class="spin"></span>Simulo…';
-  setTimeout(()=>{ const P=S.mc, res=simulate(Rs, { cap:numS(P.cap), mode:P.mode, risk: P.mode==='usd'?numS(P.riskUsd):numS(P.riskPct), n:Math.round(numS(P.n)), sims:+P.sims, ruin:numS(P.ruin), comm:numS(P.comm) });
-    S.mcLast={ key:mcKey(Rs), res }; b.disabled=false; b.innerHTML=ic('dice',18,2)+'Simula di nuovo'; drawMC(res); }, 40);
+  setTimeout(()=>{ const res=pfSimulate(D, pfParams()); S.pfLast={ key:pfKey(D), res, pace:S._pfPace };
+    b.disabled=false; b.innerHTML=ic('dice',18,2)+'Simula di nuovo'; drawPF(res, S._pfPace); }, 40);
 }
-function simulate(Rs, p) {
-  const N=p.n, M=p.sims, K=Rs.length, W=N+1, eq=new Float64Array(M*W), fin=new Float64Array(M), ddP=new Float64Array(M), stk=new Int32Array(M);
-  let ruined=0, prof=0, ruinT=[];
-  for (let s=0;s<M;s++) {
-    let e=p.cap, pk=e, mddp=0, st=0, mst=0, hit=false; eq[s*W]=e;
-    for (let t=0;t<N;t++) {
-      const r=Rs[(Math.random()*K)|0], risk = p.mode==='pct' ? Math.max(0,e)*p.risk/100 : p.risk;
-      e += risk*r - p.comm; if (e>pk) pk=e;
-      const dp = pk>0 ? (pk-e)/pk : 1; if (dp>mddp) mddp=dp;
-      if (r<0) { st++; if (st>mst) mst=st; } else st=0;
-      if (!hit && dp*100>=p.ruin) { hit=true; ruinT.push(t+1); }
-      eq[s*W+t+1]=e;
-    }
-    fin[s]=e; ddP[s]=mddp; stk[s]=mst; if (hit) ruined++; if (e>p.cap) prof++;
-  }
-  const q=(arr,p)=>{ const a=Float64Array.from(arr).sort(); return a[Math.min(a.length-1, Math.max(0, Math.round(p*(a.length-1))))]; };
-  // percentili della curva (al massimo ~160 punti per il grafico)
-  const step=Math.max(1, Math.ceil(N/160)), band=[], col=new Float64Array(M);
-  for (let t=0;t<=N;t+=step) { for (let s=0;s<M;s++) col[s]=eq[s*W+t]; col.sort(); const g=x=>col[Math.round(x*(M-1))];
-    band.push({ t, p5:g(.05), p25:g(.25), p50:g(.5), p75:g(.75), p95:g(.95) }); if (t+step>N && t!==N) t=N-step; }
-  const paths=[]; for (let k=0;k<Math.min(24,M);k++) { const s=Math.floor(k*M/Math.min(24,M)), pts=[]; for (let t=0;t<=N;t+=step) pts.push(eq[s*W+Math.min(t,N)]); if (pts.length<band.length) pts.push(eq[s*W+N]); paths.push(pts); }
-  return { p, band, paths, fin:Array.from(fin), q50:q(fin,.5), q5:q(fin,.05), q95:q(fin,.95), prof:prof/M, ruin:ruined/M,
-    dd50:q(ddP,.5), dd95:q(ddP,.95), st50:q(stk,.5), st95:q(stk,.95), ruinT: ruinT.length ? q(ruinT,.5) : NaN, K:Rs.length,
-    expR: Rs.reduce((x,y)=>x+y,0)/Rs.length };
-}
-function drawMC(res, quiet) {
-  const p=res.p, ret=x=>(x/p.cap-1)*100, box=$('mc-res'); if (!box) return;
+function drawPF(res, pace, quiet) {
+  const p=res.p, ec=pfEcon(res, pace), box=$('mc-res'); if (!box) return; const A=p.acc, fd=d=>isFinite(d)?Math.round(d):'–';
+  const wk=d=>isFinite(d)?(d/pace<1.5?'meno di 2 settimane':'circa '+fmtN(d/pace,d/pace<10?1:0)+' settimane'):'';
+  // in breve, a parole
+  const v1 = res.pr>=.5 ? 'Passi la valutazione '+pct(res.pr)+' delle volte' : res.pr>0 ? 'Passi circa 1 valutazione ogni '+fmtN(ec.att,1) : 'Con questi numeri non passi la valutazione';
+  let h='<div class="card wide pf-verdict rise"><div class="card-h"><div class="h2">'+ic('spark',18,2)+' In breve</div><span class="sub">'+res.M.toLocaleString('it-IT')+' simulazioni · '+res.K+' giornate</span></div><ul>'+
+    '<li><b>'+v1+'</b>'+(res.pr>0?', di solito in <b>'+fd(res.passQ[1])+' giornate di trading</b> ('+wk(res.passQ[1])+').':'.')+'</li>'+
+    (res.pr>0?'<li>Per ottenere un conto finanziato spendi in media <b>'+usd(ec.costFunded*A)+'</b>'+(A>1?' per '+A+' conti':'')+' tra valutazioni e attivazione.</li>':'')+
+    '<li>Una volta finanziato, il conto arriva al primo payout nel <b>'+pct(res.firstPr)+'</b> dei casi'+(isFinite(res.firstQ)?', di solito dopo <b>'+fd(res.firstQ)+' giornate</b>':'')+'.</li>'+
+    '<li>In '+p.horizon+' giornate prelevi in media <b>'+usd(res.paidMean*A)+'</b>'+(A>1?' sui '+A+' conti':'')+' ('+fmtN(res.paysMean,1)+' payout), e il conto è ancora vivo nel <b>'+pct(res.aliveEnd)+'</b> dei casi.</li>'+
+    (res.pr>0?'<li class="'+(ec.net>=0?'ok':'ko')+'">Guadagno netto atteso per ogni conto che compri: <b>'+fmtU(ec.net*A)+'</b>'+(ec.net>=0?' — la strategia ripaga le valutazioni.':' — le valutazioni costano più di quello che prelevi.')+'</li>':'')+'</ul></div>';
   const kp=(lbl, v, hint, cls, d)=>kpi(lbl, v, hint, d, cls);
-  let h='<div class="kgrid">'+
-    kp('Risultato mediano', '<span class="'+sgn(res.q50-p.cap)+'">'+usdK(res.q50)+'</span>', fmtN(ret(res.q50),1,true)+'% dopo '+p.n+' trade', '', 0)+
-    kp('Chiude in profitto', numEl(res.prof*100,0)+'<small>%</small>', 'delle simulazioni', res.prof>=.5?'pos':'neg', 40)+
-    kp('Tocca il DD del '+fmtN(p.ruin,0)+'%', numEl(res.ruin*100,1)+'<small>%</small>', isFinite(res.ruinT)?'di solito dopo ~'+Math.round(res.ruinT)+' trade':'mai successo', res.ruin>.2?'neg':res.ruin>.05?'':'pos', 80)+
-    kp('Scenario pessimo', usdK(res.q5), '5% dei casi va peggio ('+fmtN(ret(res.q5),1,true)+'%)', sgn(res.q5-p.cap), 120)+
-    kp('Scenario ottimo', usdK(res.q95), '5% dei casi va meglio ('+fmtN(ret(res.q95),1,true)+'%)', sgn(res.q95-p.cap), 160)+
-    kp('Drawdown massimo', numEl(-res.dd50*100,1)+'<small>%</small>', 'mediano · 1 volta su 20 oltre −'+fmtN(res.dd95*100,1)+'%', '', 200)+
-     kp('Perdite di fila', numEl(res.st50,0), 'serie più lunga mediana · fino a '+res.st95+' nel 5% peggiore', '', 240)+
-     kp('Resa attesa', fmtR(res.expR,2), 'per trade · '+usd(res.expR*(p.mode==='usd'?p.risk:p.cap*p.risk/100)-p.comm)+' al rischio iniziale', sgn(res.expR), 280)+'</div>';
-  h+=card('Ventaglio dei risultati', p.sims.toLocaleString('it-IT')+' simulazioni', '<div class="chart" id="c-fan"></div><div class="legend"><span><i class="lg b1"></i>90% dei casi</span><span><i class="lg b2"></i>50% dei casi</span><span><i class="lg md"></i>mediana</span><span><i class="lg pt"></i>alcune simulazioni</span></div>', 300);
-  h+=card('Dove finisce il conto', 'distribuzione del capitale finale', '<div class="chart" id="c-hist"></div>', 340);
-  h+='<p class="mc-note rise" style="--d:380ms">Ogni simulazione pesca a caso, con reinserimento, i risultati in R dei '+res.K+' trade filtrati'+(p.mode==='pct'?', rischiando il '+fmtN(p.risk,2)+'% del conto attuale (interesse composto)':', rischiando '+usd(p.risk)+' fissi')+'. È una stima basata sul passato, non una previsione.</p>';
-  box.innerHTML=h; box.classList.toggle('quiet', !!quiet);
-  fanChart($('c-fan'), res); histChart($('c-hist'), res);
+  h+='<div class="pf-h rise">'+ic('target',16,2)+'Valutazione</div><div class="kgrid">'+
+    kp('Passa la valutazione', numEl(res.pr*100,0)+'<small>%</small>', res.pr>=.995?'quasi sempre al primo tentativo':res.pr>0?'1 ogni '+fmtN(ec.att,1)+' tentativi':'mai nelle simulazioni', res.pr>=.5?'pos':res.pr>=.25?'':'neg', 0)+
+    kp('Giornate per passarla', isFinite(res.passQ[1])?numEl(res.passQ[1],0):'–', isFinite(res.passQ[0])?'di solito tra '+fd(res.passQ[0])+' e '+fd(res.passQ[2])+' · '+wk(res.passQ[1]):'', '', 40)+
+    kp('Costo di un tentativo', usd(ec.costAtt*A), 'abbonamento per la durata media'+(A>1?' · '+A+' conti':''), '', 80)+
+    kp('Costo per un conto finanziato', isFinite(ec.costFunded)?usd(ec.costFunded*A):'–', 'valutazioni + attivazione'+(A>1?' · '+A+' conti':''), '', 120)+'</div>';
+  h+='<div class="pf-h rise">'+ic('shield',16,2)+'Conto finanziato · '+p.horizon+' giornate</div><div class="kgrid">'+
+    kp('Arriva al 1° payout', numEl(res.firstPr*100,0)+'<small>%</small>', isFinite(res.firstQ)?'di solito dopo '+fd(res.firstQ)+' giornate':'', res.firstPr>=.6?'pos':res.firstPr>=.35?'':'neg', 0)+
+    kp('Payout in media', numEl(res.paysMean,1), res.zeroPay>=.005?'nessun payout nel '+pct(res.zeroPay)+' dei casi':'almeno un payout quasi sempre', '', 40)+
+    kp('Prelevato', usd(res.paidMean*A), 'in media'+(A>1?' sui '+A+' conti':'')+' · mediana '+usd(res.paidMed*A), sgn(res.paidMean), 80)+
+    kp('Conto ancora vivo', numEl(res.aliveEnd*100,0)+'<small>%</small>', res.aliveEnd>.995?'quasi nessun conto bruciato':isFinite(res.blownMed)?'chi lo brucia, di solito dopo '+fd(res.blownMed)+' giornate':'nessun conto bruciato', res.aliveEnd>=.6?'pos':res.aliveEnd>=.35?'':'neg', 120)+'</div>';
+  // grafici
+  const H=p.horizon, cum=[1,2,3,4,5,6].map(k=>({ v:Math.round((1-Math.pow(1-res.pr,k))*1000)/10, l:k===1?'1':k+'', tip:'passi almeno una valutazione su '+k+' tentativi' }));
+  const sp=Float64Array.from(res.paysN).sort(), top=Math.max(1, sp[Math.floor(.98*(res.M-1))]), pw=Math.max(1, Math.ceil(top/7)), pd=[], nP=x=>res.paysN.filter(x).length/res.M;
+  pd.push({ v:Math.round(nP(x=>!x)*1000)/10, l:'0', tip:'nessun payout in '+H+' giornate', cls:'n' });
+  for (let a=1; a<=top; a+=pw) { const z=a+pw-1, last=z>=top, lb=pw===1?(last&&sp[res.M-1]>a?a+'+':String(a)):(last?a+'+':a+'–'+z);
+    pd.push({ v:Math.round(nP(x=>x>=a&&(last||x<=z))*1000)/10, l:lb, tip:lb+' payout in '+H+' giornate', cls:'p' }); }
+  h+=rows2([card('Valutazioni che servono', 'probabilità di averne passata almeno una', '<div class="chart" id="c-pf-att"></div>', 300),
+            card('Quanto ci vuole a passarla', 'giornate di trading', '<div class="chart" id="c-pf-days"></div>', 320),
+            card('Conti finanziati ancora vivi', 'giornata per giornata', '<div class="chart" id="c-pf-alive"></div>', 340),
+            card('Payout ottenuti', 'in '+H+' giornate', '<div class="chart" id="c-pf-pays"></div>', 360)]);
+  h+='<p class="mc-note rise" style="--d:380ms">Ogni simulazione ripesca a caso, con reinserimento, le '+res.K+' giornate filtrate con i loro trade in ordine, a '+usd(p.risk)+' per R e '+usd(p.comm)+' di commissioni a trade. '+
+    'Il limite di perdita si calcola sul saldo di fine giornata ma si tocca anche durante il giorno; sul conto finanziato dopo il primo payout resta a $0. '+(A>1?'Con il copy trading i '+A+' conti fanno gli stessi trade: passano o saltano insieme, quindi costi e prelievi sono moltiplicati per '+A+'. ':'')+
+    (res.tout>.01?'Nel '+pct(res.tout)+' delle valutazioni il target non arriva entro 300 giornate (contate come non passate). ':'')+'È una stima sul passato, non una previsione: le regole di Topstep vanno verificate sul sito.</p>';
+  box.innerHTML=h; box.classList.toggle('quiet', !!quiet); richMeta(box);
+  barChart($('c-pf-att'), cum, { h:170, fmt:v=>fmtN(v,1)+'%', tickFmt:v=>fmtN(v,0)+'%', aria:'Probabilità di passare almeno una valutazione' });
+  const pq=res.pass, mx=Math.max(1, res.pass.length?Float64Array.from(pq).sort()[Math.floor(.98*(pq.length-1))]:1), nb=Math.min(12, Math.max(4, Math.ceil(mx/3))), w=Math.max(1,Math.ceil(mx/nb)), cnt=new Array(nb).fill(0); pq.forEach(d=>cnt[Math.min(nb-1, Math.floor((d-1)/w))]++);
+  barChart($('c-pf-days'), cnt.map((c,i)=>({ v:Math.round(c/Math.max(1,pq.length)*1000)/10, l:i===nb-1?(i*w+1)+'+':(i*w+1)+'', tip:i===nb-1?(i*w+1)+' giornate o più':(w===1?(i+1)+'':(i*w+1)+'–'+((i+1)*w))+' giornate', cls:'p' })), { h:170, fmt:v=>fmtN(v,1)+'% delle volte che passi', tickFmt:v=>fmtN(v,0)+'%', aria:'Giornate per passare la valutazione' });
+  const step=Math.max(1, Math.ceil(H/60)), al=[]; for (let d=0; d<=H; d+=step) al.push({ y:Math.round(res.alive[d]*1000)/10, x:d?'giornata '+d:'finanziato', tip:'giornata '+d+' · conti ancora vivi' });
+  lineChart($('c-pf-alive'), al, { h:170, x0:true, fmt:v=>fmtN(v,1)+'%', aria:'Conti finanziati ancora vivi' });
+  barChart($('c-pf-pays'), pd, { h:170, fmt:v=>fmtN(v,1)+'% dei conti', tickFmt:v=>fmtN(v,0)+'%', aria:'Distribuzione dei payout' });
   if (!quiet) { countUp(box, 0); setTimeout(()=>box.scrollIntoView({ behavior:'smooth', block:'start' }), 60); }
-}
-function fanChart(el, res) {
-  const W=el.clientWidth||320, H=240, padL=44, padR=10, padT=12, padB=24, B=res.band, p=res.p, n=p.n;
-  let lo=Math.min(...B.map(b=>b.p5), p.cap*(1-p.ruin/100)), hi=Math.max(...B.map(b=>b.p95), p.cap);
-  for (const ph of res.paths) for (const v of ph) { lo=Math.min(lo,v); hi=Math.max(hi,v); }
-  const tk=ticks(lo,hi,4); lo=Math.min(lo,tk[0]); hi=Math.max(hi,tk[tk.length-1]);
-  const x=t=>padL+t*(W-padL-padR)/n, y=v=>padT+(hi-v)*(H-padT-padB)/(hi-lo);
-  const area=(a,b)=>B.map((s,i)=>(i?'L':'M')+x(s.t).toFixed(1)+' '+y(s[a]).toFixed(1)).join(' ')+' '+B.slice().reverse().map(s=>'L'+x(s.t).toFixed(1)+' '+y(s[b]).toFixed(1)).join(' ')+'Z';
-  const line=k=>B.map((s,i)=>(i?'L':'M')+x(s.t).toFixed(1)+' '+y(s[k]).toFixed(1)).join(' ');
-  let g=''; tk.forEach(t=>{ g+='<line class="grid" x1="'+padL+'" x2="'+(W-padR)+'" y1="'+y(t)+'" y2="'+y(t)+'"/><text class="tick" x="'+(padL-8)+'" y="'+(y(t)+3.5)+'" text-anchor="end">'+usdK(t)+'</text>'; });
-  [0, Math.round(n/2), n].forEach((t,i)=>{ g+='<text class="tick" x="'+x(t)+'" y="'+(H-6)+'" text-anchor="'+(i===0?'start':i===2?'end':'middle')+'">'+(t===0?'inizio':'trade '+t)+'</text>'; });
-  const yc=y(p.cap), yr=y(p.cap*(1-p.ruin/100));
-  g+='<line class="grid zero" x1="'+padL+'" x2="'+(W-padR)+'" y1="'+yc+'" y2="'+yc+'"/>';
-  g+='<line class="ruinl" x1="'+padL+'" x2="'+(W-padR)+'" y1="'+yr+'" y2="'+yr+'"/><text class="tick ruint" x="'+(W-padR)+'" y="'+(yr-5)+'" text-anchor="end">−'+fmtN(p.ruin,0)+'% dal capitale</text>';
-  res.paths.forEach((ph,k)=>{ g+='<path class="mcpath" style="animation-delay:'+(k*25)+'ms" d="'+ph.map((v,i)=>(i?'L':'M')+x(B[Math.min(i,B.length-1)].t).toFixed(1)+' '+y(v).toFixed(1)).join(' ')+'"/>'; });
-  g+='<path class="band b1" d="'+area('p95','p5')+'"/><path class="band b2" d="'+area('p75','p25')+'"/><path class="line" pathLength="1" d="'+line('p50')+'"/>';
-  el.innerHTML='<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Ventaglio delle curve del conto simulate">'+g+'<g class="xh" opacity="0"><line y1="'+padT+'" y2="'+(H-padB)+'"/><circle r="5"/></g></svg><div class="tip"></div>';
-  const svg=el.querySelector('svg'), xh=el.querySelector('.xh'), tip=el.querySelector('.tip');
-  const show=e=>{ const r=svg.getBoundingClientRect(), t=(e.clientX-r.left-padL)/(W-padL-padR)*n; let i=0; B.forEach((s,j)=>{ if (Math.abs(s.t-t)<Math.abs(B[i].t-t)) i=j; }); const s=B[i], cx=x(s.t);
-    xh.setAttribute('opacity',1); xh.querySelector('line').setAttribute('x1',cx); xh.querySelector('line').setAttribute('x2',cx); xh.querySelector('circle').setAttribute('cx',cx); xh.querySelector('circle').setAttribute('cy',y(s.p50));
-    tip.innerHTML='<b>'+usd(s.p50)+'</b>trade '+s.t+' · 90% tra '+usdK(s.p5)+' e '+usdK(s.p95); tip.classList.add('show'); const tw=tip.offsetWidth; tip.style.left=Math.max(tw/2,Math.min(W-tw/2,cx))+'px'; tip.style.top=Math.max(y(s.p95)-8,44)+'px'; };
-  svg.addEventListener('pointermove',show); svg.addEventListener('pointerdown',show); svg.addEventListener('pointerleave',()=>{ xh.setAttribute('opacity',0); tip.classList.remove('show'); });
-}
-function histChart(el, res) {
-  const f=res.fin, lo=Math.min(...f), hi=Math.max(...f), nb=24, w=(hi-lo)/nb||1, cnt=new Array(nb).fill(0), cap=res.p.cap;
-  f.forEach(v=>{ cnt[Math.min(nb-1, Math.floor((v-lo)/w))]++; });
-  const items=cnt.map((c,i)=>{ const a=lo+i*w, b=a+w; return { v:c, l:usdK(a+w/2), cls:(a+w/2)>=cap?'p':'n', tip:usdK(a)+' – '+usdK(b)+' · '+fmtN(c/f.length*100,1)+'% delle simulazioni' }; });
-  barChart(el, items, { h:170, fmt:v=>v.toLocaleString('it-IT')+' simulazioni', tickFmt:v=>fmtN(v,0), aria:'Distribuzione del capitale finale' });
 }
 
 // ───────────────────────── SCHEDA: nuovo / modifica trade ─────────────────────────
@@ -3146,7 +3181,8 @@ document.addEventListener('click', e => {
   const sg=b.closest('[data-seg]');
   if (b.closest('[data-seg=dper]')) { S.dper=b.dataset.v; store.set('dper',S.dper); renderCurrent(true); return; }
   if (b.closest('[data-seg=per]')) { S.per=b.dataset.v; store.set('per',S.per); renderCurrent(true); return; }
-  if (sg && sg.dataset.seg.indexOf('mc-')===0) { const k=sg.dataset.seg==='mc-mode'?'mode':'sims'; S.mc[k]=b.dataset.v; saveMC(); if (k==='mode') renderCurrent(true); else setSeg(sg,b.dataset.v); return; }
+  if (sg && sg.dataset.seg==='pf-size') { S.pf.size=b.dataset.v; Object.assign(S.pf, PF_PRE[b.dataset.v]||{}); savePF(); renderCurrent(true); return; }
+  if (sg && sg.dataset.seg==='pf-sims') { S.pf.sims=b.dataset.v; savePF(); setSeg(sg,b.dataset.v); return; }
   if (b.closest('[data-lf]')) { S[b.dataset.k]=b.dataset.v; S.lmore=60; renderList(); return; }
 });
 $('sh-body').addEventListener('input', e => {
@@ -3161,9 +3197,9 @@ document.addEventListener('change', e => { const t=e.target, ds=t.dataset||{};
 });
 document.addEventListener('change', e => { const k=e.target.dataset && e.target.dataset.hp; if (!k) return;
   S.cust[k]=e.target.value; store.set('cust', JSON.stringify(S.cust)); renderCurrent(true); });
-document.addEventListener('input', e => { const k=e.target.dataset && e.target.dataset.mc; if (!k) return; S.mc[k]=e.target.value; saveMC();
-  const w=e.target.closest('.field'); if (w && w.classList.contains('bad')) { w.classList.remove('bad'); }
-  const b=$('mc-run'); if (b && !b.disabled) b.innerHTML=ic('dice',18,2)+'Avvia simulazione'; });
+document.addEventListener('input', e => { const k=e.target.dataset && e.target.dataset.pf; if (!k) return; S.pf[k]=e.target.value; savePF();
+  const w=e.target.closest('.field'); if (w && w.classList.contains('bad')) w.classList.remove('bad');
+  const b=$('mc-run'); if (b && !b.disabled) b.innerHTML=ic('dice',18,2)+'Simula'; });
 $('sh-body').addEventListener('focusout', e => { const k=e.target.dataset.k; if (k && S.sheet==='form' && !S.touched[k]) { S.touched[k]=true; refresh(); } });
 $('scrim').addEventListener('click', closeSheet);
 // scorciatoie (PC): 1–9 pagine della barra laterale, N nuovo trade, F filtri, ⌘K / Ctrl+K palette comandi
@@ -3186,7 +3222,7 @@ let lastW=window.innerWidth, rT;
 window.addEventListener('resize', () => { clearTimeout(rT); rT=setTimeout(()=>{ if (Math.abs(window.innerWidth-lastW)>20) { lastW=window.innerWidth; if (!S.sheet) renderCurrent(true); } }, 200); });
 setInterval(() => { const el=$('sess'); if (el) { const s=sessionInfo(); el.className='sess'+(s.open?' open':''); el.innerHTML='<i></i>'+s.txt; } }, 30000);
 
-S.filtBy=loadFilt(); S.filt=S.filtBy[S.file]; S.mc=loadMC();
+S.filtBy=loadFilt(); S.filt=S.filtBy[S.file]; S.pf=loadPF();
 try { S.cust=JSON.parse(store.get('cust','{}'))||{}; } catch(e) { S.cust={}; }
 (function welcome() {
   const sp=$('splash'); let seen=false; try { seen=sessionStorage.getItem('tj.hi')==='1'; sessionStorage.setItem('tj.hi','1'); } catch(e) {}
