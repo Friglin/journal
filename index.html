@@ -1135,7 +1135,7 @@ const L = {
   errs: ['FOMO','TP spostato','SL spostato','Ingresso anticipato','Uscita anticipata','Size sbagliata','Fuori piano','Altro'],
 };
 const APP = 'Edgebook';
-const BUILD = '2026-10-23.18';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
+const BUILD = '2026-10-23.19';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
 let updChk=0;
 function checkUpdate() {
   if (viaScript() || location.protocol==='file:' || Date.now()-updChk<60000) return; updChk=Date.now();
@@ -1620,7 +1620,7 @@ function plan(ts, rOf) { // max 2 trade al giorno, stop dopo il primo trade posi
 function filtered(m) {
   const F=S.filt; m=m||curModel();
   let ts=all().filter(t=> (!F.from||t.d>=new Date(F.from+'T00:00')) && (!F.to||t.d<=new Date(F.to+'T00:00')) &&
-    (!F.asset||t.a===F.asset) && (!(F.idea&&F.idea.length)||F.idea.includes(t.idea)) &&
+    (!F.asset||t.a===F.asset) && (!(F.idea&&F.idea.length)||F.idea.includes(t.idea)) && (!(F.smt&&F.smt.length)||F.smt.includes(t.smt)) &&
     (!F.lvn||t.lvn===F.lvn) && (!F.clean||(F.clean==='Sì')===t.clean) && (!F.band||bandOf(t)===F.band) && (!F.dir||t.dir===F.dir));
   if (F.plan==='max2') ts=plan(ts, m.rOf);
   return ts;
@@ -1633,6 +1633,7 @@ function activeFilters() { const F=S.filt, a=[];
   if (F.from||F.to) a.push({k:'date', l:(F.from?fmtIt(F.from):'…')+' → '+(F.to?fmtIt(F.to):'oggi')});
   if (F.band) a.push({k:'band', l:F.band}); if (F.lvn) a.push({k:'lvn', l:'LVN '+(F.lvn==='Si'?'sì':'no')});
   if (F.clean) a.push({k:'clean', l:'1m clean '+F.clean.toLowerCase()});
+  const sm=F.smt||[]; if (sm.length) a.push({k:'smt', l:sm.length===1?sm[0]:'SMT: '+sm.map(x=>x==='No SMT'?'nessuna':x.replace('SMT a ','a ')).join(' o ')});
   const id=F.idea||[]; if (id.length>2) a.push({k:'idea', l:'Idee: '+id.length+' su '+L.idea.length}); else id.forEach(i=>a.push({k:'idea:'+i, l:i}));
   return a; }
 function fbar(d) {
@@ -1642,7 +1643,7 @@ function fbar(d) {
 }
 function removeFilter(k) { const F=S.filt;
   if (k.indexOf('idea:')===0) F.idea=(F.idea||[]).filter(x=>x!==k.slice(5));
-  else if (k==='idea') F.idea=[]; else if (k==='date') { F.from=''; F.to=''; F.quick=''; } else if (k==='tgt') F.tgt=2; else F[k]='';
+  else if (k==='idea'||k==='smt') F[k]=[]; else if (k==='date') { F.from=''; F.to=''; F.quick=''; } else if (k==='tgt') F.tgt=2; else F[k]='';
   saveFilt(); renderCurrent(true);
 }
 function openFilters() {
@@ -1658,6 +1659,7 @@ function renderFilters() {
   h+='<div class="fsec"><div class="field"><span class="flabel">Asset</span>'+seg('f-asset',[{v:'',l:'Tutti'},'ES','NQ'],F.asset||'')+'</div>'+
      (hasCol('Direzione')?'<div class="field"><span class="flabel">Direzione</span>'+seg('f-dir',[{v:'',l:'Tutte'},...L.dir],F.dir||'')+'</div>':'')+
      '<div class="field"><span class="flabel">Idea 5m · anche più di una</span>'+chips('f-idea',L.idea,F.idea||[],true)+'</div>'+
+     (hasCol('SMT')?'<div class="field"><span class="flabel">SMT · anche più di una</span>'+chips('f-smt',L.smt,F.smt||[],true)+'</div>':'')+
      '<div class="field"><span class="flabel">Fascia oraria</span>'+chips('f-band',[{v:'',l:'Tutte'},...L.bands.map(b=>b[0])],F.band||'')+'</div>'+
      '<div class="g2"><div class="field"><span class="flabel">Coming from LVN</span>'+seg('f-lvn',[{v:'',l:'Tutti'},{v:'Si',l:'Sì'},'No'],F.lvn||'')+'</div>'+
      '<div class="field"><span class="flabel">1m clean</span>'+seg('f-clean',[{v:'',l:'Tutti'},'Sì','No'],F.clean||'')+'</div></div></div>';
@@ -1670,7 +1672,7 @@ function filtClick(b) {
   if (sg) { const k=sg.dataset.seg.slice(2); F[k]= k==='tgt' ? +b.dataset.v : b.dataset.v; setSeg(sg,b.dataset.v); }
   else if (ch) { const k=ch.dataset.chips, v=b.dataset.v;
     if (k==='quick') { F.quick=v; const rg=periodRange(v,0); F.from = v==='all'?'':iso(rg[0]); F.to = v==='all'?'':iso(new Date(rg[1]-864e5)); saveFilt(); renderFilters(); renderCurrent(true); return; }
-    if (ch.dataset.multi) { const a=F.idea||[]; F.idea=a.includes(v)?a.filter(x=>x!==v):[...a,v]; b.classList.toggle('on'); }
+    if (ch.dataset.multi) { const f=k.slice(2), a=F[f]||[]; F[f]=a.includes(v)?a.filter(x=>x!==v):[...a,v]; b.classList.toggle('on'); }
     else { F[k.slice(2)]=v; ch.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on', c===b)); } }
   saveFilt(); filtFoot(); renderCurrent(true);
 }
@@ -2692,9 +2694,9 @@ const PF_PRE = {
 // scaling plan del conto finanziato: contratti mini (10 micro = 1) consentiti in base al saldo
 const PF_SCALE = { '50K':[[1500,2],[2000,3],[Infinity,5]], '100K':[[1500,3],[2000,4],[3000,5],[Infinity,10]], '150K':[[1500,3],[2000,4],[3000,5],[4500,10],[Infinity,15]] };
 const PF_RT = { mini:3.78, micro:1.22 };   // commissioni e fee Topstep a contratto, andata e ritorno
-const PF_DEF = { size:'50K', dll:'si', target:'3000', mll:'2000', dllAmt:'1000', cons:'55', fee:'85', act:'0', lots:'5', win:'150', winN:'5', cap:'2000', capPct:'50',
+const PF_DEF = { size:'50K', dll:'si', target:'3000', mll:'2000', dllAmt:'1000', cons:'50', fee:'85', act:'0', lots:'5', win:'150', winN:'5', cap:'2000', capPct:'50',
   split:'100', after:'5', split2:'90', horizon:'120', risk:'', comm:'3.78', acc:'', sims:'3000' };
-function loadPF() { try { return Object.assign({}, PF_DEF, JSON.parse(store.get('pf2','{}'))); } catch(e) { return Object.assign({}, PF_DEF); } }
+function loadPF() { try { const o=Object.assign({}, PF_DEF, JSON.parse(store.get('pf2','{}'))); if (o.cons==='55') o.cons='50'; return o; } catch(e) { return Object.assign({}, PF_DEF); } }
 const savePF = () => store.set('pf2', JSON.stringify(S.pf));
 const usd = (x, dec=0) => isFinite(x) ? (x<0?'−':'')+'$'+Math.abs(x).toLocaleString('it-IT',{ maximumFractionDigits:dec, minimumFractionDigits:dec }) : '–';
 // ───── dollari e conti prop ─────
@@ -2808,7 +2810,7 @@ function renderMC() {
     '<div class="pf-sec">Il tuo piano</div>'+grid([f('risk','Rischio a trade',String(riskUsd()||200),'$','per conto'), f('acc','Conti in copy',String(nAcc()),''), f('comm','Commissioni senza SL','3.78','$','solo per i trade senza punti di stop')])+
     '<div class="pf-sec">Valutazione</div><div class="g2"><div class="field"><span class="flabel">Taglia</span>'+seg('pf-size',['50K','100K','150K'],P.size)+'</div>'+
     '<div class="field"><span class="flabel">Daily Loss Limit</span>'+seg('pf-dll',[{v:'si',l:'Sì'},{v:'no',l:'No'}],P.dll)+'</div></div>'+
-    grid([f('target','Target di profitto','3000','$'), f('mll','Limite di perdita','2000','$','segue il saldo di fine giornata'), f('cons','Consistenza','55','%','giorno migliore sul profitto')].concat(dll?[f('dllAmt','Daily Loss Limit','1000','$','si ferma la giornata')]:[]))+
+    grid([f('target','Target di profitto','3000','$'), f('mll','Limite di perdita','2000','$','segue il saldo di fine giornata'), f('cons','Consistenza','50','%','solo in valutazione: giorno migliore sul profitto')].concat(dll?[f('dllAmt','Daily Loss Limit','1000','$','si ferma la giornata')]:[]))+
     grid([f('fee','Prezzo al mese','85','$','anche il reset costa così'), f('act','Attivazione','0','$'), f('lots','Contratti massimi','5','','mini · 10 micro = 1')])+
     '<div class="pf-sec">Conto finanziato</div>'+grid([f('win','Giorno vincente da','150','$'), f('winN','Giorni vincenti per payout','5',''), f('cap','Payout massimo','2000','$', dll&&numS(P.cap)>0?'col DLL raddoppia: '+usd(numS(P.cap)*2):'per richiesta'), f('capPct','Payout massimo sul saldo','50','%')])+
     grid([f('split','Split','100','%'), f('after','Per i primi','5','','payout'), f('split2','Split dopo','90','%'), f('horizon','Giornate da simulare','120','')])+
