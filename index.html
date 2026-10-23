@@ -654,7 +654,7 @@ nav.bar { background:color-mix(in srgb,var(--surface) 76%,transparent); -webkit-
 .tr-now { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; padding:14px; border-radius:16px; background:var(--loss-soft); margin-bottom:4px; }
 .tr-now b { display:block; font-size:17px; color:var(--loss); } .tr-now span { font-size:13px; color:var(--fg2); }
 .tr-go { background:var(--loss) !important; color:#fff !important; text-decoration:none; display:inline-flex; align-items:center; gap:8px; }
-.tr-srcs { display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:12px; padding-top:10px; border-top:1px solid var(--line); font-size:12px; } .tr-srcs span { display:inline-flex; align-items:center; gap:5px; } .tr-srcs .ok { color:var(--fg3); } .tr-srcs .ok .ic { color:var(--win); } .tr-srcs .ko { color:var(--warn); }
+.tr-srcs { display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:12px; padding-top:10px; border-top:1px solid var(--line); font-size:12px; } .tr-srcs span { display:inline-flex; align-items:center; gap:5px; } .tr-srcs .ok { color:var(--fg3); } .tr-srcs .ok .ic { color:var(--win); } .tr-srcs .ko { color:var(--warn); } .tr-srcs .off { color:var(--fg3); opacity:.75; }
 .tr-where { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding-top:12px; border-top:1px solid var(--line); margin-top:4px; } .tr-where > span { font-size:12.5px; color:var(--fg3); } .tr-l { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
 .tr-none.ko { flex-wrap:wrap; align-items:center; } .tr-none.ko .ic { color:var(--warn); } .tr-none.ko .btn { margin-left:auto; }
 .tr-none, .tr-past { display:flex; gap:8px; align-items:flex-start; font-size:13.5px; color:var(--fg2); padding:6px 0; } .tr-none .ic { color:var(--win); flex:none; margin-top:1px; } .tr-past { color:var(--fg3); font-size:12.5px; border-top:1px solid var(--line); margin-top:8px; padding-top:10px; } .tr-past .ic { flex:none; margin-top:2px; }
@@ -1118,7 +1118,7 @@ const L = {
   errs: ['FOMO','TP spostato','SL spostato','Ingresso anticipato','Uscita anticipata','Size sbagliata','Fuori piano','Altro'],
 };
 const APP = 'Edgebook';
-const BUILD = '2026-10-23.10';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
+const BUILD = '2026-10-23.11';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
 let updChk=0;
 function checkUpdate() {
   if (viaScript() || location.protocol==='file:' || Date.now()-updChk<60000) return; updChk=Date.now();
@@ -1949,11 +1949,14 @@ function trumpCard(ev) {
     : trErr && !trP ? '<div class="tr-none ko">'+ic('alert',16,2.2)+'<span>Non riesco a controllare se Trump parla: '+esc(trErr==='NETWORK'?'lo script non ha risposto in tempo':trErr)+'.</span><button type="button" class="btn sec sm" data-act="trretry">'+ic('refresh',15,2)+'Riprova</button></div>'
     : '<div class="tr-none">'+ic('clock',16,2.2)+'<span>Controllo se Trump sta parlando…</span></div>';
   if (past.length) h+='<div class="tr-past">'+ic('clock',14,2)+'<span>Ha già parlato: '+past.map(p=>(iso(romeDate(p.from))===todayIso()?'':dayShort(iso(romeDate(p.from)))+' ')+hmOf(p.from)+'–'+hmOf(p.to)).join(' · ')+'</span></div>';
-  const sv = (n,v) => '<span class="'+(v==='ok'?'ok':'ko')+'">'+ic(v==='ok'?'check':'alert',13,2.4)+n+(v==='ok'?'':' · '+esc(String(v||'non controllato')))+'</span>';
+  // fonte che funziona: spunta; FinancialJuice in pausa (429) mentre YouTube va: grigio e discreto; altri problemi: giallo
+  const sv = (n,v,quiet) => v==='ok' ? '<span class="ok">'+ic('check',13,2.4)+n+'</span>'
+    : quiet ? '<span class="off">'+ic('clock',13,2.2)+n+' in pausa</span>'
+    : '<span class="ko">'+ic('alert',13,2.4)+n+' · '+esc(String(v||'non controllato'))+'</span>';
   // FinancialJuice: se l'ultimo controllo riuscito è recente va bene così (un 429 è solo una pausa che lo script si prende da solo)
   const fjRecent = T && T.src && T.src.fjAt && now-T.src.fjAt < 30*60000, fjV = T && T.src ? (T.src.fj==='ok' || fjRecent ? 'ok' : T.src.fj) : '';
   if (T && T.src && T.src.err) h+='<p class="tr-src"><b>Ultimo controllo non riuscito</b> ('+esc(T.src.err)+'): sto mostrando quello delle '+hmOf(T.at)+'.</p>';
-  if (T && T.src) h+='<div class="tr-srcs">'+sv('YouTube Casa Bianca',T.src.yt)+sv('FinancialJuice'+(fjRecent?' · '+hmOf(T.src.fjAt):''),fjV)+'</div>';
+  if (T && T.src) h+='<div class="tr-srcs">'+sv('YouTube Casa Bianca',T.src.yt)+sv('FinancialJuice'+(fjRecent?' · '+hmOf(T.src.fjAt):''),fjV, fjV!=='ok' && T.src.yt==='ok' && /429|troppe richieste/i.test(String(T.src.fj)))+'</div>';
   h+='<p class="tr-src">'+(T && T.src && T.src.yt!=='ok' && fjV!=='ok' ? '<b>Nessuna fonte raggiungibile in questo momento: riprovo da solo.</b> ' : '')+'Diretta e dirette in programma dal canale YouTube della Casa Bianca, dichiarazioni dai titoli di FinancialJuice (qualche minuto di ritardo), interventi dal calendario di ForexFactory.</p>';
   return h+'</div>';
 }
