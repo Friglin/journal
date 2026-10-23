@@ -1162,7 +1162,7 @@ const L = {
   errs: ['FOMO','TP spostato','SL spostato','Ingresso anticipato','Uscita anticipata','Size sbagliata','Fuori piano','Altro'],
 };
 const APP = 'Edgebook';
-const BUILD = '2026-10-23.21';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
+const BUILD = '2026-10-23.22';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
 let updChk=0;
 function checkUpdate() {
   if (viaScript() || location.protocol==='file:' || Date.now()-updChk<60000) return; updChk=Date.now();
@@ -2990,10 +2990,10 @@ function pfRank(rows, fmt, bestI) {
 function pfWfCard(wf, d) {
   if (!wf) return '';
   const good=wf.test.m>=wf.base.m;
-  return card('Tenuta sul periodo più recente', 'dal '+fmtIt(wf.from)+' · '+wf.days+' giorni',
-    '<p class="pf-wf">Ho rifatto la ricerca dei filtri solo sul primo 70% dei giorni e ho guardato come vanno i filtri trovati sul restante 30%, che la ricerca non aveva visto.</p>'+
+  return card('Controllo anti-fortuna', 'giorni dal '+fmtIt(wf.from)+' · '+wf.days+' giorni',
+    '<p class="pf-wf">Il percorso qui sopra usa <b>tutti</b> i trade dell\'EOW. Questo è solo un controllo a parte: rifaccio la stessa ricerca fingendo di avere solo i giorni fino al '+fmtIt(wf.from)+', poi guardo come sarebbero andati quei filtri nei giorni dopo. Serve a capire se i filtri trovati funzionano anche su trade nuovi o se sono solo fortuna.</p>'+
     '<div class="pf-wf-g"><div><span>Filtri trovati</span><b class="'+(wf.test.m>=0?'pos':'neg')+'">'+fmtR(wf.test.m,2)+'</b><em>al giorno · '+wf.test.k+' trade</em></div><div><span>Tutti i trade</span><b class="'+(wf.base.m>=0?'pos':'neg')+'">'+fmtR(wf.base.m,2)+'</b><em>al giorno · '+wf.base.k+' trade</em></div></div>'+
-    '<p class="pf-wf '+(good?'ok':'ko')+'">'+(good?'I filtri reggono anche su giorni nuovi: è un buon segno che non siano solo fortuna.':'Sui giorni nuovi i filtri fanno peggio di tutti i trade: i filtri trovati potrebbero essere in parte fortuna, prendili con cautela.')+'</p>', d); }
+    '<p class="pf-wf '+(good?'ok':'ko')+'">'+(good?'I filtri reggono anche sui giorni dopo: è un buon segno che non siano solo fortuna.':'Sui giorni dopo i filtri hanno fatto peggio di tutti i trade: i filtri trovati potrebbero essere in parte fortuna, prendili con cautela.')+'</p>', d); }
 function drawPass(R, quiet) {
   const box=$('mc-res'); if (!box) return; const B=R.B||S._pfB, b=R.best, r=R.res, st=R.strats[b.i].st, conf=pfConf(b.z,b.d), N=R.N, wl=pfWkLbl(R.Td/5), fd=d=>isFinite(d)?Math.round(d):'–';
   const wk=d=>!isFinite(d)?'':d<8?'circa '+Math.round(d)+' giorni lavorativi':'circa '+fmtN(d/5,d/5<10?1:0)+' settimane';
