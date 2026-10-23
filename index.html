@@ -1135,7 +1135,7 @@ const L = {
   errs: ['FOMO','TP spostato','SL spostato','Ingresso anticipato','Uscita anticipata','Size sbagliata','Fuori piano','Altro'],
 };
 const APP = 'Edgebook';
-const BUILD = '2026-10-23.14';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
+const BUILD = '2026-10-23.15';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
 let updChk=0;
 function checkUpdate() {
   if (viaScript() || location.protocol==='file:' || Date.now()-updChk<60000) return; updChk=Date.now();
@@ -2418,7 +2418,7 @@ function openBd(b) {
   $('sh-body').innerHTML='<div class="bd-sum"><div><span>Trade</span><b class="num">'+a.n+'</b></div><div><span>Win rate</span><b class="num">'+pct(a.wr)+'</b></div>'+
       '<div><span>Risultato</span><b class="num '+sgn(a.R)+'">'+fmtR(a.R)+'</b></div>'+(U?'<div><span>Dollari</span><b class="num '+sgn(usdSum(x.g,x.m))+'">'+fmtU(usdSum(x.g,x.m))+'</b></div>':'')+'</div>'+
     '<div class="bd-list">'+list.map(t=>'<button type="button" class="trow" data-open="'+x.f+':'+t.row+'">'+tline(t, x.f, { r:x.m.rOf(t), w:x.m.isWin(t), l:x.m.isLoss(t), date:true })+'</button>').join('')+'</div>';
-  $('sh-foot').innerHTML=''; openSheet(innerWidth>=1000);
+  $('sh-foot').innerHTML=''; openSheet();   // al centro anche su PC, come la scheda del trade
 }
 function levelRows(rows) { // [{l, p, right, sub}]
   return rows.map((r,j)=>'<div class="bd"><div class="bd-l"><span>'+r.l+'</span>'+(r.sub?'<small>'+r.sub+'</small>':'')+'</div><div class="track"><i style="width:'+((r.p||0)*100)+'%;--d:'+(j*70)+'ms"></i></div><div class="p2 num">'+pct(r.p)+'</div><div class="r '+(r.cls||'')+'">'+r.right+'</div></div>').join('');
