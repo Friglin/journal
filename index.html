@@ -656,6 +656,7 @@ nav.bar { background:color-mix(in srgb,var(--surface) 76%,transparent); -webkit-
 .tr-go { background:var(--loss) !important; color:#fff !important; text-decoration:none; display:inline-flex; align-items:center; gap:8px; }
 .tr-srcs { display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:12px; padding-top:10px; border-top:1px solid var(--line); font-size:12px; } .tr-srcs span { display:inline-flex; align-items:center; gap:5px; } .tr-srcs .ok { color:var(--fg3); } .tr-srcs .ok .ic { color:var(--win); } .tr-srcs .ko { color:var(--warn); }
 .tr-where { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding-top:12px; border-top:1px solid var(--line); margin-top:4px; } .tr-where > span { font-size:12.5px; color:var(--fg3); } .tr-l { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.tr-none.ko { flex-wrap:wrap; align-items:center; } .tr-none.ko .ic { color:var(--warn); } .tr-none.ko .btn { margin-left:auto; }
 .tr-none, .tr-past { display:flex; gap:8px; align-items:flex-start; font-size:13.5px; color:var(--fg2); padding:6px 0; } .tr-none .ic { color:var(--win); flex:none; margin-top:1px; } .tr-past { color:var(--fg3); font-size:12.5px; border-top:1px solid var(--line); margin-top:8px; padding-top:10px; } .tr-past .ic { flex:none; margin-top:2px; }
 .tr-src { font-size:12px; color:var(--fg3); margin:14px 0 0; line-height:1.45; }
 .td-tr.on { background:var(--loss-soft); text-decoration:none; } .td-tr.on b { color:var(--loss); } .td-tr .tr-dot { width:10px; height:10px; border-radius:50%; background:var(--loss); flex:none; margin:0 3px; animation:pulse 1.6s infinite; }
@@ -1117,7 +1118,7 @@ const L = {
   errs: ['FOMO','TP spostato','SL spostato','Ingresso anticipato','Uscita anticipata','Size sbagliata','Fuori piano','Altro'],
 };
 const APP = 'Edgebook';
-const BUILD = '2026-10-23.9';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
+const BUILD = '2026-10-23.10';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
 let updChk=0;
 function checkUpdate() {
   if (viaScript() || location.protocol==='file:' || Date.now()-updChk<60000) return; updChk=Date.now();
@@ -1196,7 +1197,7 @@ function call(fn, ...args) {
   const url=store.get('api',''), key=store.get('key','');
   if (!url || !key) { showSetup(); return Promise.reject(new Error('Inserisci indirizzo e chiave di accesso')); }
   // corpo in text/plain: è una richiesta «semplice», niente controllo preventivo CORS
-  const ctl = 'AbortController' in window ? new AbortController() : null, to = ctl && setTimeout(()=>ctl.abort(), fn==='chat'||fn==='coach'||fn==='news'||fn==='newsSunto'||WRITES.includes(fn) ? 90000 : 30000);
+  const ctl = 'AbortController' in window ? new AbortController() : null, to = ctl && setTimeout(()=>ctl.abort(), fn==='chat'||fn==='coach'||fn==='news'||fn==='newsSunto'||fn==='trumpNews'||WRITES.includes(fn) ? 90000 : 30000);
   return fetch(url, { method:'POST', body: JSON.stringify({ key, fn, args }), signal: ctl ? ctl.signal : undefined })
     .catch(() => { throw new Error('NETWORK'); })
     .finally(() => clearTimeout(to))
@@ -1818,7 +1819,7 @@ const insRow = (icn, lbl, k, b, bad) => '<div class="ins-row"><div class="ins-ic
 // ───────────────────────── NEWS (calendario economico USD, fonte ForexFactory) ─────────────────────────
 const NEWS_TTL = 15*60000;
 S.dper = store.get('dper','') || 'm';
-S.trump = (()=>{ try { const v=JSON.parse(localStorage.getItem('tj.trump2')||'null'); return v && Date.now()-v.got<3600000 ? v : null; } catch(e) { return null; } })();
+S.trump = (()=>{ try { const v=JSON.parse(localStorage.getItem('tj.trump2')||'null'); return v && Date.now()-v.got<6*3600000 ? v : null; } catch(e) { return null; } })();
 S.news = (()=>{ try { return JSON.parse(localStorage.getItem('tj.news')||'null'); } catch(e) { return null; } })();
 S.nsAI = {};
 let newsP=null, newsErr='', newsTry=0, newsRetry=null, newsRetryN=0;
@@ -1942,11 +1943,16 @@ function trumpCard(ev) {
   if (sch.length) h+=(live?'<div class="tr-sect">In programma</div>':'')+sch.map(o=>{ const st = o.tbd ? (o.ann?'annunciato alle '+hmOf(o.ann)+', orario non indicato':'orario da definire') : now<o.t ? 'alle '+hmOf(o.t)+' · <b data-cd="'+o.t+'">'+cdTxt(o.t-now)+'</b>' : 'iniziato alle '+hmOf(o.t)+' · la fine non viene annunciata';
       return '<div class="tr-row"><div><b>'+esc(o.lbl)+'</b><span>'+dayLbl(o.day)+' · '+st+'</span></div>'+(o.url?'<div class="tr-l"><a class="lnk" href="'+esc(o.url)+'" target="_blank" rel="noopener">'+ic('play',14,2)+'Apri su YouTube</a></div>':'')+'</div>'; }).join('')+
       (live?'':'<div class="tr-where"><span>Dove vederlo</span>'+trLinks()+'</div>');
-  else if (!live) h+='<div class="tr-none">'+ic('check',16,2.2)+'<span>'+(T ? 'Nessun intervento di Trump in programma. Quando inizia a parlare lo vedi qui, con il link alla diretta.' : trErr==='OLD' ? 'Aggiorna Code.gs per sapere quando Trump parla.' : 'Controllo se Trump sta parlando…')+'</span></div>';
+  else if (!live && T) h+='<div class="tr-none">'+ic('check',16,2.2)+'<span>Nessun intervento di Trump in programma. Quando inizia a parlare lo vedi qui, con il link alla diretta.</span></div>';
+  // controllo non riuscito (e nessun dato salvato): il motivo e «Riprova», anche se ci sono interventi dal calendario
+  if (!T) h+= trErr==='OLD' ? '<div class="tr-none ko">'+ic('alert',16,2.2)+'<span>Aggiorna Code.gs per sapere quando Trump parla.</span></div>'
+    : trErr && !trP ? '<div class="tr-none ko">'+ic('alert',16,2.2)+'<span>Non riesco a controllare se Trump parla: '+esc(trErr==='NETWORK'?'lo script non ha risposto in tempo':trErr)+'.</span><button type="button" class="btn sec sm" data-act="trretry">'+ic('refresh',15,2)+'Riprova</button></div>'
+    : '<div class="tr-none">'+ic('clock',16,2.2)+'<span>Controllo se Trump sta parlando…</span></div>';
   if (past.length) h+='<div class="tr-past">'+ic('clock',14,2)+'<span>Ha già parlato: '+past.map(p=>(iso(romeDate(p.from))===todayIso()?'':dayShort(iso(romeDate(p.from)))+' ')+hmOf(p.from)+'–'+hmOf(p.to)).join(' · ')+'</span></div>';
   const sv = (n,v) => '<span class="'+(v==='ok'?'ok':'ko')+'">'+ic(v==='ok'?'check':'alert',13,2.4)+n+(v==='ok'?'':' · '+esc(String(v||'non controllato')))+'</span>';
   // FinancialJuice: se l'ultimo controllo riuscito è recente va bene così (un 429 è solo una pausa che lo script si prende da solo)
   const fjRecent = T && T.src && T.src.fjAt && now-T.src.fjAt < 30*60000, fjV = T && T.src ? (T.src.fj==='ok' || fjRecent ? 'ok' : T.src.fj) : '';
+  if (T && T.src && T.src.err) h+='<p class="tr-src"><b>Ultimo controllo non riuscito</b> ('+esc(T.src.err)+'): sto mostrando quello delle '+hmOf(T.at)+'.</p>';
   if (T && T.src) h+='<div class="tr-srcs">'+sv('YouTube Casa Bianca',T.src.yt)+sv('FinancialJuice'+(fjRecent?' · '+hmOf(T.src.fjAt):''),fjV)+'</div>';
   h+='<p class="tr-src">'+(T && T.src && T.src.yt!=='ok' && fjV!=='ok' ? '<b>Nessuna fonte raggiungibile in questo momento: riprovo da solo.</b> ' : '')+'Diretta e dirette in programma dal canale YouTube della Casa Bianca, dichiarazioni dai titoli di FinancialJuice (qualche minuto di ritardo), interventi dal calendario di ForexFactory.</p>';
   return h+'</div>';
@@ -3070,6 +3076,7 @@ document.addEventListener('click', e => {
   if (b.dataset.newf) { switchFile(b.dataset.newf); openForm(); return; }
   if (b.dataset.open) { const [f,row]=b.dataset.open.split(':'); if (!(+row>1)) { toast('Il trade si sta ancora salvando: riprova tra un attimo'); return; } switchFile(f); openForm(+row); return; }
   if (b.dataset.act==='nsai') { askNewsAI(b); return; }
+  if (b.dataset.act==='trretry') { trTry=0; trErr=''; loadTrump(true).catch(()=>{}); renderCurrent(true); return; }
   if (b.dataset.nday) { const el=$('nd-'+b.dataset.nday); if (!el) { toast('Nessuna news di impatto medio o alto quel giorno'); return; } const d=el.closest('details'); if (d) d.open=true;
     const y=el.getBoundingClientRect().top+scrollY-(innerWidth<1000?78:16); window.scrollTo({ top:y, behavior:reduceMotion()?'auto':'smooth' }); return; }
   if (b.id==='sh-close' || b.dataset.act==='close') { closeSheet(); return; }
