@@ -794,7 +794,6 @@ header.top::before { display:none; } header.top { border-top:0; }
 
  
 
-.pgrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; align-items:start; }
 .prow { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; align-items:stretch; } .prow > .card { min-width:0; }
 .prow.one { grid-template-columns:minmax(0,1fr); }
 .mcols.eq { align-items:stretch; } .mcols.eq > .mcol > :last-child { flex:1; }
@@ -804,7 +803,7 @@ header.top::before { display:none; } header.top { border-top:0; }
 
 .empty-row { padding:16px; border:1px dashed var(--line); border-radius:12px; color:var(--fg3); font-size:14px; text-align:center; }
 
-@media (max-width:999px) { .pgrid, .prow { grid-template-columns:minmax(0,1fr); gap:14px; }  .stat-h h1, .hello h1 { font-size:24px !important; } }
+@media (max-width:999px) { .prow { grid-template-columns:minmax(0,1fr); gap:14px; }  .stat-h h1, .hello h1 { font-size:24px !important; } }
 @media (max-width:640px) {
     
      
@@ -829,8 +828,6 @@ th, .bd.hd { text-transform:none !important; letter-spacing:0 !important; font-s
 .ds-cost { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); border:1px solid var(--line); border-radius:14px; margin-top:14px; }
 .ds-cost > div { padding:12px 14px; } .ds-cost > div + div { border-left:1px solid var(--line); }
 .ds-cost span { display:block; font-size:12.5px; color:var(--fg3); } .ds-cost b { display:block; font-size:20px; font-weight:650; margin:2px 0; } .ds-cost em { font-style:normal; font-size:12px; color:var(--fg3); }
-.ds-errs { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
-.echip { font-size:12.5px; padding:5px 10px; border-radius:99px; background:color-mix(in srgb,var(--loss) 10%,var(--sunk)); color:var(--fg); } .echip b { color:var(--loss); margin-left:2px; }
 .nsrc a { color:var(--accent); }
 
 /* ═════════════ Interfaccia: regole di Vercel, Emil Kowalski, Apple, Impeccable ═════════════ */
@@ -963,7 +960,7 @@ main:focus { outline:none; }
 
 /* telefono: le card fuori dallo schermo non si calcolano né si disegnano finché non ci arrivi (pagine più rapide da aprire) */
 @media (max-width:999px) {
-  .view > .card:not(.hero):not(.wide), .view > .kgrid, .view > .pgrid, .view > .prow, .view > .brief, .view > .card.wide:not(.ntoday):not(.hero) { content-visibility:auto; contain-intrinsic-size:auto 360px; }
+  .view > .card:not(.hero):not(.wide), .view > .kgrid, .view > .prow, .view > .brief, .view > .card.wide:not(.ntoday):not(.hero) { content-visibility:auto; contain-intrinsic-size:auto 360px; }
 }
 
 /* ═════════════ Movimento ═════════════
@@ -1135,7 +1132,7 @@ const L = {
   errs: ['FOMO','TP spostato','SL spostato','Ingresso anticipato','Uscita anticipata','Size sbagliata','Fuori piano','Altro'],
 };
 const APP = 'Edgebook';
-const BUILD = '2026-10-23.15';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
+const BUILD = '2026-10-23.16';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
 let updChk=0;
 function checkUpdate() {
   if (viaScript() || location.protocol==='file:' || Date.now()-updChk<60000) return; updChk=Date.now();
@@ -1264,7 +1261,7 @@ function logo(s) { // monogramma «E» geometrico con un punto (il prezzo che ar
 function seg(key, opts, val, cls) {
   const i = opts.findIndex(o => String(o.v ?? o) === String(val ?? ''));
   return '<div class="seg '+(cls||'')+(i<0?' none':'')+'" data-seg="'+key+'" style="--n:'+opts.length+';--i:'+Math.max(i,0)+'">'+
-    opts.map((o,j)=>'<button type="button" data-v="'+esc(o.v ?? o)+'" class="'+(j===i?'on':'')+'">'+(o.h ?? esc(o.l ?? o))+'</button>').join('')+'</div>';
+    opts.map((o,j)=>'<button type="button" data-v="'+esc(o.v ?? o)+'" class="'+(j===i?'on':'')+'"'+(o.h&&o.l?' aria-label="'+esc(o.l)+'" title="'+esc(o.l)+'"':'')+'>'+(o.h ?? esc(o.l ?? o))+'</button>').join('')+'</div>';   // solo icona: il nome per lettori di schermo e tooltip
 }
 function setSeg(el, v) {
   const bs=[...el.querySelectorAll('button')], i=bs.findIndex(b=>b.dataset.v===String(v));
@@ -1677,7 +1674,7 @@ function filtClick(b) {
 
 // ───────────────────────── HOME ─────────────────────────
 function sessionInfo() {
-  const it = new Date(new Date().toLocaleString('en-US',{ timeZone:'Europe/Rome' })), m=it.getHours()*60+it.getMinutes(), wd=it.getDay();
+  const it = romeDate(Date.now()), m=it.getHours()*60+it.getMinutes(), wd=it.getDay();   // formattatore già pronto (toLocaleString ne creava uno a ogni chiamata)
   const fm = x => (x>=60 ? Math.floor(x/60)+' h ' : '')+String(x%60).padStart(x>=60?2:1,'0')+' min';
   if (wd>=1 && wd<=5 && m>=SESS[0] && m<SESS[1]) return { open:true, txt:'Sessione aperta · chiude tra '+fm(SESS[1]-m) };
   if (wd>=1 && wd<=5 && m<SESS[0]) return { open:false, txt:'La sessione inizia tra '+fm(SESS[0]-m) };
@@ -1923,7 +1920,6 @@ function newsEvents() {
 }
 const inSess = e => !e.tbd && e.mm>=SESS[0]-15 && e.mm<=SESS[1];   // dentro la sessione (o nei 15 minuti prima dell'apertura)
 const when = e => e.tbd ? 'orario da definire' : e.mm<SESS[0]-15 ? 'prima della sessione' : e.mm<=SESS[1] ? 'in sessione' : 'dopo la sessione';
-const ffDay = d => 'https://www.forexfactory.com/calendar?day='+['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'][d.getMonth()]+d.getDate()+'.'+d.getFullYear();
 const TRUMP_LINKS = [['Diretta Casa Bianca','https://www.youtube.com/@WhiteHouse/streams'],['C-SPAN','https://www.c-span.org/live/']];
 // versione corta per le righe del calendario: «tra 1 h 59 min» → «1h 59m»
 const cdS = ms => cdTxt(ms).replace(/^tra /,'').replace(/ h /,'h ').replace(/ min\b/,'m').replace(/ giorn[oi]/,' g');
