@@ -403,6 +403,10 @@ body::after { content:""; position:fixed; inset:-25%; z-index:-1; pointer-events
 .pf-rk b { display:block; font-size:13.5px; font-weight:600; line-height:1.35; } .pf-rk span { display:block; font-size:12px; color:var(--fg3); margin-top:1px; }
 .pf-rk em { white-space:nowrap; font-style:normal; font-family:var(--display); font-weight:650; font-size:16px; }
 .pf-wf { margin:0 0 12px; font-size:13px; line-height:1.5; color:var(--fg2); } .pf-wf.ok { color:var(--win); margin:12px 0 0; } .pf-wf.ko { color:var(--warn,var(--loss)); margin:12px 0 0; }
+.pf-exp { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:0 0 16px; } .pf-exp > div { border-radius:14px; padding:11px 13px; background:var(--bg); }
+.pf-exp > div.on { background:var(--accent-soft); } .pf-exp span { display:block; font-size:12px; font-weight:600; color:var(--fg2); } .pf-exp > div.on span { color:var(--accent); }
+.pf-exp b { display:block; font-family:var(--display); font-size:22px; font-weight:650; margin:2px 0; } .pf-exp em { display:block; font-style:normal; font-size:11.5px; line-height:1.4; color:var(--fg3); }
+@media (max-width:480px) { .pf-exp { grid-template-columns:1fr; } }
 .pf-wf-g { display:grid; grid-template-columns:1fr 1fr; gap:10px; } .pf-wf-g > div { background:var(--bg); border-radius:14px; padding:12px; }
 .pf-wf-g span { display:block; font-size:12px; color:var(--fg3); } .pf-wf-g b { display:block; font-family:var(--display); font-size:22px; font-weight:650; margin:3px 0 1px; } .pf-wf-g b.pos { color:var(--win); } .pf-wf-g b.neg { color:var(--loss); } .pf-wf-g em { font-style:normal; font-size:12px; color:var(--fg3); }
 .pf-lead { margin:0 0 14px; font-size:14px; line-height:1.5; color:var(--fg2); }
@@ -587,8 +591,8 @@ nav.bar { background:color-mix(in srgb,var(--surface) 76%,transparent); -webkit-
   .aifab { left:auto; right:max(20px,calc(env(safe-area-inset-right,0px) + 20px)); bottom:calc(env(safe-area-inset-bottom,0px) + 146px); width:48px; height:48px; border-radius:16px; }
 }
 /* pagine che non dipendono da EOW / Journal: niente selettore del file */
-:root[data-tab="news"] #fileSeg, :root[data-tab="set"] #fileSeg { visibility:hidden; }
-:root[data-tab="home"] .top .wrap.filebar, :root[data-tab="news"] .top .wrap.filebar, :root[data-tab="set"] .top .wrap.filebar { display:none; }
+:root[data-tab="news"] #fileSeg, :root[data-tab="set"] #fileSeg, :root[data-tab="disc"] #fileSeg, :root[data-tab="mc"] #fileSeg { visibility:hidden; }
+:root[data-tab="home"] .top .wrap.filebar, :root[data-tab="news"] .top .wrap.filebar, :root[data-tab="set"] .top .wrap.filebar, :root[data-tab="disc"] .top .wrap.filebar, :root[data-tab="mc"] .top .wrap.filebar { display:none; }
 /* ───── navigazione: barra laterale su PC, barra in basso con «Altro» sul telefono ───── */
 .side { display:none; }
 .ptitle { display:none; }
@@ -1162,7 +1166,7 @@ const L = {
   errs: ['FOMO','TP spostato','SL spostato','Ingresso anticipato','Uscita anticipata','Size sbagliata','Fuori piano','Altro'],
 };
 const APP = 'Edgebook';
-const BUILD = '2026-10-23.22';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
+const BUILD = '2026-10-23.25';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
 let updChk=0;
 function checkUpdate() {
   if (viaScript() || location.protocol==='file:' || Date.now()-updChk<60000) return; updChk=Date.now();
@@ -1464,7 +1468,7 @@ const NAV_FOOT = [ { id:'set', l:'Impostazioni', i:'gear' } ];
 const BAR = [['home','Home','home'],['news','News','news'],['list','Trade','list'],['stats','Analisi','chart'],['more','Altro','grid']];
 const VIEWS = ['home','news','list','stats','cal','mc','disc','coach','set'];
 const PTITLE = { home:'Panoramica', news:'News', list:'Trade', stats:'Analisi', cal:'Calendario', mc:'Simula', disc:'Disciplina', coach:'Coach', set:'Impostazioni' };
-const NOFILE = ['news','set','disc'];   // pagine che non dipendono da EOW / Journal (la Disciplina usa sempre il Journal)
+const NOFILE = ['news','set','disc','mc'];   // pagine che non dipendono da EOW / Journal (la Disciplina usa sempre il Journal, Simula sempre l'EOW)
 const FILE_LBL = { EOW:['EOW','End of Week · backtest della settimana'], Journal:['JOURNAL','Trade reali eseguiti'] };
 const navKey = n => n.id+(n.f?':'+n.f:'');
 const curNavKey = () => S.tab==='list' ? 'list:'+S.file : S.tab;
@@ -1644,20 +1648,26 @@ function plan(ts, rOf) { // max 2 trade al giorno, stop dopo il primo trade posi
   ts.forEach(t=>{ const k=t.d.toDateString(); if (k!==day){ day=k; n=0; stop=false; } if (stop||n>=2) return; out.push(t); n++; if (rOf(t)>0) stop=true; });
   return out;
 }
-function filtered(m) {
+function filtered(m, noPer) {
   const F=S.filt; m=m||curModel();
-  let ts=all().filter(t=> (!F.from||t.d>=new Date(F.from+'T00:00')) && (!F.to||t.d<=new Date(F.to+'T00:00')) &&
+  let ts=all().filter(t=>
     (!F.asset||t.a===F.asset) && (!(F.idea&&F.idea.length)||F.idea.includes(t.idea)) && (!(F.smt&&F.smt.length)||F.smt.includes(t.smt)) &&
     (!F.lvn||t.lvn===F.lvn) && (!F.clean||(F.clean==='Sì')===t.clean) && (!F.band||bandOf(t)===F.band) && (!F.dir||t.dir===F.dir));
+  if (!noPer && S.per!=='all') ts=inRange(ts, periodRange(S.per,0));
   if (F.plan==='max2') ts=plan(ts, m.rOf);
   return ts;
 }
+// il periodo è lo stesso ovunque: la barra Sett./Mese/3M/Anno/Tutto della Panoramica e il «Periodo» dei filtri
+function perLabel() { const now=new Date(), cr=S.per==='c'?periodRange('c',0):null;
+  return { w:wkLbl(), m:MESI_F[now.getMonth()].replace(/^./,c=>c.toUpperCase())+' '+now.getFullYear(), '3m':'Ultimi 3 mesi', y:'Anno '+now.getFullYear(), all:'Tutto',
+    c: cr && cr[0].getFullYear()>2000 ? fmtIt(iso(cr[0]))+' → '+fmtIt(iso(addDays(cr[1],-1))) : 'Date da scegliere' }[S.per]; }
+function setPer(v) { S.per=v; store.set('per',v); }
 function activeFilters() { const F=S.filt, a=[];
   if (F.plan==='max2') a.push({k:'plan', l:'Max 2 trade al giorno'});
   if (F.asset) a.push({k:'asset', l:F.asset});
   if (F.dir) a.push({k:'dir', l:F.dir});
   if (S.type==='EOW' && tgt()!==2) a.push({k:'tgt', l:'Target '+tgt()+'R'});
-  if (F.from||F.to) a.push({k:'date', l:(F.from?fmtIt(F.from):'…')+' → '+(F.to?fmtIt(F.to):'oggi')});
+  if (S.per!=='all' && S.tab!=='home' && S.tab!=='cal') a.push({k:'per', l:perLabel()});   // in Panoramica c'è già la barra del periodo
   if (F.band) a.push({k:'band', l:F.band}); if (F.lvn) a.push({k:'lvn', l:'LVN '+(F.lvn==='Si'?'sì':'no')});
   if (F.clean) a.push({k:'clean', l:'1m clean '+F.clean.toLowerCase()});
   const sm=F.smt||[]; if (sm.length) a.push({k:'smt', l:sm.length===1?sm[0]:'SMT: '+sm.map(x=>x==='No SMT'?'nessuna':x.replace('SMT a ','a ')).join(' o ')});
@@ -1670,7 +1680,7 @@ function fbar(d) {
 }
 function removeFilter(k) { const F=S.filt;
   if (k.indexOf('idea:')===0) F.idea=(F.idea||[]).filter(x=>x!==k.slice(5));
-  else if (k==='idea'||k==='smt') F[k]=[]; else if (k==='date') { F.from=''; F.to=''; F.quick=''; } else if (k==='tgt') F.tgt=2; else F[k]='';
+  else if (k==='idea'||k==='smt') F[k]=[]; else if (k==='per') setPer('all'); else if (k==='tgt') F.tgt=2; else F[k]='';
   saveFilt(); renderCurrent(true);
 }
 function openFilters() {
@@ -1681,8 +1691,8 @@ function renderFilters() {
   let h='<div class="fsec"><div class="field"><span class="flabel">Trading plan</span>'+seg('f-plan',[{v:'max2',l:'Max 2 trade al giorno'},{v:'',l:'Nessuno'}],F.plan||'')+
         '<span class="hint">Max 2 trade al giorno: dopo il primo trade in profitto la giornata si chiude.</span></div>'+
         (E?'<div class="field"><span class="flabel">Target (esito del trade)</span>'+seg('f-tgt',[1,2,3,4,5].map(k=>({v:k,l:k+'R'})),tgt())+'</div>':'')+'</div>';
-  h+='<div class="fsec"><div class="flabel">Periodo</div>'+chips('quick',[{v:'all',l:'Tutto'},{v:'w',l:wkLbl()},{v:'m',l:'Questo mese'},{v:'3m',l:'Ultimi 3 mesi'},{v:'y',l:'Quest\'anno'}],F.quick||'all').replace('class="chips"','class="chips scrollx"')+
-        '<div class="g2"><div class="field"><label for="ff-from">Dal</label><input class="inp" id="ff-from" type="date" data-fk="from" value="'+(F.from||'')+'"></div><div class="field"><label for="ff-to">Al</label><input class="inp" id="ff-to" type="date" data-fk="to" value="'+(F.to||'')+'"></div></div></div>';
+  h+='<div class="fsec"><div class="flabel">Periodo · lo stesso della barra in Panoramica</div>'+chips('quick',[{v:'all',l:'Tutto'},{v:'w',l:wkLbl()},{v:'m',l:'Questo mese'},{v:'3m',l:'Ultimi 3 mesi'},{v:'y',l:'Quest\'anno'},{v:'c',l:'Date'}],S.per).replace('class="chips"','class="chips scrollx"')+
+        '<div class="g2"><div class="field"><label for="ff-from">Dal</label><input class="inp" id="ff-from" type="date" data-fk="from" value="'+esc(S.per==='c'?S.cust.from||'':'')+'"></div><div class="field"><label for="ff-to">Al</label><input class="inp" id="ff-to" type="date" data-fk="to" value="'+esc(S.per==='c'?S.cust.to||'':'')+'"></div></div></div>';
   h+='<div class="fsec"><div class="field"><span class="flabel">Asset</span>'+seg('f-asset',[{v:'',l:'Tutti'},'ES','NQ'],F.asset||'')+'</div>'+
      (hasCol('Direzione')?'<div class="field"><span class="flabel">Direzione</span>'+seg('f-dir',[{v:'',l:'Tutte'},...L.dir],F.dir||'')+'</div>':'')+
      '<div class="field"><span class="flabel">Idea 5m · anche più di una</span>'+chips('f-idea',L.idea,F.idea||[],true)+'</div>'+
@@ -1698,7 +1708,7 @@ function filtClick(b) {
   const sg=b.closest('[data-seg]'), ch=b.closest('[data-chips]'), F=S.filt;
   if (sg) { const k=sg.dataset.seg.slice(2); F[k]= k==='tgt' ? +b.dataset.v : b.dataset.v; setSeg(sg,b.dataset.v); }
   else if (ch) { const k=ch.dataset.chips, v=b.dataset.v;
-    if (k==='quick') { F.quick=v; const rg=periodRange(v,0); F.from = v==='all'?'':iso(rg[0]); F.to = v==='all'?'':iso(new Date(rg[1]-864e5)); saveFilt(); renderFilters(); renderCurrent(true); return; }
+    if (k==='quick') { setPer(v); renderFilters(); renderCurrent(true); return; }
     if (ch.dataset.multi) { const f=k.slice(2), a=F[f]||[]; F[f]=a.includes(v)?a.filter(x=>x!==v):[...a,v]; b.classList.toggle('on'); }
     else { F[k.slice(2)]=v; ch.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on', c===b)); } }
   saveFilt(); filtFoot(); renderCurrent(true);
@@ -1772,7 +1782,7 @@ function renderHome() {
   let h='<div class="hello"><div><div class="eyebrow">'+GIORNI[now.getDay()]+' '+now.getDate()+' '+MESI_F[now.getMonth()]+'</div><h1>'+words(greeting())+'</h1></div>'+
     '<span class="sess'+(ses.open?' open':'')+'" id="sess"><i></i>'+ses.txt+'</span></div>';
   if (!S.loaded) { enter(el, h+skeleton()); return; }
-  const T=tgt(), m=curModel(), ALL=filtered(m), ts=inRange(ALL,periodRange(S.per,0)), prev=inRange(ALL,periodRange(S.per,1));
+  const T=tgt(), m=curModel(), ALL=filtered(m,true), ts=inRange(ALL,periodRange(S.per,0)), prev=inRange(ALL,periodRange(S.per,1));
   const a=agg(ts,m), pa=agg(prev,m), E=S.type==='EOW';
   const dd = d => d.getDate()+' '+MESI[d.getMonth()], cr = S.per==='c' ? periodRange('c',0) : null, cOk = cr && cr[0].getFullYear()>2000;
   const perLbl = { w:wkLbl().toLowerCase(), m: MESI_F[now.getMonth()]+' '+now.getFullYear(), '3m':'ultimi 3 mesi', y:String(now.getFullYear()), all:'da sempre',
@@ -2170,7 +2180,7 @@ function briefing() {
 // ───────────────────────── CALENDARIO ─────────────────────────
 function renderCal() {
   const el=$('v-cal'); if (!S.loaded) { el.innerHTML=skeleton(); return; }
-  const m=curModel(), ts=filtered(m), now=new Date(); if (!S.calM) S.calM=now.getFullYear()+'-'+p2(now.getMonth()+1);
+  const m=curModel(), ts=filtered(m,true), now=new Date(); if (!S.calM) S.calM=now.getFullYear()+'-'+p2(now.getMonth()+1);
   const [Y,M]=S.calM.split('-').map(Number), first=new Date(Y,M-1,1), last=new Date(Y,M,0), byDay={};
   ts.forEach(t=>{ if (t.d.getFullYear()===Y && t.d.getMonth()===M-1) { const k=iso(t.d); (byDay[k]=byDay[k]||[]).push(t); } });
   const U=usdOn(), dayU = k => byDay[k] ? usdSum(byDay[k],m) : 0;
@@ -2199,7 +2209,7 @@ function renderCal() {
 
 // trade del giorno scelto nel calendario
 function calDayCard(k, cls) {
-  const m=curModel(), g=filtered(m).filter(t=>iso(t.d)===k); if (!g.length) return '';
+  const m=curModel(), g=filtered(m,true).filter(t=>iso(t.d)===k); if (!g.length) return '';
   const R=g.reduce((s,t)=>s+m.rOf(t),0), U=usdOn();
   return '<div class="card wide '+(cls||'')+'" id="cal-day" style="--d:120ms"><div class="card-h"><div class="h2">'+dayLbl(k)+'</div><span class="sub '+sgn(R)+'">'+fmtR(R,2)+(U?' · '+fmtU(usdSum(g,m)):'')+'</span></div>'+g.map(t=>trow(t,m,true)).join('')+'</div>';
 }
@@ -2683,7 +2693,8 @@ function ctxNow() {
         prob_passarli_entro:r2(a.res.P), spesa_media:Math.round(a.res.cost), giorni_mediani:a.res.doneQ[1], per_modo:a.byMode.map(v=>({ modo:PF_MODE[v.mode], prob:r2(v.P) })), per_conto:a.byCombo.map(v=>({ conto:v.z+(v.d==='si'?' DLL':''), prob:r2(v.P) })) } : 'non ancora calcolato',
       conto_finanziato: f ? { conto:pfAccTxt(f.conf.size,f.conf.dllOn?'si':'no'), giorni:f.H, trade:pfDesc(f.strats[f.best.i].st), rischio:f.best.rF, payout:f.best.amt==='max'?'massimo':f.best.amt, saldo_minimo:f.best.B,
         prelevato_medio:Math.round(f.res.paid), conto_vivo:r2(f.res.alive), per_importo:f.byAmt.map(v=>({ importo:v.amt, prelevato:Math.round(v.paid), vivo:r2(v.alive) })) } : 'non ancora calcolato',
-      verifica_filtri: (a||f) && (a||f).wf ? { filtri:pfDesc((a||f).wf.st), R_giorno_su_giorni_nuovi:r2((a||f).wf.test.m), R_giorno_tutti_i_trade:r2((a||f).wf.base.m) } : null }; }
+      nota_pesi:'le scelte danno più peso ai giorni recenti; ogni risultato ha anche la versione su tutto lo storico',
+      breve_termine_vs_storico: { passare: a ? [r2(a.res.P), r2(a.resAll.P)] : null, prelevato: f ? [Math.round(f.res.paid), Math.round(f.resAll.paid)] : null } }; }
   else if (tab==='list') c.trade_visibili_in_pagina=ts.slice(-30).map(t=>tradeCtx(t,m));
   return c;
 }
@@ -2760,7 +2771,9 @@ function pfBase() {
   const ts=E.filter(t=>t.d && isFinite(t.best) && t.d.getDay()%6!==0), days=[], idx={};
   if (ts.length) for (let d=new Date(ts[0].d.getFullYear(),ts[0].d.getMonth(),ts[0].d.getDate()); d<=ts[ts.length-1].d; d.setDate(d.getDate()+1)) { if (d.getDay()%6===0) continue; idx[iso(d)]=days.length; days.push(iso(d)); }
   const di=ts.map(t=>idx[iso(t.d)]), sl=ts.map(t=>{ const v=num(t.raw['SL Points']); return v>0?v:0; });
-  return { ts, days, di, sl, dir:ts.some(t=>t.dir), cc2:ts.some(t=>t.cc2), n:E.length };
+  // peso dei giorni: dimezza ogni «hl» giorni feriali andando indietro, così le scelte guardano soprattutto ai giorni recenti
+  const n=days.length, hl=Math.max(20, Math.round(n*.25)), w=days.map((_,i)=>Math.pow(.5,(n-1-i)/hl)), cut=Math.max(0, Math.min(Math.floor(n*.7), n-20));
+  return { ts, days, di, sl, dir:ts.some(t=>t.dir), cc2:ts.some(t=>t.cc2), n:E.length, w, hl, cut };
 }
 const PF_ST0 = { T:2, asset:'', plan:'', xIdea:[], smt:'', news:'', lvn:'', clean:'', xBand:[], dir:'' };
 // i trade di una strategia, giorno per giorno, nell'intervallo di giorni [lo, hi)
@@ -2779,37 +2792,36 @@ function pfApply(B, st, lo=0, hi=B.days.length) {
 }
 // qualità di una strategia, senza simulare: rendimento medio al giorno feriale diviso per la sua variabilità (il rischio a trade
 // lo sceglie poi la simulazione), ridotto quando restano pochi giorni con trade, perché lì il risultato è più fortuna
-function pfStat(days) { let n=days.length, s=0, s2=0, act=0, k=0;
-  days.forEach(d=>{ if (!d.length) return; act++; k+=d.length; const r=d.reduce((x,t)=>x+t.r,0); s+=r; s2+=r*r; });
-  const m=s/n, sd=Math.sqrt(Math.max(0, s2/n-m*m)); return { m, sd, act, k, sh: sd>0?m/sd:0 }; }
+function pfStat(days, w) { let W=0, s=0, s2=0, act=0, k=0;
+  days.forEach((d,i)=>{ const wi=w?w[i]:1, r=d.reduce((x,t)=>x+t.r,0); W+=wi; s+=wi*r; s2+=wi*r*r; if (d.length) { act++; k+=d.length; } });
+  const m=W?s/W:0, sd=Math.sqrt(Math.max(0, (W?s2/W:0)-m*m)); return { m, sd, act, k, sh: sd>0?m/sd:0 }; }
 const pfScore = st => (st.k<20 || st.act<12 || !(st.sd>0)) ? -Infinity : st.sh*st.act/(st.act+15);
-// ricerca a passi: parte da tutti i trade con un target e prova un filtro alla volta, tenendo solo i miglioramenti chiari
-function pfGreedy(B, T, lo, hi) {
-  const sc=st=>pfScore(pfStat(pfApply(B,st,lo,hi)));
-  let st=Object.assign({}, PF_ST0, { T, xIdea:[], xBand:[] }), best=sc(st);
+// ricerca a passi: parte da tutti i trade con un target e prova un filtro alla volta. Un filtro resta solo se migliora il risultato
+// (giorni pesati verso i recenti) e non peggiora il rendimento degli ultimi giorni (l'ultimo 30%): deve reggere soprattutto adesso
+function pfGreedy(B, T) {
+  const ev=st=>{ const d=pfApply(B,st); return { sc:pfScore(pfStat(d,B.w)), rec:pfStat(d.slice(B.cut)).m }; };
+  let st=Object.assign({}, PF_ST0, { T, xIdea:[], xBand:[] }), best=ev(st);
   const opts={ asset:['','ES','NQ'], plan:['','max2','max1'], smt:['','nosf','fav'], news:['','nored','none'], lvn:['','Si','No'], clean:['','si'] };
   if (B.dir) opts.dir=['','Long','Short'];
-  const tryIt=c=>{ const v=sc(c); if (v>best+.01) { st=c; best=v; return true; } return false; };
+  const tryIt=c=>{ const v=ev(c); if (v.sc>best.sc+.01 && v.rec>=best.rec-1e-9) { st=c; best=v; return true; } return false; };
   for (let pass=0; pass<3; pass++) { let imp=false;
     for (const k in opts) for (const v of opts[k]) if (v!==st[k] && tryIt(Object.assign({}, st, { [k]:v }))) imp=true;
     for (const i of L.idea) { const x=st.xIdea.includes(i)?st.xIdea.filter(y=>y!==i):st.xIdea.concat(i); if (x.length<L.idea.length && tryIt(Object.assign({}, st, { xIdea:x }))) imp=true; }
     for (const b of L.bands.map(b=>b[0])) { const x=st.xBand.includes(b)?st.xBand.filter(y=>y!==b):st.xBand.concat(b); if (x.length<L.bands.length && tryIt(Object.assign({}, st, { xBand:x }))) imp=true; }
     if (!imp) break; }
-  return { st, score:best };
+  return { st, score:best.sc };
 }
 const pfStKey = st => JSON.stringify([st.T,st.asset,st.plan,[...st.xIdea].sort(),st.smt,st.news,st.lvn,st.clean,[...st.xBand].sort(),st.dir]);
-// le strategie da simulare: la migliore per ogni target, più «tutti i trade» come riferimento; e la verifica sul periodo più recente
+// le strategie da simulare: la migliore per ogni target, più «tutti i trade» come riferimento; per ognuna il rendimento
+// su tutto lo storico e negli ultimi giorni, confrontato con tutti i trade allo stesso target
 function pfStrats(B) {
   if (B._st) return B._st;
-  const seen=new Set(), list=[], add=(st,lbl)=>{ const k=pfStKey(st); if (seen.has(k)) return; seen.add(k); const s=pfStat(pfApply(B,st)); list.push({ st, stat:s, score:pfScore(s), lbl }); };
-  add(Object.assign({}, PF_ST0, { xIdea:[], xBand:[] }), 'tutti i trade');
+  const seen=new Set(), list=[], all=T=>Object.assign({}, PF_ST0, { T, xIdea:[], xBand:[] });
+  const add=st=>{ const k=pfStKey(st); if (seen.has(k)) return; seen.add(k); const d=pfApply(B,st), s=pfStat(d,B.w), b=pfApply(B,all(st.T));
+    list.push({ st, stat:s, score:pfScore(s), full:pfStat(d), rec:pfStat(d.slice(B.cut)), base:{ full:pfStat(b), rec:pfStat(b.slice(B.cut)) } }); };
+  add(all(2));
   [1,2,3,4,5].map(T=>pfGreedy(B,T)).filter(g=>isFinite(g.score)).sort((a,b)=>b.score-a.score).forEach(g=>add(g.st));
-  // verifica: stessi passi solo sul primo 70% dei giorni, risultato misurato sul restante 30% che la ricerca non ha visto
-  const cut=Math.floor(B.days.length*.7); let wf=null;
-  if (B.days.length-cut>=20) { const g=[1,2,3,4,5].map(T=>pfGreedy(B,T,0,cut)).sort((a,b)=>b.score-a.score)[0];
-    if (g && isFinite(g.score)) { const te=pfStat(pfApply(B,g.st,cut)), ba=pfStat(pfApply(B,Object.assign({}, PF_ST0, { xIdea:[], xBand:[] }),cut)), tr=pfStat(pfApply(B,g.st,0,cut));
-      wf={ st:g.st, test:te, base:ba, train:tr, days:B.days.length-cut, from:B.days[cut] }; } }
-  return (B._st={ list:list.filter(x=>isFinite(x.score)||x.lbl).slice(0,6), wf });
+  return (B._st={ list:list.slice(0,6) });
 }
 const PF_NEWS = { nored:'niente giorni con Red News', none:'solo giorni senza news' };
 function pfDesc(st, short) {
@@ -2828,8 +2840,10 @@ function pfConf(size, dll) { const q=PF_PRE[size], d=dll==='si';
 const pfRiskGrid = mll => [.03,.05,.075,.1,.125,.15,.2,.25,.3,.4,.5].map(f=>Math.max(25, Math.round(f*mll/25)*25));
 const pfBGrid = mll => [0,.5,1,1.5,2,3,4,5].map(f=>Math.round(f*mll));
 const pfAmtGrid = (mll, cap) => ['max'].concat([.25,.5,.75,1,1.5].map(f=>Math.round(f*mll/250)*250).filter(v=>v>=250 && v<cap));
-function pfEngine(days) {
-  const K=days.length, cache=new Map(), cd=7/5;
+function pfEngine(days, w) {
+  const K=days.length, cache=new Map(), cd=7/5, cum=new Float64Array(K); let tot=0; for (let i=0;i<K;i++) { tot+=w?w[i]:1; cum[i]=tot; }
+  // un giorno a caso: con i pesi, i giorni recenti escono più spesso
+  const idx=rnd=>{ const x=rnd()*tot; let lo=0, hi=K-1; while (lo<hi) { const m=(lo+hi)>>1; if (cum[m]>x) hi=m; else lo=m+1; } return lo; };
   const rt=n=>Math.floor(n/10)*PF_RT.mini+(n%10)*PF_RT.micro;
   // per un rischio: per ogni trade i micro che ci stanno con il suo stop (almeno 1; senza stop: R × rischio)
   const prep=risk=>{ let v=cache.get(risk); if (!v) { v=days.map(day=>day.map(t=>({ r:t.r, sm:t.sl*t.mv, n0:t.sl>0?Math.max(1, Math.floor(risk/(t.sl*t.mv)+1e-9)):0, risk }))); cache.set(risk,v); } return v; };
@@ -2851,7 +2865,7 @@ function pfEngine(days) {
   const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:NaN;
   // N valutazioni: in copy (stessi trade su tutti), a rotazione (ogni giorno con trade su un conto diverso) o una alla volta
   function pass(p, N, mode, Td, M, seed, full) {
-    const rnd=pfRng(seed), DE=prep(p.rE), pick=()=>DE[(rnd()*K)|0], cap=full?Math.max(Td*4, 260):Td;
+    const rnd=pfRng(seed), DE=prep(p.rE), pick=()=>DE[idx(rnd)], cap=full?Math.max(Td*4, 260):Td;
     let ok=0, sumPassed=0; const doneD=[], costL=[], resets=[], byDay=new Float64Array(cap+1);
     for (let s=0;s<M;s++) { let d=0, passed=0, cost=0, rs=0, passedAtT=0;
       if (mode==='copy') { let a=newEval(p); const sub=newSub(p);
@@ -2875,7 +2889,7 @@ function pfEngine(days) {
   // conto finanziato per H giorni: payout dopo 5 giorni vincenti, col saldo almeno pari a quello dell'ultimo payout e alla soglia B;
   // importo: il massimo (50% del saldo fino al tetto) oppure una cifra fissa; dopo il primo payout il limite resta a $0
   function fund(p, H, M, seed, full) {
-    const rnd=pfRng(seed), DF=prep(p.rF), pick=()=>DF[(rnd()*K)|0];
+    const rnd=pfRng(seed), DF=prep(p.rF), pick=()=>DF[idx(rnd)];
     const sc=PF_SCALE[p.size], lotsFor=b=>{ if (b<sc[0][0]) return sc[0][1]; for (const [lim,l] of sc) if (b<=lim) return l; return sc[sc.length-1][1]; };
     const paidL=[], paysN=[], first=[], blown=[], alive=new Float64Array(H+1);
     for (let s=0;s<M;s++) { const a={ bal:0, peak:0, floor:-p.mll, lock:false, wd:0, pays:0, paid:0, need:0 }; alive[0]++;
@@ -2896,7 +2910,7 @@ const pfPassScore = (r, N) => r.P - .01*r.cost/(N*1000);
 const pfTick = () => new Promise(r=>setTimeout(r,0));
 async function pfOptPass(B, N, Td, prog) {
   const SL=pfStrats(B).list, modes=N>1?['copy','rot','seq']:['copy'], combos=[]; Object.keys(PF_PRE).forEach(z=>['si','no'].forEach(d=>combos.push([z,d])));
-  const s1=pfRand(), s2=pfRand(), M1=250, M2=1500, eng=SL.map(x=>pfEngine(pfApply(B,x.st)));
+  const s1=pfRand(), s2=pfRand(), M1=250, M2=1500, eng=SL.map(x=>pfEngine(pfApply(B,x.st), B.w));
   const c1=new Map(), c2=new Map(), ev=(c,M,sd,i,z,d,mode,rE)=>{ const k=[i,z,d,mode,rE].join('|'); let v=c.get(k);
       if (!v) { const r=eng[i].pass(Object.assign(pfConf(z,d), { rE }), N, mode, Td, M, sd, false); v={ i, z, d, mode, rE, P:r.P, cost:r.cost, passedT:r.passedT, sc:pfPassScore(r,N) }; c.set(k,v); } return v; };
   const scan=(i,z,d,mode)=>pfRiskGrid(PF_PRE[z].mll).map(rE=>ev(c1,M1,s1,i,z,d,mode,rE)).sort((a,b)=>b.sc-a.sc)[0];
@@ -2914,11 +2928,11 @@ async function pfOptPass(B, N, Td, prog) {
   const byCombo=combos.map(([z,d])=>bestFor(best.i,z,d,best.mode));
   const byRisk=pfRiskGrid(PF_PRE[best.z].mll).map(rE=>ev(c2,M2,s2,best.i,best.z,best.d,best.mode,rE)); await step();
   const byStrat=[]; for (let i=0;i<SL.length;i++) { const b=scan(i,best.z,best.d,best.mode); byStrat.push(ev(c2,M2,s2,i,best.z,best.d,best.mode,b.rE)); await step(); }
-  const res=eng[best.i].pass(Object.assign(pfConf(best.z,best.d), { rE:best.rE }), N, best.mode, Td, 3000, pfRand(), true);
-  return { kind:'pass', N, Td, best, res, byMode, byCombo, byRisk, byStrat, strats:SL, wf:pfStrats(B).wf, tried:c1.size };
+  const pb=Object.assign(pfConf(best.z,best.d), { rE:best.rE }), res=eng[best.i].pass(pb, N, best.mode, Td, 3000, pfRand(), true), resAll=pfEngine(pfApply(B,SL[best.i].st)).pass(pb, N, best.mode, Td, 3000, pfRand(), true);
+  return { kind:'pass', N, Td, best, res, resAll, byMode, byCombo, byRisk, byStrat, strats:SL, tried:c1.size };
 }
 async function pfOptFund(B, size, dll, H, prog) {
-  const SL=pfStrats(B).list, s1=pfRand(), s2=pfRand(), M1=300, M2=1500, eng=SL.map(x=>pfEngine(pfApply(B,x.st))), conf=pfConf(size,dll);
+  const SL=pfStrats(B).list, s1=pfRand(), s2=pfRand(), M1=300, M2=1500, eng=SL.map(x=>pfEngine(pfApply(B,x.st), B.w)), conf=pfConf(size,dll);
   const RG=pfRiskGrid(conf.mll), AG=pfAmtGrid(conf.mll, conf.cap), BG=pfBGrid(conf.mll);
   const c1=new Map(), c2=new Map(), ev=(c,M,sd,i,rF,amt,Bv)=>{ const k=[i,rF,amt,Bv].join('|'); let v=c.get(k);
       if (!v) { const r=eng[i].fund(Object.assign({}, conf, { rF, amt, B:Bv }), H, M, sd, false); v={ i, rF, amt, B:Bv, paid:r.paid, alive:r.alive, first:r.first }; c.set(k,v); } return v; };
@@ -2933,8 +2947,8 @@ async function pfOptFund(B, size, dll, H, prog) {
   const byAmt=AG.map(a=>{ const b=opt(Object.assign({}, best, { amt:a }),'B',BG); return ev(c2,M2,s2,best.i,best.rF,a,b.B); }); await step();
   const byRisk=RG.map(rF=>ev(c2,M2,s2,best.i,rF,best.amt,best.B)), byB=BG.map(Bv=>ev(c2,M2,s2,best.i,best.rF,best.amt,Bv)); await step();
   const byStrat=SL.map((x,i)=>{ const b=opt({ i, rF:best.rF, amt:best.amt, B:best.B },'rF',RG); return ev(c2,M2,s2,i,b.rF,best.amt,best.B); }); await step();
-  const res=eng[best.i].fund(Object.assign({}, conf, { rF:best.rF, amt:best.amt, B:best.B }), H, 3000, pfRand(), true);
-  return { kind:'fund', conf, H, best, res, byAmt, byRisk, byB, byStrat, strats:SL, wf:pfStrats(B).wf, tried:c1.size };
+  const pb=Object.assign({}, conf, { rF:best.rF, amt:best.amt, B:best.B }), res=eng[best.i].fund(pb, H, 3000, pfRand(), true), resAll=pfEngine(pfApply(B,SL[best.i].st)).fund(pb, H, 3000, pfRand(), true);
+  return { kind:'fund', conf, H, best, res, resAll, byAmt, byRisk, byB, byStrat, strats:SL, tried:c1.size };
 }
 // ── 4. pagina ──
 const PF_WEEKS = [{v:'2',l:'2 sett.'},{v:'4',l:'1 mese'},{v:'9',l:'2 mesi'},{v:'13',l:'3 mesi'},{v:'26',l:'6 mesi'}];
@@ -2955,7 +2969,7 @@ function renderMC() {
   let html='<div class="stat-h rise"><div><div class="eyebrow">Prop firm · Topstep</div><h1>'+words('Simula')+'</h1></div></div>'+
     '<div class="pf-tabs rise" style="--d:20ms">'+seg('pf-tab',[{v:'pass',l:'Passare i conti'},{v:'fund',l:'Conto finanziato'}],P.tab)+'</div>';
   html+='<div class="card wide mc-src rise" style="--d:40ms"><div class="mc-src-ic">'+logo(30)+'</div><div><b>Tutti i '+B.ts.length+' trade dell\'EOW · '+B.days.length+' giorni feriali</b>'+
-    '<span>'+fd+' · qui i filtri non valgono: il simulatore prova da solo target, asset, idee, SMT, news, LVN, fasce orarie e trade al giorno</span></div></div>';
+    '<span>'+fd+' · qui i filtri non valgono: il simulatore prova da solo target, asset, idee, SMT, news, LVN, fasce orarie e trade al giorno, dando più peso ai giorni recenti</span></div></div>';
   if (B.ts.length<40) html+='<div class="warn rise">'+ic('alert',17,2)+'<span>Solo '+B.ts.length+' trade nell\'EOW: servono più trade perché le combinazioni di filtri siano affidabili.</span></div>';
   const pass=P.tab==='pass';
   html+='<div class="card wide rise pf-set" style="--d:80ms">'+(pass?
@@ -2987,13 +3001,20 @@ function runMCClick() {
 // classifica delle strategie provate
 function pfRank(rows, fmt, bestI) {
   return '<div class="pf-rank">'+rows.map((r,j)=>'<div class="pf-rk'+(r.i===bestI?' on':'')+'"><span class="pf-rk-n">'+(j+1)+'</span><div><b>'+esc(pfDesc(r.st,true))+'</b><span>'+esc(r.sub)+'</span></div><em>'+fmt(r)+'</em></div>').join('')+'</div>'; }
-function pfWfCard(wf, d) {
-  if (!wf) return '';
-  const good=wf.test.m>=wf.base.m;
-  return card('Controllo anti-fortuna', 'giorni dal '+fmtIt(wf.from)+' · '+wf.days+' giorni',
-    '<p class="pf-wf">Il percorso qui sopra usa <b>tutti</b> i trade dell\'EOW. Questo è solo un controllo a parte: rifaccio la stessa ricerca fingendo di avere solo i giorni fino al '+fmtIt(wf.from)+', poi guardo come sarebbero andati quei filtri nei giorni dopo. Serve a capire se i filtri trovati funzionano anche su trade nuovi o se sono solo fortuna.</p>'+
-    '<div class="pf-wf-g"><div><span>Filtri trovati</span><b class="'+(wf.test.m>=0?'pos':'neg')+'">'+fmtR(wf.test.m,2)+'</b><em>al giorno · '+wf.test.k+' trade</em></div><div><span>Tutti i trade</span><b class="'+(wf.base.m>=0?'pos':'neg')+'">'+fmtR(wf.base.m,2)+'</b><em>al giorno · '+wf.base.k+' trade</em></div></div>'+
-    '<p class="pf-wf '+(good?'ok':'ko')+'">'+(good?'I filtri reggono anche sui giorni dopo: è un buon segno che non siano solo fortuna.':'Sui giorni dopo i filtri hanno fatto peggio di tutti i trade: i filtri trovati potrebbero essere in parte fortuna, prendili con cautela.')+'</p>', d); }
+// le due aspettative: a breve termine (giorni recenti pesati di più: è quella usata per le scelte) e su tutto lo storico
+const pfWeeks = B => Math.max(1, Math.round(B.hl/5));
+function pfExp(B, a, b, fmt, lbl) {
+  return '<div class="pf-exp"><div class="on"><span>A breve termine</span><b>'+fmt(a)+'</b><em>'+lbl+' · conta di più l\'ultimo periodo: metà del peso alle ultime '+pfWeeks(B)+' settimane</em></div>'+
+    '<div><span>Su tutto lo storico</span><b>'+fmt(b)+'</b><em>'+lbl+' · tutti i giorni dal '+fmtIt(B.days[0])+' pesano uguale</em></div></div>'; }
+// filtri scelti: come vanno negli ultimi giorni e su tutto lo storico, contro tutti i trade allo stesso target
+function pfRecCard(B, x, d) {
+  const nf=pfStKey(x.st)===pfStKey(Object.assign({}, PF_ST0, { T:x.st.T, xIdea:[], xBand:[] })), cell=(l,v,k)=>'<div><span>'+l+'</span><b class="'+(v>=0?'pos':'neg')+'">'+fmtR(v,2)+'</b><em>al giorno · '+k+' trade</em></div>';
+  const down=x.rec.m < x.full.m-.05;
+  return card('Recenti o tutto lo storico', 'ultimi '+(B.days.length-B.cut)+' giorni, dal '+fmtIt(B.days[B.cut]),
+    '<p class="pf-wf">'+(nf?'Nessun filtro regge sui giorni recenti: con target '+x.st.T+'R conviene prendere tutti i trade.':'Ogni filtro è stato tenuto solo perché migliora il risultato <b>e</b> non peggiora gli ultimi '+(B.days.length-B.cut)+' giorni rispetto a tutti i trade.')+'</p>'+
+    '<div class="pf-wf-g">'+cell((nf?'Tutti i trade':'Questi trade')+' · ultimi giorni', x.rec.m, x.rec.k)+cell((nf?'Tutti i trade':'Questi trade')+' · tutto lo storico', x.full.m, x.full.k)+
+    (nf?'':cell('Tutti i trade · ultimi giorni', x.base.rec.m, x.base.rec.k)+cell('Tutti i trade · tutto lo storico', x.base.full.m, x.base.full.k))+'</div>'+
+    '<p class="pf-wf '+(down?'ko':'ok')+'">'+(down?'Negli ultimi giorni la strategia rende meno della sua media storica: per questo le aspettative a breve termine sono più basse di quelle sullo storico.':'Negli ultimi giorni la strategia rende come o più della sua media storica.')+'</p>', d); }
 function drawPass(R, quiet) {
   const box=$('mc-res'); if (!box) return; const B=R.B||S._pfB, b=R.best, r=R.res, st=R.strats[b.i].st, conf=pfConf(b.z,b.d), N=R.N, wl=pfWkLbl(R.Td/5), fd=d=>isFinite(d)?Math.round(d):'–';
   const wk=d=>!isFinite(d)?'':d<8?'circa '+Math.round(d)+' giorni lavorativi':'circa '+fmtN(d/5,d/5<10?1:0)+' settimane';
@@ -3001,21 +3022,22 @@ function drawPass(R, quiet) {
     rot:'<b>Tradali a rotazione:</b> ogni giorno con trade lo fai su un conto solo, poi passi al successivo ('+['A','B','C','D','E'].slice(0,N).join(', ')+', '+'A…). Quando un conto passa, esce dal giro.',
     seq:'<b>Uno alla volta:</b> tutti i giorni sullo stesso conto finché passa, poi compri il successivo.' }[b.mode];
   let h='<div class="card wide pf-plan rise"><div class="eyebrow">Il percorso migliore · '+N+' cont'+(N>1?'i':'o')+' entro '+wl+'</div><div class="pf-plan-h"><div><h2>'+pfAccTxt(b.z,b.d)+'</h2><span>'+usd(conf.fee)+' al mese per conto'+(N>1?' · '+PF_MODE[b.mode].toLowerCase():'')+'</span></div>'+
-    '<div class="pf-big"><b class="'+(r.P>=.5?'pos':r.P>=.25?'':'neg')+'">'+numEl(r.P*100,0)+'%</b><span>di probabilità di passarl'+(N>1?'i tutti':'o')+' entro '+wl+' '+(moe>=.005?'(±'+fmtN(moe*100,0)+'%)':'')+(N>1?' · in media ne passi '+fmtN(r.passedT,1)+' su '+N:'')+'</span></div></div><ol>'+
+    '</div>'+
+    pfExp(B, r.P, R.resAll.P, v=>fmtN(v*100,0)+'%', 'probabilità di passarl'+(N>1?'i tutti':'o')+' entro '+wl)+'<ol>'+
     '<li><b>Compra '+(N>1?N+' conti':'il conto')+' '+b.z+(b.d==='si'?' con':' senza')+' Daily Loss Limit</b> ('+usd(conf.fee)+' al mese'+(N>1?' ciascuno':'')+(b.mode==='seq'&&N>1?', uno alla volta':'')+').</li>'+
     '<li>'+modeTxt+'</li>'+
     '<li><b>Prendi solo questi trade:</b> '+esc(pfDesc(st))+'.</li>'+
     '<li><b>Rischia '+usd(b.rE)+' a trade.</b><span class="pf-lots">'+pfStops(conf.mll,b.rE)+(pfLots(B,b.rE,conf.lots)?' · '+esc(pfLots(B,b.rE,conf.lots)):'')+'</span></li>'+
     '<li><b>Se un conto salta, resettalo e continua.</b></li></ol>'+
-    '<p class="pf-sum">Spesa media '+usd(r.cost)+(N>1?' per tutti i conti':'')+' (nel 90% dei casi fino a '+usd(r.costQ90)+'), '+fmtN(r.resets,1)+' reset in media. Senza limiti di tempo l'+(N>1?'i':'o')+' passi di solito in '+wk(r.doneQ[1])+'.</p></div>';
+    '<p class="pf-sum">'+(moe>=.005?'Margine d\'errore ±'+fmtN(moe*100,0)+'%. ':'')+(N>1?'Entro '+wl+' ne passi in media '+fmtN(r.passedT,1)+' su '+N+'. ':'')+'Spesa media '+usd(r.cost)+(N>1?' per tutti i conti':'')+' (nel 90% dei casi fino a '+usd(r.costQ90)+'), '+fmtN(r.resets,1)+' reset in media. Senza limiti di tempo l'+(N>1?'i':'o')+' passi di solito in '+wk(r.doneQ[1])+'.</p></div>';
   h+='<div class="pf-h rise">'+ic('chart',16,2)+'Perché questo percorso · probabilità di passarl'+(N>1?'i tutti':'o')+' entro '+wl+'</div>';
   const cards=[]; if (R.byMode.length>1) cards.push(card('Copy, rotazione o uno alla volta', 'il modo di tradare i conti', '<div class="chart" id="c-pf-mode"></div>', 60));
   cards.push(card('Quale conto conviene', 'Topstep, con e senza DLL', '<div class="chart" id="c-pf-cmp"></div>', 80), card('Quanto rischiare', 'rischio a trade', '<div class="chart" id="c-pf-risk"></div>', 100),
     card('Nel tempo', 'probabilità di averl'+(N>1?'i passati tutti':'o passato')+', settimana per settimana', '<div class="chart" id="c-pf-time"></div>', 120));
   h+=rows2(cards);
-  const rk=R.byStrat.map(v=>({ i:v.i, st:R.strats[v.i].st, sub:fmtN(R.strats[v.i].stat.k,0)+' trade · '+fmtR(R.strats[v.i].stat.m,2)+' al giorno · rischio '+usd(v.rE), v })).sort((x,y)=>(y.i===b.i)-(x.i===b.i) || y.v.sc-x.v.sc);
-  h+=rows2([card('Quali trade prendere', 'le combinazioni migliori per target, provate sul tuo conto', pfRank(rk, x=>numEl(x.v.P*100,0)+'%', b.i), 140), pfWfCard(R.wf, 160)]);
-  h+='<p class="mc-note rise">Ho provato '+R.tried.toLocaleString('it-IT')+' percorsi (combinazioni di trade, conto, Daily Loss Limit, rischio e modo di tradare), ripescando a caso i '+B.days.length+' giorni feriali dell\'EOW con i loro trade in ordine. I migliori li ho ricontrollati con 1.500 simulazioni nuove e il percorso scelto con 3.000: ogni calcolo usa numeri casuali nuovi, quindi i risultati cambiano un poco'+(moe>=.005?' (±'+fmtN(moe*100,0)+'%)':'')+' ma le scelte restano se sono davvero migliori. '+
+  const rk=R.byStrat.map(v=>({ i:v.i, st:R.strats[v.i].st, sub:fmtN(R.strats[v.i].full.k,0)+' trade · '+fmtR(R.strats[v.i].rec.m,2)+' al giorno di recente, '+fmtR(R.strats[v.i].full.m,2)+' su tutto · rischio '+usd(v.rE), v })).sort((x,y)=>(y.i===b.i)-(x.i===b.i) || y.v.sc-x.v.sc);
+  h+=rows2([card('Quali trade prendere', 'le combinazioni migliori per target, provate sul tuo conto', pfRank(rk, x=>numEl(x.v.P*100,0)+'%', b.i), 140), pfRecCard(B, R.strats[b.i], 160)]);
+  h+='<p class="mc-note rise">Ho provato '+R.tried.toLocaleString('it-IT')+' percorsi (combinazioni di trade, conto, Daily Loss Limit, rischio e modo di tradare), ripescando a caso i '+B.days.length+' giorni feriali dell\'EOW con i loro trade in ordine; i giorni recenti escono più spesso (metà del peso alle ultime '+pfWeeks(B)+' settimane). I migliori li ho ricontrollati con 1.500 simulazioni nuove e il percorso scelto con 3.000: ogni calcolo usa numeri casuali nuovi, quindi i risultati cambiano un poco'+(moe>=.005?' (±'+fmtN(moe*100,0)+'%)':'')+' ma le scelte restano se sono davvero migliori. '+
     'Contratti: i micro che stanno nel rischio con lo stop di ogni trade (10 diventano 1 mini, almeno 1 micro), entro i limiti Topstep, con le commissioni reali. È una stima sul passato, non una previsione.</p>';
   box.innerHTML=h; box.classList.toggle('quiet', !!quiet); richMeta(box);
   const pc=v=>fmtN(v,0)+'%', bar=(id,items,aria)=>barChart($(id), items, { h:170, fmt:v=>fmtN(v,1)+'%', tickFmt:pc, aria });
@@ -3034,18 +3056,19 @@ function drawFund(R, quiet) {
   const verdict = b.amt==='max' ? (R.byAmt.length>1?'<b>Puntare al payout massimo conviene:</b> chiedendo cifre più basse prelevi in tutto al massimo '+usd(Math.max(...R.byAmt.filter(v=>v.amt!=='max').map(v=>v.paid))*A)+', contro '+usd(mx.paid*A)+'.':'')
     : '<b>Conviene accontentarsi:</b> chiedendo '+usd(b.amt)+' alla volta prelevi in tutto '+usd(b.paid*A)+', contro '+usd(mx.paid*A)+' puntando al massimo, e il conto resta vivo più spesso ('+pct(b.alive)+' contro '+pct(mx.alive)+').';
   let h='<div class="card wide pf-plan rise"><div class="eyebrow">La gestione migliore · '+per+'</div><div class="pf-plan-h"><div><h2>'+pfAccTxt(conf.size,conf.dllOn?'si':'no')+'</h2><span>conto finanziato'+(A>1?' · '+A+' conti in copy':'')+'</span></div>'+
-    '<div class="pf-big"><b class="pos">'+usd(r.paid*A)+'</b><span>prelevati in media'+xA+' in '+per+' · conto ancora vivo nel '+pct(r.alive)+'</span></div></div><ol>'+
+    '</div>'+
+    pfExp(B, r.paid*A, R.resAll.paid*A, v=>usd(v), 'prelevato medio'+xA)+'<ol>'+
     '<li><b>Prendi solo questi trade:</b> '+esc(pfDesc(st))+'.</li>'+
     '<li><b>Rischia '+usd(b.rF)+' a trade.</b><span class="pf-lots">'+pfStops(conf.mll,b.rF)+(pfLots(B,b.rF,sc[sc.length-1][1])?' · '+esc(pfLots(B,b.rF,sc[sc.length-1][1])):'')+(sc[0][1]<conf.lots?' · all\'inizio lo scaling plan ne consente al massimo '+sc[0][1]+' (mini)':'')+'</span></li>'+
     '<li><b>'+(b.amt==='max'?'Chiedi il payout massimo':'Chiedi '+usd(b.amt)+' alla volta')+(b.B>0?' quando il saldo è almeno '+usd(b.B):' appena puoi')+'</b> (dopo 5 giorni da $150'+(b.amt==='max'?'; il massimo è il 50% del saldo, fino a '+usd(conf.cap):'')+').</li>'+
     '<li>'+verdict+'</li></ol>'+
-    '<p class="pf-sum">Arrivi al primo payout nel '+pct(r.first)+' dei casi'+(isFinite(r.firstQ)?', di solito dopo '+fd(r.firstQ)+' giorni lavorativi':'')+'; in '+per+' fai in media '+fmtN(r.pays,1)+' payout. Nel caso mediano prelevi '+usd(r.paidMed*A)+', 1 volta su 4 meno di '+usd(r.paidQ25*A)+'.</p></div>';
+    '<p class="pf-sum">Il conto è ancora vivo a fine periodo nel '+pct(r.alive)+' dei casi ('+pct(R.resAll.alive)+' su tutto lo storico). Arrivi al primo payout nel '+pct(r.first)+' dei casi'+(isFinite(r.firstQ)?', di solito dopo '+fd(r.firstQ)+' giorni lavorativi':'')+'; in '+per+' fai in media '+fmtN(r.pays,1)+' payout. Nel caso mediano prelevi '+usd(r.paidMed*A)+', 1 volta su 4 meno di '+usd(r.paidQ25*A)+'.</p></div>';
   h+='<div class="pf-h rise">'+ic('chart',16,2)+'Perché questa gestione · prelevato medio in '+per+(A>1?' · '+A+' conti':'')+'</div>';
   h+=rows2([card('Payout massimo o meno?', 'importo di ogni richiesta', '<div class="chart" id="c-pf-amt"></div>', 60), card('Quanto rischiare', 'rischio a trade', '<div class="chart" id="c-pf-risk"></div>', 80),
             card('Da che saldo chiedere', 'saldo minimo per il payout', '<div class="chart" id="c-pf-b"></div>', 100), card('Conti ancora vivi', 'giorno per giorno', '<div class="chart" id="c-pf-alive"></div>', 120)]);
-  const rk=R.byStrat.map(v=>({ i:v.i, st:R.strats[v.i].st, sub:fmtN(R.strats[v.i].stat.k,0)+' trade · '+fmtR(R.strats[v.i].stat.m,2)+' al giorno · rischio '+usd(v.rF)+' · vivo '+pct(v.alive), v })).sort((x,y)=>(y.i===b.i)-(x.i===b.i) || y.v.paid-x.v.paid);
-  h+=rows2([card('Quali trade prendere', 'le combinazioni migliori per target, provate sul tuo conto', pfRank(rk, x=>pfK(x.v.paid*A), b.i), 140), pfWfCard(R.wf, 160)]);
-  h+='<p class="mc-note rise">Ho provato '+R.tried.toLocaleString('it-IT')+' gestioni (combinazioni di trade, rischio, importo e soglia del payout) per '+H+' giorni lavorativi, ripescando a caso i '+B.days.length+' giorni feriali dell\'EOW con i loro trade in ordine; le migliori le ho ricontrollate con 1.500 simulazioni nuove e la scelta con 3.000. Ogni calcolo usa numeri nuovi: le cifre cambiano un poco, le scelte restano se sono davvero migliori. '+
+  const rk=R.byStrat.map(v=>({ i:v.i, st:R.strats[v.i].st, sub:fmtN(R.strats[v.i].full.k,0)+' trade · '+fmtR(R.strats[v.i].rec.m,2)+' al giorno di recente, '+fmtR(R.strats[v.i].full.m,2)+' su tutto · rischio '+usd(v.rF), v })).sort((x,y)=>(y.i===b.i)-(x.i===b.i) || y.v.paid-x.v.paid);
+  h+=rows2([card('Quali trade prendere', 'le combinazioni migliori per target, provate sul tuo conto', pfRank(rk, x=>pfK(x.v.paid*A), b.i), 140), pfRecCard(B, R.strats[b.i], 160)]);
+  h+='<p class="mc-note rise">Ho provato '+R.tried.toLocaleString('it-IT')+' gestioni (combinazioni di trade, rischio, importo e soglia del payout) per '+H+' giorni lavorativi, ripescando a caso i '+B.days.length+' giorni feriali dell\'EOW con i loro trade in ordine, con più peso ai giorni recenti (metà alle ultime '+pfWeeks(B)+' settimane); le migliori le ho ricontrollate con 1.500 simulazioni nuove e la scelta con 3.000. Ogni calcolo usa numeri nuovi: le cifre cambiano un poco, le scelte restano se sono davvero migliori. '+
     'Il payout arriva dopo 5 giorni da $150 e solo tornando al saldo dell\'ultimo prelievo; dopo il primo il limite di perdita resta a $0. '+(A>1?'Con il copy trading i '+A+' conti fanno gli stessi trade: i prelievi sono moltiplicati per '+A+'. ':'')+'È una stima sul passato, non una previsione.</p>';
   box.innerHTML=h; box.classList.toggle('quiet', !!quiet); richMeta(box);
   const bar=(id,items,aria)=>barChart($(id), items, { h:170, fmt:v=>usd(v), tickFmt:pfK, aria });
@@ -3357,8 +3380,8 @@ document.addEventListener('click', e => {
     const c=b.closest('.bchk'), tot=CFG.check.length, done=CFG.check.filter((_,j)=>nk.includes(j)).length; c.querySelector('.chk-bar i').style.width=(100*done/tot)+'%'; $('chk-n').textContent=done+'/'+tot; c.classList.toggle('ok', done===tot);
     c.classList.remove('party'); if (on && done===tot) { void c.offsetWidth; c.classList.add('party'); setTimeout(()=>c.classList.remove('party'), 1600); } return; }
   if (b.dataset.cal) { const [y,mo]=S.calM.split('-').map(Number), d=new Date(y, mo-1+(+b.dataset.cal), 1); S.calM=d.getFullYear()+'-'+p2(d.getMonth()+1); S.calSel=null; renderCurrent(true); return; }
-  if (b.dataset.cday) { const k=b.dataset.cday, n=filtered(curModel()).filter(t=>iso(t.d)===k).length;
-    if (n===1) { calPick(k, false); const t=filtered(curModel()).find(t=>iso(t.d)===k); openForm(t.row); return; }   // un solo trade: si apre subito
+  if (b.dataset.cday) { const k=b.dataset.cday, n=filtered(curModel(),true).filter(t=>iso(t.d)===k).length;
+    if (n===1) { calPick(k, false); const t=filtered(curModel(),true).find(t=>iso(t.d)===k); openForm(t.row); return; }   // un solo trade: si apre subito
     calPick(S.calSel===k ? null : k, true); return; }   // più trade: la card entra e la pagina scende fino all'elenco
   if (b.closest('[data-seg="pcfg-view"]')) { CFG.prop.view=b.dataset.v; setSeg(b.closest('[data-seg]'),b.dataset.v); propChanged(); return; }
   if (b.dataset.act==='nacc') { CFG.prop.n=Math.min(50, Math.max(1, nAcc()+(+b.dataset.d))); propChanged(true); return; }
@@ -3396,14 +3419,14 @@ document.addEventListener('click', e => {
   if (b.classList.contains('trow')) { if (b.dataset.row) openForm(+b.dataset.row); return; }
   const sg=b.closest('[data-seg]');
   if (b.closest('[data-seg=dper]')) { S.dper=b.dataset.v; store.set('dper',S.dper); renderCurrent(true); return; }
-  if (b.closest('[data-seg=per]')) { S.per=b.dataset.v; store.set('per',S.per); renderCurrent(true); return; }
+  if (b.closest('[data-seg=per]')) { setPer(b.dataset.v); renderCurrent(true); return; }
   if (sg && sg.dataset.seg.indexOf('pf-')===0) { const k=sg.dataset.seg.slice(3); S.pf[k]=b.dataset.v; savePF(); if (k==='tab') renderCurrent(true); else setSeg(sg,b.dataset.v); return; }
   if (b.closest('[data-lf]')) { S[b.dataset.k]=b.dataset.v; S.lmore=60; renderList(); return; }
 });
 $('sh-body').addEventListener('input', e => {
   const k=e.target.dataset.k, fk=e.target.dataset.fk;
   if (k && S.sheet==='form') { S.f[k]=e.target.value; refresh(); }
-  if (fk && S.sheet==='filt') { S.filt[fk]=e.target.value; S.filt.quick=''; saveFilt(); renderCurrent(true); filtFoot(); }
+  if (fk && S.sheet==='filt') { S.cust[fk]=e.target.value; store.set('cust', JSON.stringify(S.cust)); if (S.per!=='c') { setPer('c'); document.querySelectorAll('#sh-body [data-chips=quick] .chip').forEach(c=>c.classList.toggle('on', c.dataset.v==='c')); } renderCurrent(true); filtFoot(); }
 });
 document.addEventListener('change', e => { const c=e.target.dataset && e.target.dataset.cfg; if (!c) return;
   CFG[c] = c==='check' ? e.target.value.split('\n').map(x=>x.trim()).filter(Boolean) : e.target.value; cfgChanged(c); toast('Impostazione salvata'); });
