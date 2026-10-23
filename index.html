@@ -1173,7 +1173,7 @@ const L = {
   errs: ['FOMO','TP spostato','SL spostato','Ingresso anticipato','Uscita anticipata','Size sbagliata','Fuori piano','Altro'],
 };
 const APP = 'Edgebook';
-const BUILD = '2026-10-23.28';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
+const BUILD = '2026-10-23.29';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
 let updChk=0;
 function checkUpdate() {
   if (viaScript() || location.protocol==='file:' || Date.now()-updChk<60000) return; updChk=Date.now();
@@ -2743,6 +2743,7 @@ const PF_PRE = {
   '150K': { target:9000, mll:4500, dllAmt:3000, feeD:235, feeN:245, lots:15 } };
 const PF_CONS = 50;                         // consistenza: il giorno migliore non oltre il 50% del profitto totale
 const PF_RT = { mini:3.78, micro:1.22 };   // commissioni e fee Topstep a contratto, andata e ritorno
+const PF_BUF = { ES:1, NQ:5 };               // buffer già compreso negli stop dell'EOW (punti oltre il livello di struttura)
 const PF_DEF = { size:'50K', n:'1', weeks:'4', goal:'safe' };
 function loadPF() { try { const o=Object.assign({}, PF_DEF, JSON.parse(store.get('pf5','{}'))); if (!PF_PRE[o.size]) o.size='50K'; return o; } catch(e) { return Object.assign({}, PF_DEF); } }
 const savePF = () => store.set('pf5', JSON.stringify(S.pf));
@@ -2773,14 +2774,16 @@ function pfBase() {
   const E=rowsOf('EOW'); if (!E) return null;
   const ts=E.filter(t=>t.d && isFinite(t.best) && t.d.getDay()%6!==0), days=[], idx={};
   if (ts.length) for (let d=new Date(ts[0].d.getFullYear(),ts[0].d.getMonth(),ts[0].d.getDate()); d<=ts[ts.length-1].d; d.setDate(d.getDate()+1)) { if (d.getDay()%6===0) continue; idx[iso(d)]=days.length; days.push(iso(d)); }
-  const di=ts.map(t=>idx[iso(t.d)]), sl=ts.map(t=>{ const v=num(t.raw['SL Points']); return v>0?v:0; }), dd=ts.map(t=>{ const v=num(t.raw['SL DD']); return v>=0?v:NaN; });
+  const di=ts.map(t=>idx[iso(t.d)]), sl=ts.map(t=>{ const v=num(t.raw['SL Points']); return v>0?Math.max(v, PF_BUF[/NQ/i.test(t.a||'')?'NQ':'ES']):0; }), dd=ts.map(t=>{ const v=num(t.raw['SL DD']); return v>=0?v:NaN; });
   // peso dei giorni: si dimezza ogni «hl» giorni feriali andando indietro, così le scelte guardano soprattutto al periodo recente;
   // «cut» separa gli ultimi giorni (l'ultimo 30%, almeno 20) su cui ogni filtro deve reggere
   const n=days.length, hl=Math.max(20, Math.round(n*.25)), w=days.map((_,i)=>Math.pow(.5,(n-1-i)/hl)), cut=Math.max(0, Math.min(Math.floor(n*.7), n-20));
   const slq={}; ['ES','NQ'].forEach(a=>{ const v=ts.map((t,i)=>(/NQ/i.test(t.a||'')?'NQ':'ES')===a?sl[i]:0).filter(x=>x>0).sort((x,y)=>x-y); if (v.length>=10) slq[a]={ p75:v[Math.floor(.75*(v.length-1))], p90:v[Math.floor(.9*(v.length-1))] }; });
-  // escursione contraria in R (SL DD / stop, al massimo 1): se manca, per i vincenti vale la mediana degli altri vincenti
-  const mw=ts.map((t,i)=>sl[i]>0&&isFinite(dd[i])&&t.best>=1?Math.min(1,dd[i]/sl[i]):NaN).filter(isFinite).sort((x,y)=>x-y), maeW=mw.length?mw[Math.floor(mw.length/2)]:.5;
-  const mae=ts.map((t,i)=>sl[i]>0&&isFinite(dd[i])?Math.min(1,dd[i]/sl[i]):maeW);
+  // escursione contraria in R (SL DD / stop). Nei vincenti uno SL DD pari o oltre lo stop vuol dire che è stato misurato dopo il
+  // target (es. «raggiunge 2,2R, poi torna a BE»): lì, e quando manca, vale la mediana degli altri vincenti
+  const okW=(t,i)=>t.best>=1 && sl[i]>0 && isFinite(dd[i]) && dd[i]<sl[i];
+  const mw=ts.map((t,i)=>okW(t,i)?dd[i]/sl[i]:NaN).filter(isFinite).sort((x,y)=>x-y), maeW=mw.length?mw[Math.floor(mw.length/2)]:.5;
+  const mae=ts.map((t,i)=>t.best>=1 ? (okW(t,i)?dd[i]/sl[i]:maeW) : 1);
   return { ts, days, di, sl, mae, slq, dir:ts.some(t=>t.dir), w, hl, cut };
 }
 // T: target in R · maxN: trade al giorno (0 = senza limite) · sw: stop dopo il primo trade in profitto · sll: stop dopo 1 o 2 perdite
@@ -3024,10 +3027,12 @@ function pfSlCard(B, st, risk, lots, d) {
     const lbl=n=>[Math.floor(n/10)?Math.floor(n/10)+' '+a:'', n%10?(n%10)+' M'+a:''].filter(Boolean).join(' + ');
     const mw=ts.filter(t=>t.r>0).map(t=>t.mae).sort((x,y)=>x-y), mwM=mw.length?mw[Math.floor(mw.length/2)]:NaN;
     const eff=v.map(sl=>ctr(sl)*sl*mv), effM=eff.reduce((x,y)=>x+y,0)/eff.length, cm=v.reduce((x,sl)=>x+rt(ctr(sl)),0)/v.length, over=v.filter(sl=>sl*mv>risk*1.05).length;
-    return '<div class="pf-sl"><div class="pf-sl-h"><b>'+a+'</b><span>'+ts.length+' trade · stop di solito tra '+fmtN(q(.25),1)+' e '+fmtN(q(.75),1)+' punti (mediana '+fmtN(q(.5),1)+') · micro M'+a+' $'+mv+' a punto, mini '+a+' $'+(mv*10)+'</span></div>'+
-      '<div class="pf-sl-g">'+[[.1,'stretto'],[.5,'tipico'],[.9,'largo']].map(([f,l])=>{ const sl=q(f), n=ctr(sl); return '<div><span>stop '+l+' · '+fmtN(sl,1)+' pt</span><b>'+lbl(n)+'</b><em>'+usd(n*sl*mv)+' di rischio · '+usd(rt(n),2)+' di commissioni</em></div>'; }).join('')+'</div>'+
-      '<p>Rischio vero medio '+usd(effM)+' a trade (i contratti sono interi) · commissioni medie '+usd(cm,2)+' a trade'+(isFinite(mwM)?' · prima di arrivare al target i trade vincenti vanno contro di solito del '+pct(mwM)+' dello stop':'')+(over?' · in '+over+' trade lo stop è così largo che anche 1 micro rischia più di '+usd(risk):'')+'.</p></div>'; });
-  return card('Stop loss e contratti', 'con '+usd(risk)+' di rischio a trade · al massimo '+lots+' mini', rows.join(''), d); }
+    const bf=PF_BUF[a], pt=x=>fmtN(x,x%1?2:0).replace(/(,\d*?)0+$/,'$1').replace(/,$/,'')+' pt';
+    return '<div class="pf-sl"><div class="pf-sl-h"><b>'+a+'</b><span>'+ts.length+' trade · stop totale di solito tra '+pt(q(.25))+' e '+pt(q(.75))+' (mediana '+pt(q(.5))+'), buffer di '+pt(bf)+' compreso · micro M'+a+' $'+mv+' a punto, mini '+a+' $'+(mv*10)+'</span></div>'+
+      '<div class="pf-sl-g">'+[[.1,'corto'],[.5,'tipico'],[.9,'lungo']].map(([f,l])=>{ const sl=q(f), n=ctr(sl); return '<div><span>stop '+l+' · '+pt(sl)+' = '+pt(Math.max(0,sl-bf))+' + '+pt(bf)+' di buffer</span><b>'+lbl(n)+'</b><em>'+usd(n*sl*mv)+' di rischio · '+usd(rt(n),2)+' di commissioni</em></div>'; }).join('')+'</div>'+
+      '<p>Rischio vero medio '+usd(effM)+' a trade (i contratti sono interi) · commissioni medie '+usd(cm,2)+' a trade'+(isFinite(mwM)?' · prima di arrivare al target i trade vincenti vanno contro di solito del '+pct(mwM)+' dello stop (buffer compreso)':'')+(over?' · in '+over+' trade lo stop è così largo che anche 1 micro rischia più di '+usd(risk):'')+'.</p></div>'; });
+  return card('Stop loss e contratti', 'con '+usd(risk)+' di rischio a trade · al massimo '+lots+' mini',
+    '<p class="pf-wf">Il buffer è fisso ('+Object.entries(PF_BUF).map(([k,v])=>k+' '+v+' pt').join(', ')+') ed è già dentro ogni stop dell\'EOW. Cambia invece la distanza tra l\'entrata e il livello di struttura, quindi lo stop totale è diverso da trade a trade: con lo stesso rischio in $, uno stop più lungo vuol dire meno contratti. Qui sotto quanti contratti prendere per uno stop corto, tipico e lungo.</p>'+rows.join(''), d); }
 // rischio rispetto ai limiti del conto, in parole
 const pfStops = (mll, r, dll) => { const k=Math.max(1, Math.floor(mll/r+1e-9)), j=dll?Math.floor(dll/r+1e-9):0, left=dll?dll-j*r:0;
   return (k<=1?'un solo stop pieno ti porta al limite di perdita':k+' stop pieni di fila ti portano al limite di perdita')+
