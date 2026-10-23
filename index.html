@@ -654,6 +654,7 @@ nav.bar { background:color-mix(in srgb,var(--surface) 76%,transparent); -webkit-
 .tr-now { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; padding:14px; border-radius:16px; background:var(--loss-soft); margin-bottom:4px; }
 .tr-now b { display:block; font-size:17px; color:var(--loss); } .tr-now span { font-size:13px; color:var(--fg2); }
 .tr-go { background:var(--loss) !important; color:#fff !important; text-decoration:none; display:inline-flex; align-items:center; gap:8px; }
+.tr-srcs { display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:12px; padding-top:10px; border-top:1px solid var(--line); font-size:12px; } .tr-srcs span { display:inline-flex; align-items:center; gap:5px; } .tr-srcs .ok { color:var(--fg3); } .tr-srcs .ok .ic { color:var(--win); } .tr-srcs .ko { color:var(--warn); }
 .tr-where { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding-top:12px; border-top:1px solid var(--line); margin-top:4px; } .tr-where > span { font-size:12.5px; color:var(--fg3); } .tr-l { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
 .tr-none, .tr-past { display:flex; gap:8px; align-items:flex-start; font-size:13.5px; color:var(--fg2); padding:6px 0; } .tr-none .ic { color:var(--win); flex:none; margin-top:1px; } .tr-past { color:var(--fg3); font-size:12.5px; border-top:1px solid var(--line); margin-top:8px; padding-top:10px; } .tr-past .ic { flex:none; margin-top:2px; }
 .tr-src { font-size:12px; color:var(--fg3); margin:14px 0 0; line-height:1.45; }
@@ -1116,7 +1117,7 @@ const L = {
   errs: ['FOMO','TP spostato','SL spostato','Ingresso anticipato','Uscita anticipata','Size sbagliata','Fuori piano','Altro'],
 };
 const APP = 'Edgebook';
-const BUILD = '2026-10-23.7';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
+const BUILD = '2026-10-23.8';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
 let updChk=0;
 function checkUpdate() {
   if (viaScript() || location.protocol==='file:' || Date.now()-updChk<60000) return; updChk=Date.now();
@@ -1927,6 +1928,7 @@ const trLinks = cls => '<div class="tr-l">'+TRUMP_LINKS.map((l,i)=>'<a class="'+
 function trumpSched(ev) {
   const now=Date.now(), T=S.trump, out=ev.map(e=>({ t:e.tbd?null:e.t, tbd:e.tbd, day:e.day, lbl:newsIt(e.title), src:'ForexFactory' }));
   (T && T.sched || []).forEach(x=>{ if (x.t && out.some(o=>o.t && Math.abs(o.t-x.t)<45*60000)) return;
+    if (x.url) { out.push({ t:x.t, tbd:false, day:iso(romeDate(x.t)), lbl:x.title||'Diretta della Casa Bianca', src:'YouTube', url:x.url }); return; }
     out.push({ t:x.t, tbd:!x.t, day:iso(romeDate(x.t||x.a)), lbl:{ conferenza:'Conferenza stampa di Trump', firma:'Trump firma un provvedimento', discorso:'Discorso di Trump' }[x.k]||'Intervento di Trump', src:'FinancialJuice', ann:x.a }); });
   return out.filter(o=>o.tbd || o.t>now-3*3600000).sort((a,b)=>(a.tbd-b.tbd) || ((a.t||a.ann||0)-(b.t||b.ann||0)));   // prima quelli con l'orario
 }
@@ -1934,14 +1936,17 @@ function trumpCard(ev) {
   const T=S.trump, now=Date.now(), live=T && T.live, sch=trumpSched(ev), past=(T && T.past) || [];
   let h='<div class="card wide trump rise'+(live?' on':'')+'" id="trump" style="--d:90ms"><div class="card-h"><div class="h2">'+ic('mic',19,2)+' Trump'+(live?'<span class="tr-live"><i></i>In diretta</span>':'')+'</div>'+
     '<span class="sub">'+(T&&T.at?'controllato alle '+hmOf(T.at):'')+'</span></div>';
-  if (live) h+='<div class="tr-now"><div><b>Sta parlando ora</b><span>dalle '+hmOf(live.since)+' · ultima dichiarazione '+agoTxt(now-live.last)+'</span></div>'+trLinks('btn tr-go')+'</div>';
+  if (live) h+='<div class="tr-now"><div><b>Sta parlando ora</b><span>'+(live.title?esc(live.title)+' · ':'')+'dalle '+hmOf(live.since)+(live.yt?'':' · ultima dichiarazione '+agoTxt(now-live.last))+'</span></div>'+
+    '<div class="tr-l">'+(live.url?'<a class="btn tr-go" href="'+esc(live.url)+'" target="_blank" rel="noopener">'+ic('play',16,2)+'Guarda la diretta</a>':'<a class="btn tr-go" href="'+TRUMP_LINKS[0][1]+'" target="_blank" rel="noopener">'+ic('play',16,2)+TRUMP_LINKS[0][0]+'</a>')+
+    '<a class="lnk" href="'+TRUMP_LINKS[1][1]+'" target="_blank" rel="noopener">'+ic('ext',14,2)+TRUMP_LINKS[1][0]+'</a></div></div>';
   if (sch.length) h+=(live?'<div class="tr-sect">In programma</div>':'')+sch.map(o=>{ const st = o.tbd ? (o.ann?'annunciato alle '+hmOf(o.ann)+', orario non indicato':'orario da definire') : now<o.t ? 'alle '+hmOf(o.t)+' · <b data-cd="'+o.t+'">'+cdTxt(o.t-now)+'</b>' : 'iniziato alle '+hmOf(o.t)+' · la fine non viene annunciata';
-      return '<div class="tr-row"><div><b>'+esc(o.lbl)+'</b><span>'+dayLbl(o.day)+' · '+st+'</span></div></div>'; }).join('')+
+      return '<div class="tr-row"><div><b>'+esc(o.lbl)+'</b><span>'+dayLbl(o.day)+' · '+st+'</span></div>'+(o.url?'<div class="tr-l"><a class="lnk" href="'+esc(o.url)+'" target="_blank" rel="noopener">'+ic('play',14,2)+'Apri su YouTube</a></div>':'')+'</div>'; }).join('')+
       (live?'':'<div class="tr-where"><span>Dove vederlo</span>'+trLinks()+'</div>');
   else if (!live) h+='<div class="tr-none">'+ic('check',16,2.2)+'<span>'+(T ? 'Nessun intervento di Trump in programma. Quando inizia a parlare lo vedi qui, con il link alla diretta.' : trErr==='OLD' ? 'Aggiorna Code.gs per sapere quando Trump parla.' : 'Controllo se Trump sta parlando…')+'</span></div>';
   if (past.length) h+='<div class="tr-past">'+ic('clock',14,2)+'<span>Ha già parlato: '+past.map(p=>(iso(romeDate(p.from))===todayIso()?'':dayShort(iso(romeDate(p.from)))+' ')+hmOf(p.from)+'–'+hmOf(p.to)).join(' · ')+'</span></div>';
-  if (T && T.stale) h+='<p class="tr-src">FinancialJuice non risponde: l\'ultimo controllo potrebbe essere vecchio.</p>';
-  h+='<p class="tr-src">Rilevato dai titoli di FinancialJuice (qualche minuto di ritardo) e dal calendario di ForexFactory. La fine dei discorsi non viene mai annunciata.</p>';
+  const sv = (n,v) => '<span class="'+(v==='ok'?'ok':'ko')+'">'+ic(v==='ok'?'check':'alert',13,2.4)+n+(v==='ok'?'':' · '+esc(String(v||'non controllato')))+'</span>';
+  if (T && T.src) h+='<div class="tr-srcs">'+sv('YouTube Casa Bianca',T.src.yt)+sv('FinancialJuice',T.src.fj)+'</div>';
+  h+='<p class="tr-src">'+(T && T.src && T.src.yt!=='ok' && T.src.fj!=='ok' ? '<b>Nessuna fonte raggiungibile in questo momento: riprovo da solo.</b> ' : '')+'Diretta e dirette in programma dal canale YouTube della Casa Bianca, dichiarazioni dai titoli di FinancialJuice (qualche minuto di ritardo), interventi dal calendario di ForexFactory.</p>';
   return h+'</div>';
 }
 const agoTxt = ms => ms<60000 ? 'adesso' : ms<3600000 ? Math.floor(ms/60000)+' min fa' : Math.floor(ms/3600000)+' h fa';
@@ -2068,7 +2073,7 @@ function briefing() {
      (tj.length?'<div class="bp-tr">'+tj.map(x=>'<span class="'+(x.out==='Win'||x.rr>0?'w':x.out==='Loss'||x.rr<0?'l':'b')+'">'+esc(String(x.raw.Ora).slice(0,5))+' · '+esc(x.idea||x.a)+' <b class="num">'+fmtR(x.rr,2)+'</b></span>').join('')+'</div>':'')+
      (nb?'<div class="td-news"><div class="td-sub"><span>News USD</span>'+(nx?'<span>'+esc(newsIt(nx.title))+' <b data-cd="'+nx.t+'">'+cdTxt(nx.t-now)+'</b></span>':'')+'</div>'+nb+'</div>':'')+
      (()=>{ const T=S.trump; if (!T) return '';
-        if (T.live) return '<a class="td-tr on" href="'+TRUMP_LINKS[0][1]+'" target="_blank" rel="noopener"><span class="tr-dot"></span><span><b>Trump sta parlando ora</b><span class="trq">dalle '+hmOf(T.live.since)+' · tocca per la diretta</span></span>'+ic('play',16,2)+'</a>';
+        if (T.live) return '<a class="td-tr on" href="'+esc(T.live.url||TRUMP_LINKS[0][1])+'" target="_blank" rel="noopener"><span class="tr-dot"></span><span><b>Trump sta parlando ora</b><span class="trq">dalle '+hmOf(T.live.since)+' · tocca per la diretta</span></span>'+ic('play',16,2)+'</a>';
         const o=trumpSched([]).find(x=>x.day===t && (x.tbd || x.t>Date.now()-30*60000)); if (!o) return '';
         return '<button type="button" class="td-tr" data-nav="news">'+ic('mic',16,2)+'<span><b>'+esc(o.lbl)+(o.tbd?'':' alle '+hmOf(o.t))+'</b><span class="trq">'+(o.tbd?'orario non indicato':'tra '+cdTxt(o.t-Date.now()).replace(/^tra /,''))+' · annunciato su FinancialJuice</span></span>'+ic('chev',15,2)+'</button>'; })()+
      (notes.length?'<p class="td-note">'+notes.join(' ')+'</p>':'')+
