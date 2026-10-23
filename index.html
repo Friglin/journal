@@ -649,22 +649,18 @@ nav.bar { background:color-mix(in srgb,var(--surface) 76%,transparent); -webkit-
 .trump .h2 { display:flex; align-items:center; gap:8px; } .trump .h2 .ic { color:var(--loss); }
 .tr-live { display:inline-flex; align-items:center; gap:6px; margin-left:8px; font-family:var(--sans); font-size:11.5px; font-weight:650; color:var(--loss); background:var(--loss-soft); padding:3px 9px; border-radius:99px; }
 .tr-live i { width:7px; height:7px; border-radius:50%; background:var(--loss); animation:pulse 1.6s infinite; }
-.tr-sect { display:flex; justify-content:space-between; align-items:baseline; font-size:12px; font-weight:650; color:var(--fg3); margin:14px 0 4px; text-transform:uppercase; letter-spacing:.05em; } .tr-sect span { text-transform:none; letter-spacing:0; font-weight:500; }
-.trl { display:flex; flex-direction:column; }
-.trh { display:grid; grid-template-columns:62px minmax(0,1fr); gap:12px; padding:11px 0; border-top:1px solid var(--line); color:inherit; text-decoration:none; transition:background-color 200ms ease; border-radius:10px; }
-.trl .trh:first-child { border-top:0; } .trh:hover { background:color-mix(in srgb,var(--fg) 4%,transparent); }
-.trh-t b { display:block; font-size:14px; font-weight:650; } .trh-t em { display:block; font-style:normal; font-size:11.5px; color:var(--fg3); margin-top:1px; }
-.trh-x { display:block; font-size:14px; line-height:1.4; color:var(--fg2); } .trh.mk .trh-x { color:var(--fg); font-weight:550; }
-.trh-g { display:flex; flex-wrap:wrap; gap:5px; margin-top:6px; } .tg { font-style:normal; font-size:11px; font-weight:600; padding:2px 8px; border-radius:99px; background:var(--sunk); color:var(--fg2); }
-.tg.mk { background:color-mix(in srgb,var(--loss) 14%,var(--sunk)); color:var(--loss); } .tg.new { background:var(--accent); color:var(--accent-ink); }
-.trh.fresh .trh-t b { color:var(--accent); }
-.trold { margin-top:10px; border-top:1px solid var(--line); padding-top:8px; } .trold summary { cursor:pointer; list-style:none; display:flex; align-items:center; gap:6px; font-weight:600; font-size:13.5px; color:var(--accent); padding:4px 0; }
-.trold summary::-webkit-details-marker { display:none; } .trold summary .ic { transition:transform 260ms var(--e-out); } .trold[open] summary .ic { transform:rotate(90deg); } .trold summary em { font-style:normal; font-weight:500; color:var(--fg3); margin-left:auto; }
-.trump .tr-ai { margin-top:14px; } .tr-src { font-size:12px; color:var(--fg3); margin:14px 0 0; line-height:1.45; }
+.tr-sect { font-size:12px; font-weight:650; color:var(--fg3); margin:14px 0 2px; text-transform:uppercase; letter-spacing:.05em; }
+.trump.on { border-color:color-mix(in srgb,var(--loss) 55%,var(--line)); }
+.tr-now { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; padding:14px; border-radius:16px; background:var(--loss-soft); margin-bottom:4px; }
+.tr-now b { display:block; font-size:17px; color:var(--loss); } .tr-now span { font-size:13px; color:var(--fg2); }
+.tr-go { background:var(--loss) !important; color:#fff !important; text-decoration:none; display:inline-flex; align-items:center; gap:8px; }
+.tr-where { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding-top:12px; border-top:1px solid var(--line); margin-top:4px; } .tr-where > span { font-size:12.5px; color:var(--fg3); } .tr-l { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.tr-none, .tr-past { display:flex; gap:8px; align-items:flex-start; font-size:13.5px; color:var(--fg2); padding:6px 0; } .tr-none .ic { color:var(--win); flex:none; margin-top:1px; } .tr-past { color:var(--fg3); font-size:12.5px; border-top:1px solid var(--line); margin-top:8px; padding-top:10px; } .tr-past .ic { flex:none; margin-top:2px; }
+.tr-src { font-size:12px; color:var(--fg3); margin:14px 0 0; line-height:1.45; }
+.td-tr.on { background:var(--loss-soft); text-decoration:none; } .td-tr.on b { color:var(--loss); } .td-tr .tr-dot { width:10px; height:10px; border-radius:50%; background:var(--loss); flex:none; margin:0 3px; animation:pulse 1.6s infinite; }
 .td-tr { display:flex; align-items:center; gap:10px; width:100%; text-align:left; font:inherit; color:inherit; background:color-mix(in srgb,var(--loss) 7%,var(--sunk)); border:0; border-radius:14px; padding:10px 12px; margin-top:12px; cursor:pointer; }
 .td-tr > .ic:first-child { color:var(--loss); flex:none; } .td-tr > span { min-width:0; flex:1; } .td-tr b { display:block; font-size:13.5px; }
 .td-tr .trq { display:block; font-size:12.5px; color:var(--fg2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .td-tr > .ic:last-child { color:var(--fg3); flex:none; }
-@media (max-width:640px) { .trh { grid-template-columns:52px minmax(0,1fr); gap:10px; } }
 .tr-row { display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; padding:12px 0; border-top:1px solid var(--line); }
 .tr-row:first-of-type { border-top:0; } .tr-row b { display:block; font-size:15px; } .tr-row span { font-size:13px; color:var(--fg2); }
 .tr-l { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
@@ -1120,7 +1116,7 @@ const L = {
   errs: ['FOMO','TP spostato','SL spostato','Ingresso anticipato','Uscita anticipata','Size sbagliata','Fuori piano','Altro'],
 };
 const APP = 'Edgebook';
-const BUILD = '2026-10-23.6';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
+const BUILD = '2026-10-23.7';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
 let updChk=0;
 function checkUpdate() {
   if (viaScript() || location.protocol==='file:' || Date.now()-updChk<60000) return; updChk=Date.now();
@@ -1199,7 +1195,7 @@ function call(fn, ...args) {
   const url=store.get('api',''), key=store.get('key','');
   if (!url || !key) { showSetup(); return Promise.reject(new Error('Inserisci indirizzo e chiave di accesso')); }
   // corpo in text/plain: è una richiesta «semplice», niente controllo preventivo CORS
-  const ctl = 'AbortController' in window ? new AbortController() : null, to = ctl && setTimeout(()=>ctl.abort(), fn==='chat'||fn==='coach'||fn==='news'||fn==='newsSunto'||fn==='trumpSunto'||WRITES.includes(fn) ? 90000 : 30000);
+  const ctl = 'AbortController' in window ? new AbortController() : null, to = ctl && setTimeout(()=>ctl.abort(), fn==='chat'||fn==='coach'||fn==='news'||fn==='newsSunto'||WRITES.includes(fn) ? 90000 : 30000);
   return fetch(url, { method:'POST', body: JSON.stringify({ key, fn, args }), signal: ctl ? ctl.signal : undefined })
     .catch(() => { throw new Error('NETWORK'); })
     .finally(() => clearTimeout(to))
@@ -1225,6 +1221,7 @@ const I = {
   gear:'<circle cx="12" cy="12" r="3"/><path d="M12 3.5v2.2M12 18.3v2.2M20.5 12h-2.2M5.7 12H3.5M18 6l-1.6 1.6M7.6 16.4 6 18M18 18l-1.6-1.6M7.6 7.6 6 6"/>',
   grid:'<rect x="4" y="4" width="6.5" height="6.5" rx="1.8"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.8"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.8"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.8"/>',
   side:'<rect x="3.5" y="4.5" width="17" height="15" rx="3.5"/><path d="M9.5 4.5v15M14 10l-2 2 2 2"/>',
+  play:'<path d="M8 5.5v13l10.5-6.5z"/>',
   ext:'<path d="M14 4.5h5.5V10M19.5 4.5 11 13"/><path d="M18 14v4.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6H10"/>',
   mic:'<rect x="9" y="3.5" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v2.5"/>',
   refresh:'<path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.5 4.5v4h-4"/>',
@@ -1488,7 +1485,8 @@ function openMore() {
   $('sh-body').innerHTML='<div class="more">'+it.map((x,k)=>'<button type="button" data-nav="'+x[0]+'" style="--k:'+k+'" class="'+(curNavKey()===x[0]?'on':'')+'">'+ic(x[2],24,1.8)+'<b>'+x[1]+'</b><span>'+x[3]+'</span></button>').join('')+'</div>';
   $('sh-foot').innerHTML=''; openSheet();
 }
-function newsBadge() { const b=$('nb-news'); if (!b || !S.news) return; const now=Date.now(), t=todayIso();
+function newsBadge() { const b=$('nb-news'); if (!b) return;
+  if (S.trump && S.trump.live) { b.textContent='Live'; b.classList.add('on'); b.title='Trump sta parlando ora'; return; } if (!S.news) return; const now=Date.now(), t=todayIso();
   const n=newsEvents().filter(e=>e.day===t && !e.tbd && e.t>now-60000 && (e.imp==='High' || e.trump)).length; b.textContent=n; b.classList.toggle('on', n>0); b.title=n+' news ad alto impatto ancora da uscire oggi'; }
 let introRT=0;
 function renderCurrent(quiet) {
@@ -1819,7 +1817,7 @@ const insRow = (icn, lbl, k, b, bad) => '<div class="ins-row"><div class="ins-ic
 // ───────────────────────── NEWS (calendario economico USD, fonte ForexFactory) ─────────────────────────
 const NEWS_TTL = 15*60000;
 S.dper = store.get('dper','') || 'm';
-S.trump = (()=>{ try { return JSON.parse(localStorage.getItem('tj.trump')||'null'); } catch(e) { return null; } })();
+S.trump = (()=>{ try { const v=JSON.parse(localStorage.getItem('tj.trump2')||'null'); return v && Date.now()-v.got<3600000 ? v : null; } catch(e) { return null; } })();
 S.news = (()=>{ try { return JSON.parse(localStorage.getItem('tj.news')||'null'); } catch(e) { return null; } })();
 S.nsAI = {};
 let newsP=null, newsErr='', newsTry=0, newsRetry=null, newsRetryN=0;
@@ -1893,7 +1891,7 @@ function newsEvents() {
 const inSess = e => !e.tbd && e.mm>=SESS[0]-15 && e.mm<=SESS[1];   // dentro la sessione (o nei 15 minuti prima dell'apertura)
 const when = e => e.tbd ? 'orario da definire' : e.mm<SESS[0]-15 ? 'prima della sessione' : e.mm<=SESS[1] ? 'in sessione' : 'dopo la sessione';
 const ffDay = d => 'https://www.forexfactory.com/calendar?day='+['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'][d.getMonth()]+d.getDate()+'.'+d.getFullYear();
-const TRUMP_LINKS = [['Diretta Casa Bianca','https://www.youtube.com/@WhiteHouse/streams']];
+const TRUMP_LINKS = [['Diretta Casa Bianca','https://www.youtube.com/@WhiteHouse/streams'],['C-SPAN','https://www.c-span.org/live/']];
 // versione corta per le righe del calendario: «tra 1 h 59 min» → «1h 59m»
 const cdS = ms => cdTxt(ms).replace(/^tra /,'').replace(/ h /,'h ').replace(/ min\b/,'m').replace(/ giorn[oi]/,' g');
 function cdTxt(ms) { const a=Math.abs(ms), s=Math.floor(a/1000)%60, m=Math.floor(a/60000)%60, h=Math.floor(a/3600000), d=Math.floor(h/24);
@@ -1906,68 +1904,47 @@ const weekOf = dIso => { const d=pdIso(dIso); return iso(addDays(d, -((d.getDay(
 // categoria di news della giornata, come nella colonna News del foglio
 function newsCat(dIso) { if (!S.news) return ''; const ev=newsEvents().filter(e=>e.day===dIso && e.cur==='USD');
   return ev.some(e=>e.imp==='High') ? 'Red News' : ev.some(e=>e.imp==='Medium') ? 'Orange News' : 'No News Day'; }
-// ───── Trump: titoli di FinancialJuice (archiviati dallo script) + interventi in calendario su ForexFactory ─────
-let trP=null, trErr='', trTry=0; const TR_TTL=90000;
+// ───── Trump: quando parla. Lo script lo ricava dai titoli di FinancialJuice (diretta in corso, interventi annunciati,
+// interventi già fatti); in più ci sono gli interventi in calendario su ForexFactory. Nell'app niente titoli, solo questo.
+let trP=null, trErr='', trTry=0; const TR_TTL=60000;
 function loadTrump(force) {
   if (trP) return trP;
   if (!force && S.trump && Date.now()-S.trump.got < TR_TTL) return Promise.resolve(S.trump);
   if (!force && Date.now()-trTry < 45000) return Promise.reject(new Error(trErr||'attendi'));
-  trTry=Date.now();
-  const before = S.trump ? new Set(S.trump.items.map(x=>x.t+'|'+x.title)) : null;
-  trP = call('trumpNews', !!force).then(d=>{ d.got=Date.now(); S.trump=d; trErr='';
-      try { localStorage.setItem('tj.trump', JSON.stringify(d)); } catch(e) {}
-      // titolo nuovo mentre l'app è aperta: un avviso (solo per quelli degli ultimi 20 minuti)
-      if (before) { const nw=d.items.filter(x=>!before.has(x.t+'|'+x.title) && Date.now()-x.t<20*60000); if (nw.length && !document.hidden) toast('Trump · '+nw[0].title.slice(0,90)); }
+  trTry=Date.now(); const wasLive = !!(S.trump && S.trump.live);
+  trP = call('trumpNews', !!force).then(d=>{ d.got=Date.now(); S.trump=d; trErr=''; newsBadge();
+      try { localStorage.setItem('tj.trump2', JSON.stringify(d)); } catch(e) {}
+      if (d.live && !wasLive && !document.hidden) toast('Trump sta parlando ora: la diretta è nella pagina News');
       return d; })
     .catch(e=>{ trErr = /Funzione sconosciuta/.test(e.message||'') ? 'OLD' : (e.message||String(e)); throw e; })
     .finally(()=>{ trP=null; if ((S.tab==='news' || S.tab==='home') && !S.sheet) renderCurrent(true); });
   return trP;
 }
-setInterval(()=>{ if (!document.hidden && (S.tab==='news' || S.tab==='home')) loadTrump().catch(()=>{}); }, 120000);
-// temi dei titoli; quelli segnati con 1 sono i più capaci di muovere ES e NQ
-const TR_TAGS = [['Dazi',/tariff|duties|trade (deal|war|talk|agreement)|import tax/i,1],['Fed',/\bFed\b|Powell|rate cut|interest rate|Federal Reserve/i,1],['Cina',/China|Chinese|\bXi\b|Beijing/i,1],
-  ['Mercati',/stock|market|S&P|Dow|Nasdaq|equities|Wall Street/i,1],['Petrolio',/\boil\b|OPEC|crude|gasoline/i,1],['Economia',/\btax|econom|inflation|jobs|deficit|budget|shutdown|debt|recession/i,1],
-  ['Russia/Ucraina',/Russia|Putin|Ukrain|Zelensk/i,0],['Medio Oriente',/Iran|Israel|Gaza|Hamas|Middle East|Saudi/i,0],['Europa',/\bEU\b|Europe|NATO/i,0]];
-const trTags = t => TR_TAGS.filter(x=>x[1].test(t));
-const agoTxt = ms => ms<60000 ? 'adesso' : ms<3600000 ? Math.floor(ms/60000)+' min fa' : ms<86400000 ? Math.floor(ms/3600000)+' h fa' : '';
-function trHead(x, now) { const d=romeDate(x.t), tg=trTags(x.title), mk=tg.some(g=>g[2]), fresh=now-x.t<30*60000;
-  return '<a class="trh'+(mk?' mk':'')+(fresh?' fresh':'')+'" href="'+esc(x.link||'https://www.financialjuice.com/home')+'" target="_blank" rel="noopener">'+
-    '<span class="trh-t"><b class="num">'+p2(d.getHours())+':'+p2(d.getMinutes())+'</b>'+(now-x.t<86400000?'<em>'+agoTxt(now-x.t)+'</em>':'')+'</span>'+
-    '<span class="trh-b"><span class="trh-x">'+esc(x.title)+'</span>'+(tg.length||fresh?'<span class="trh-g">'+(fresh?'<i class="tg new">Nuovo</i>':'')+tg.map(g=>'<i class="tg'+(g[2]?' mk':'')+'">'+g[0]+'</i>').join('')+'</span>':'')+'</span></a>'; }
+setInterval(()=>{ if (!document.hidden) loadTrump().catch(()=>{}); }, 90000);
+const hmOf = t => { const d=romeDate(t); return p2(d.getHours())+':'+p2(d.getMinutes()); };
+const trLinks = cls => '<div class="tr-l">'+TRUMP_LINKS.map((l,i)=>'<a class="'+(cls&&!i?cls:'lnk')+'" href="'+l[1]+'" target="_blank" rel="noopener">'+ic(cls&&!i?'play':'ext',cls&&!i?16:14,2)+l[0]+'</a>').join('')+'</div>';
+// interventi in programma: ForexFactory + annunci rilevati da FinancialJuice (senza doppioni)
+function trumpSched(ev) {
+  const now=Date.now(), T=S.trump, out=ev.map(e=>({ t:e.tbd?null:e.t, tbd:e.tbd, day:e.day, lbl:newsIt(e.title), src:'ForexFactory' }));
+  (T && T.sched || []).forEach(x=>{ if (x.t && out.some(o=>o.t && Math.abs(o.t-x.t)<45*60000)) return;
+    out.push({ t:x.t, tbd:!x.t, day:iso(romeDate(x.t||x.a)), lbl:{ conferenza:'Conferenza stampa di Trump', firma:'Trump firma un provvedimento', discorso:'Discorso di Trump' }[x.k]||'Intervento di Trump', src:'FinancialJuice', ann:x.a }); });
+  return out.filter(o=>o.tbd || o.t>now-3*3600000).sort((a,b)=>(a.tbd-b.tbd) || ((a.t||a.ann||0)-(b.t||b.ann||0)));   // prima quelli con l'orario
+}
 function trumpCard(ev) {
-  const T=S.trump, now=Date.now(), items=T?T.items:[], rec=items.filter(x=>now-x.t<86400000), old=items.filter(x=>now-x.t>=86400000).slice(0,60);
-  const last=items[0], at=T&&T.at?romeDate(T.at):null, live=last && now-last.t<60*60000;
-  let h='<div class="card wide trump rise" id="trump" style="--d:90ms"><div class="card-h"><div class="h2">'+ic('mic',19,2)+' Trump'+(live?'<span class="tr-live"><i></i>attivo ora</span>':'')+'</div>'+
-    '<span class="sub">'+(T?'FinancialJuice'+(at?' · '+p2(at.getHours())+':'+p2(at.getMinutes()):''):'')+'</span></div>';
-  // interventi in calendario (ForexFactory)
-  if (ev.length) h+='<div class="tr-sect">In programma</div>'+ev.map(e=>{ const st = e.tbd ? 'Orario da definire' : now<e.t ? 'Inizia alle '+e.hm+' · <b data-cd="'+e.t+'">'+cdTxt(e.t-now)+'</b>' :
-        now-e.t < 4*3600000 ? '<b class="live"><i></i>Iniziato alle '+e.hm+'</b> · la fine non viene annunciata' : 'Iniziato alle '+e.hm;
-      return '<div class="tr-row"><div><b>'+esc(newsIt(e.title))+'</b><span>'+dayLbl(e.day)+' · '+st+'</span></div><div class="tr-l">'+
-        TRUMP_LINKS.map(l=>'<a class="lnk" href="'+l[1]+'" target="_blank" rel="noopener">'+ic('ext',14,2)+l[0]+'</a>').join('')+'</div></div>'; }).join('');
-  // titoli
-  if (!T) h += trErr==='OLD' ? '<p class="mut">Per i titoli su Trump da FinancialJuice aggiorna Code.gs alla versione nuova.</p>'
-    : trErr && !trP ? '<p class="mut">FinancialJuice non risponde: riprovo tra poco.</p>' : '<div class="skel" style="height:120px"></div>';
-  else {
-    h+='<div class="tr-sect">Ultime 24 ore<span>'+(rec.length?rec.length+(rec.length===1?' titolo':' titoli'):'')+'</span></div>';
-    h+= rec.length ? '<div class="trl">'+rec.map(x=>trHead(x,now)).join('')+'</div>' : '<div class="empty-row">Nessun titolo su Trump nelle ultime 24 ore.</div>';
-    if (old.length) { const days=[...new Set(old.map(x=>iso(romeDate(x.t))))];
-      h+='<details class="trold"><summary>'+ic('chev',15,2.2)+'Giorni precedenti<em>'+old.length+' titoli</em></summary>'+days.map(d=>'<div class="tr-sect">'+dayLbl(d)+'</div><div class="trl">'+old.filter(x=>iso(romeDate(x.t))===d).map(x=>trHead(x,now)).join('')+'</div>').join('')+'</details>'; }
-    const pool=(rec.length?rec:items.slice(0,15)).slice(0,25), k='tr|'+pool.map(x=>x.t).join(','), ai=S.nsAI[k];
-    if (pool.length) h+= ai===1 ? '<div class="ns-ai"><span class="thinking">'+ic('spark',16,2)+'Claude sta leggendo i titoli…</span></div>'
-      : ai ? '<div class="ns-ai md">'+md(ai)+'<p class="mut" style="font-size:12px;margin:6px 0 0">Scritto da Claude dai titoli di FinancialJuice: non è una previsione.</p></div>'
-      : '<button type="button" class="btn sec sm tr-ai" data-act="trsum" data-k="'+esc(k)+'">'+ic('spark',16,2)+'Riassumi in italiano con Claude</button>';
-    if (T.stale) h+='<p class="mut" style="font-size:12.5px">FinancialJuice non risponde: sto mostrando gli ultimi titoli salvati.</p>';
-  }
-  h+='<p class="tr-src">Titoli dal feed pubblico di FinancialJuice (qualche minuto di ritardo), in inglese: tocca un titolo per aprirlo. In evidenza quelli su dazi, Fed, Cina, mercati, petrolio ed economia.</p>';
+  const T=S.trump, now=Date.now(), live=T && T.live, sch=trumpSched(ev), past=(T && T.past) || [];
+  let h='<div class="card wide trump rise'+(live?' on':'')+'" id="trump" style="--d:90ms"><div class="card-h"><div class="h2">'+ic('mic',19,2)+' Trump'+(live?'<span class="tr-live"><i></i>In diretta</span>':'')+'</div>'+
+    '<span class="sub">'+(T&&T.at?'controllato alle '+hmOf(T.at):'')+'</span></div>';
+  if (live) h+='<div class="tr-now"><div><b>Sta parlando ora</b><span>dalle '+hmOf(live.since)+' · ultima dichiarazione '+agoTxt(now-live.last)+'</span></div>'+trLinks('btn tr-go')+'</div>';
+  if (sch.length) h+=(live?'<div class="tr-sect">In programma</div>':'')+sch.map(o=>{ const st = o.tbd ? (o.ann?'annunciato alle '+hmOf(o.ann)+', orario non indicato':'orario da definire') : now<o.t ? 'alle '+hmOf(o.t)+' · <b data-cd="'+o.t+'">'+cdTxt(o.t-now)+'</b>' : 'iniziato alle '+hmOf(o.t)+' · la fine non viene annunciata';
+      return '<div class="tr-row"><div><b>'+esc(o.lbl)+'</b><span>'+dayLbl(o.day)+' · '+st+'</span></div></div>'; }).join('')+
+      (live?'':'<div class="tr-where"><span>Dove vederlo</span>'+trLinks()+'</div>');
+  else if (!live) h+='<div class="tr-none">'+ic('check',16,2.2)+'<span>'+(T ? 'Nessun intervento di Trump in programma. Quando inizia a parlare lo vedi qui, con il link alla diretta.' : trErr==='OLD' ? 'Aggiorna Code.gs per sapere quando Trump parla.' : 'Controllo se Trump sta parlando…')+'</span></div>';
+  if (past.length) h+='<div class="tr-past">'+ic('clock',14,2)+'<span>Ha già parlato: '+past.map(p=>(iso(romeDate(p.from))===todayIso()?'':dayShort(iso(romeDate(p.from)))+' ')+hmOf(p.from)+'–'+hmOf(p.to)).join(' · ')+'</span></div>';
+  if (T && T.stale) h+='<p class="tr-src">FinancialJuice non risponde: l\'ultimo controllo potrebbe essere vecchio.</p>';
+  h+='<p class="tr-src">Rilevato dai titoli di FinancialJuice (qualche minuto di ritardo) e dal calendario di ForexFactory. La fine dei discorsi non viene mai annunciata.</p>';
   return h+'</div>';
 }
-function askTrumpAI(b) {
-  const k=b.dataset.k, now=Date.now(), items=(S.trump?S.trump.items:[]), rec=items.filter(x=>now-x.t<86400000), pool=(rec.length?rec:items.slice(0,15)).slice(0,25);
-  S.nsAI[k]=1; renderCurrent(true);
-  call('trumpSunto', pool.map(x=>{ const d=romeDate(x.t); return dayShort(iso(d))+' '+p2(d.getHours())+':'+p2(d.getMinutes())+' · '+x.title; }))
-    .then(txt=>{ S.nsAI[k]=txt; }).catch(e=>{ delete S.nsAI[k]; toast(/NO_CLAUDE_KEY/.test(e.message||'')?'Claude non è collegato allo script':/Funzione sconosciuta/.test(e.message||'')?'Aggiorna Code.gs per il riassunto':'Claude non ha risposto: '+(e.message||e), true); })
-    .finally(()=>{ if (S.tab==='news') renderCurrent(true); });
-}
+const agoTxt = ms => ms<60000 ? 'adesso' : ms<3600000 ? Math.floor(ms/60000)+' min fa' : Math.floor(ms/3600000)+' h fa';
 // una news: orario (e quanto manca, solo oggi), pallino dell'impatto sulla linea del tempo, nome, valori
 function nrow(e, now, nextT) {
   const past = !e.tbd && e.t<now-60000, nx = e.t===nextT, today = e.day===todayIso();
@@ -2090,9 +2067,10 @@ function briefing() {
      '<div class="td-main"><div><div class="bp-t">'+st.t+'</div><p>'+st.s+'</p></div>'+(n?'<div class="td-r"><b class="'+sgn(rT)+' num">'+fmtR(rT,2)+'</b><span>'+withU(n+' trade', usdOn(false)?tj.reduce((s,x)=>s+(usdT(x,isFinite(x.rr)?x.rr:0)||0),0):NaN)+'</span></div>':'')+'</div>'+
      (tj.length?'<div class="bp-tr">'+tj.map(x=>'<span class="'+(x.out==='Win'||x.rr>0?'w':x.out==='Loss'||x.rr<0?'l':'b')+'">'+esc(String(x.raw.Ora).slice(0,5))+' · '+esc(x.idea||x.a)+' <b class="num">'+fmtR(x.rr,2)+'</b></span>').join('')+'</div>':'')+
      (nb?'<div class="td-news"><div class="td-sub"><span>News USD</span>'+(nx?'<span>'+esc(newsIt(nx.title))+' <b data-cd="'+nx.t+'">'+cdTxt(nx.t-now)+'</b></span>':'')+'</div>'+nb+'</div>':'')+
-     (()=>{ const T=S.trump, tr=T?T.items.filter(x=>iso(romeDate(x.t))===t):[]; if (!tr.length) return '';
-        const d=romeDate(tr[0].t);
-        return '<button type="button" class="td-tr" data-nav="news">'+ic('mic',16,2)+'<span><b>Trump · '+tr.length+(tr.length===1?' titolo oggi':' titoli oggi')+'</b><span class="trq">'+p2(d.getHours())+':'+p2(d.getMinutes())+' · '+esc(tr[0].title)+'</span></span>'+ic('chev',15,2)+'</button>'; })()+
+     (()=>{ const T=S.trump; if (!T) return '';
+        if (T.live) return '<a class="td-tr on" href="'+TRUMP_LINKS[0][1]+'" target="_blank" rel="noopener"><span class="tr-dot"></span><span><b>Trump sta parlando ora</b><span class="trq">dalle '+hmOf(T.live.since)+' · tocca per la diretta</span></span>'+ic('play',16,2)+'</a>';
+        const o=trumpSched([]).find(x=>x.day===t && (x.tbd || x.t>Date.now()-30*60000)); if (!o) return '';
+        return '<button type="button" class="td-tr" data-nav="news">'+ic('mic',16,2)+'<span><b>'+esc(o.lbl)+(o.tbd?'':' alle '+hmOf(o.t))+'</b><span class="trq">'+(o.tbd?'orario non indicato':'tra '+cdTxt(o.t-Date.now()).replace(/^tra /,''))+' · annunciato su FinancialJuice</span></span>'+ic('chev',15,2)+'</button>'; })()+
      (notes.length?'<p class="td-note">'+notes.join(' ')+'</p>':'')+
      '<div class="td-foot"><span>Piano: 2 trade al giorno, stop dopo il TP'+(isFinite(lossLim)&&lossLim>0?', max −'+fmtN(lossLim,1)+' R':'')+'</span><button type="button" class="link" data-nav="news">Calendario'+ic('chev',15,2)+'</button></div></div>';
   // aspettative dallo storico EOW
@@ -3085,7 +3063,6 @@ document.addEventListener('click', e => {
   if (b.dataset.newf) { switchFile(b.dataset.newf); openForm(); return; }
   if (b.dataset.open) { const [f,row]=b.dataset.open.split(':'); if (!(+row>1)) { toast('Il trade si sta ancora salvando: riprova tra un attimo'); return; } switchFile(f); openForm(+row); return; }
   if (b.dataset.act==='nsai') { askNewsAI(b); return; }
-  if (b.dataset.act==='trsum') { askTrumpAI(b); return; }
   if (b.dataset.nday) { const el=$('nd-'+b.dataset.nday); if (!el) { toast('Nessuna news di impatto medio o alto quel giorno'); return; } const d=el.closest('details'); if (d) d.open=true;
     const y=el.getBoundingClientRect().top+scrollY-(innerWidth<1000?78:16); window.scrollTo({ top:y, behavior:reduceMotion()?'auto':'smooth' }); return; }
   if (b.id==='sh-close' || b.dataset.act==='close') { closeSheet(); return; }
