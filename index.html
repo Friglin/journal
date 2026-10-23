@@ -1117,7 +1117,7 @@ const L = {
   errs: ['FOMO','TP spostato','SL spostato','Ingresso anticipato','Uscita anticipata','Size sbagliata','Fuori piano','Altro'],
 };
 const APP = 'Edgebook';
-const BUILD = '2026-10-23.8';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
+const BUILD = '2026-10-23.9';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
 let updChk=0;
 function checkUpdate() {
   if (viaScript() || location.protocol==='file:' || Date.now()-updChk<60000) return; updChk=Date.now();
@@ -1945,8 +1945,10 @@ function trumpCard(ev) {
   else if (!live) h+='<div class="tr-none">'+ic('check',16,2.2)+'<span>'+(T ? 'Nessun intervento di Trump in programma. Quando inizia a parlare lo vedi qui, con il link alla diretta.' : trErr==='OLD' ? 'Aggiorna Code.gs per sapere quando Trump parla.' : 'Controllo se Trump sta parlando…')+'</span></div>';
   if (past.length) h+='<div class="tr-past">'+ic('clock',14,2)+'<span>Ha già parlato: '+past.map(p=>(iso(romeDate(p.from))===todayIso()?'':dayShort(iso(romeDate(p.from)))+' ')+hmOf(p.from)+'–'+hmOf(p.to)).join(' · ')+'</span></div>';
   const sv = (n,v) => '<span class="'+(v==='ok'?'ok':'ko')+'">'+ic(v==='ok'?'check':'alert',13,2.4)+n+(v==='ok'?'':' · '+esc(String(v||'non controllato')))+'</span>';
-  if (T && T.src) h+='<div class="tr-srcs">'+sv('YouTube Casa Bianca',T.src.yt)+sv('FinancialJuice',T.src.fj)+'</div>';
-  h+='<p class="tr-src">'+(T && T.src && T.src.yt!=='ok' && T.src.fj!=='ok' ? '<b>Nessuna fonte raggiungibile in questo momento: riprovo da solo.</b> ' : '')+'Diretta e dirette in programma dal canale YouTube della Casa Bianca, dichiarazioni dai titoli di FinancialJuice (qualche minuto di ritardo), interventi dal calendario di ForexFactory.</p>';
+  // FinancialJuice: se l'ultimo controllo riuscito è recente va bene così (un 429 è solo una pausa che lo script si prende da solo)
+  const fjRecent = T && T.src && T.src.fjAt && now-T.src.fjAt < 30*60000, fjV = T && T.src ? (T.src.fj==='ok' || fjRecent ? 'ok' : T.src.fj) : '';
+  if (T && T.src) h+='<div class="tr-srcs">'+sv('YouTube Casa Bianca',T.src.yt)+sv('FinancialJuice'+(fjRecent?' · '+hmOf(T.src.fjAt):''),fjV)+'</div>';
+  h+='<p class="tr-src">'+(T && T.src && T.src.yt!=='ok' && fjV!=='ok' ? '<b>Nessuna fonte raggiungibile in questo momento: riprovo da solo.</b> ' : '')+'Diretta e dirette in programma dal canale YouTube della Casa Bianca, dichiarazioni dai titoli di FinancialJuice (qualche minuto di ritardo), interventi dal calendario di ForexFactory.</p>';
   return h+'</div>';
 }
 const agoTxt = ms => ms<60000 ? 'adesso' : ms<3600000 ? Math.floor(ms/60000)+' min fa' : Math.floor(ms/3600000)+' h fa';
