@@ -395,6 +395,25 @@ body::after { content:""; position:fixed; inset:-25%; z-index:-1; pointer-events
 .g3 { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; } @media (max-width:640px) { .g3 { grid-template-columns:1fr 1fr; } .g3 > :last-child:nth-child(odd) { grid-column:1/-1; } }
 .g4 { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; } @media (max-width:640px) { .g4 { grid-template-columns:1fr 1fr; } }
 .pf-scale { display:flex; gap:8px; align-items:flex-start; margin:0; font-size:12.5px; line-height:1.45; color:var(--fg3); } .pf-scale .ic { flex:none; margin-top:1px; color:var(--accent); }
+.pf-opts { display:grid; grid-template-columns:1.3fr 1fr 1fr; gap:12px; } @media (max-width:700px) { .pf-opts { grid-template-columns:1fr; } }
+.pf-goal { margin:10px 0 0; font-size:12.5px; color:var(--fg3); line-height:1.45; } .pf-goal b { color:var(--fg2); }
+.pf-lead { margin:0 0 14px; font-size:14px; line-height:1.5; color:var(--fg2); }
+.pf-set .seg { margin-top:6px; } .pf-set .btn { width:100%; margin-top:14px; }
+.pf-prog { height:3px; border-radius:2px; background:var(--line); margin-top:10px; overflow:hidden; opacity:0; transition:opacity .3s; } .pf-prog.on { opacity:1; }
+.pf-prog i { display:block; height:100%; width:0; background:var(--accent); border-radius:2px; transition:width .25s ease; }
+.pf-rules { margin-top:14px; font-size:12.5px; color:var(--fg3); } .pf-rules summary { cursor:pointer; color:var(--fg2); font-weight:600; width:max-content; }
+.pf-rules ul { margin:8px 0 0; padding-left:18px; display:flex; flex-direction:column; gap:5px; line-height:1.45; } .pf-rules b { color:var(--fg2); } .pf-rules p { margin:6px 0 0; }
+.pf-plan .pf-plan-h { display:flex; justify-content:space-between; align-items:flex-end; gap:16px; flex-wrap:wrap; margin:6px 0 16px; }
+.pf-plan h2 { margin:0; font-family:var(--display); font-size:24px; letter-spacing:-.02em; line-height:1.15; } .pf-plan-h > div > span { font-size:13px; color:var(--fg3); }
+.pf-big { text-align:right; } .pf-big b { display:block; font-family:var(--display); font-size:34px; font-weight:650; letter-spacing:-.03em; line-height:1; } .pf-big b.pos { color:var(--win); } .pf-big b.neg { color:var(--loss); }
+.pf-big span { font-size:12.5px; color:var(--fg3); }
+@media (max-width:640px) { .pf-big { text-align:left; } .pf-plan h2 { font-size:21px; } }
+.pf-plan ol { margin:0; padding:0; list-style:none; counter-reset:pf; display:flex; flex-direction:column; gap:10px; }
+.pf-plan li { counter-increment:pf; position:relative; padding-left:34px; font-size:14.5px; line-height:1.45; color:var(--fg2); } .pf-plan li b { color:var(--fg); font-weight:600; }
+.pf-plan li::before { content:counter(pf); position:absolute; left:0; top:-1px; width:23px; height:23px; border-radius:50%; background:var(--accent-soft); color:var(--accent); font-size:12.5px; font-weight:700; display:grid; place-items:center; }
+.pf-lots { display:block; font-size:12.5px; color:var(--fg3); margin-top:2px; }
+.pf-sum { margin:14px 0 0; padding-top:12px; border-top:1px solid var(--line); font-size:13px; line-height:1.5; color:var(--fg3); }
+svg .bar.pick { fill:var(--accent); }
 .pf-sec { font-size:12px; font-weight:650; color:var(--fg3); text-transform:uppercase; letter-spacing:.06em; margin:6px 0 -4px; }
 .pf-set .field { margin:0; } .pf-set .hint { font-size:11.5px; }
 .pf-h { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:650; color:var(--fg2); margin:14px 2px 2px; } .pf-h .ic { color:var(--accent); }
@@ -1135,7 +1154,7 @@ const L = {
   errs: ['FOMO','TP spostato','SL spostato','Ingresso anticipato','Uscita anticipata','Size sbagliata','Fuori piano','Altro'],
 };
 const APP = 'Edgebook';
-const BUILD = '2026-10-23.19';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
+const BUILD = '2026-10-23.20';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
 let updChk=0;
 function checkUpdate() {
   if (viaScript() || location.protocol==='file:' || Date.now()-updChk<60000) return; updChk=Date.now();
@@ -2650,7 +2669,9 @@ function ctxNow() {
     trade_filtrati:ts.length, riepilogo_filtrati:{ winrate:r2(a.wr), R_totali:r2(a.R), expectancy:r2(a.exp), profit_factor:isFinite(a.pf)?r2(a.pf):null, max_drawdown_R:r2(a.dd) },
     statistiche_tutti_i_trade:coachData('all'), statistiche_con_filtri:coachData('filt'), tutti_i_trade:tableCtx(all(), m) };
   if (tab==='home') { const p=inRange(ts, periodRange(S.per,0)), pa=agg(p,m); c.periodo_home={ periodo:S.per, trade:p.length, R:r2(pa.R), winrate:r2(pa.wr) }; c.trade_del_periodo=p.slice(-20).map(t=>tradeCtx(t,m)); }
-  else if (tab==='mc') { const r=S.pfLast && S.pfLast.res; c.simulazione_prop_firm={ parametri:S.pf, risultati: r ? { prob_passare:r2(r.pr), tentativi_medi:r2(r.attMean), giornate_per_conto_finanziato:r.jDaysQ[1], spesa_media_per_conto_finanziato:Math.round(r.jCostMean), prob_primo_payout:r2(r.firstPr), payout_medi:r2(r.paysMean), prelevato_medio_per_conto:Math.round(r.paidMean), conto_vivo_a_fine:r2(r.aliveEnd), netto_medio_percorso:Math.round(r.netMean), prob_netto_positivo:r2(r.netPos), giornate:r.p.horizon, conti:r.p.acc } : 'non ancora eseguita' }; }
+  else if (tab==='mc') { const r=S.pfLast && S.pfLast.res, q=r&&r.p; c.simulazione_prop_firm={ scelte:S.pf, conti_in_copy:nAcc(), piano_migliore: r ? { conto:'Topstep '+q.size+' '+pfDllTxt(q), rischio_valutazione:q.rE, rischio_finanziato:q.rF, saldo_minimo_payout:q.B, giornate:r.H,
+    netto_medio_per_conto:Math.round(r.netMean), prob_netto_positivo:r2(r.netPos), prob_passare:r2(r.pr), tentativi_medi:r2(r.attMean), prob_primo_payout:r2(r.firstPr), payout_medi:r2(r.paysMean), conto_vivo_a_fine:r2(r.aliveEnd),
+    confronto_conti:r.combo.map(c=>({ conto:c.size+(c.dll==='si'?' DLL':''), netto_medio:Math.round(c.mean) })) } : 'non ancora calcolato' }; }
   else if (tab==='list') c.trade_visibili_in_pagina=ts.slice(-30).map(t=>tradeCtx(t,m));
   return c;
 }
@@ -2685,19 +2706,20 @@ async function delTrade() {
 
 // ───────────────────────── SIMULA: prop firm ─────────────────────────
 // Le giornate di trading filtrate (EOW o Journal) vengono ripescate a caso, con reinserimento e con i trade nell'ordine
-// in cui sono stati presi, e giocate sulle regole della prop firm: valutazione, conto finanziato e percorso completo.
-// Valori predefiniti: Topstep (50K confermati dall'utente, 100K/150K da verificare); si possono modificare tutti.
+// in cui sono stati presi, e giocate sulle regole Topstep. Il simulatore cerca da solo il piano che rende di più:
+// conto e Daily Loss Limit, rischio a trade in valutazione e sul finanziato, saldo da cui chiedere il payout.
+// Regole Topstep (50K confermate dall'utente, prezzi e limiti di 100K/150K da verificare).
 const PF_PRE = {
-  '50K':  { target:'3000', mll:'2000', dllAmt:'1000', feeD:'85',  feeN:'95',  cap:'2000', lots:'5' },
-  '100K': { target:'6000', mll:'3000', dllAmt:'2000', feeD:'155', feeN:'165', cap:'3000', lots:'10' },
-  '150K': { target:'9000', mll:'4500', dllAmt:'3000', feeD:'235', feeN:'245', cap:'5000', lots:'15' } };
+  '50K':  { target:3000, mll:2000, dllAmt:1000, feeD:85,  feeN:95,  cap:2000, lots:5 },
+  '100K': { target:6000, mll:3000, dllAmt:2000, feeD:155, feeN:165, cap:3000, lots:10 },
+  '150K': { target:9000, mll:4500, dllAmt:3000, feeD:235, feeN:245, cap:5000, lots:15 } };
+const PF_RULE = { cons:50, win:150, winN:5, capPct:50, minPay:125, split:100, after:5, split2:90, act:0 };
 // scaling plan del conto finanziato: contratti mini (10 micro = 1) consentiti in base al saldo
 const PF_SCALE = { '50K':[[1500,2],[2000,3],[Infinity,5]], '100K':[[1500,3],[2000,4],[3000,5],[Infinity,10]], '150K':[[1500,3],[2000,4],[3000,5],[4500,10],[Infinity,15]] };
 const PF_RT = { mini:3.78, micro:1.22 };   // commissioni e fee Topstep a contratto, andata e ritorno
-const PF_DEF = { size:'50K', dll:'si', target:'3000', mll:'2000', dllAmt:'1000', cons:'50', fee:'85', act:'0', lots:'5', win:'150', winN:'5', cap:'2000', capPct:'50',
-  split:'100', after:'5', split2:'90', horizon:'120', risk:'', comm:'3.78', acc:'', sims:'3000' };
-function loadPF() { try { const o=Object.assign({}, PF_DEF, JSON.parse(store.get('pf2','{}'))); if (o.cons==='55') o.cons='50'; return o; } catch(e) { return Object.assign({}, PF_DEF); } }
-const savePF = () => store.set('pf2', JSON.stringify(S.pf));
+const PF_DEF = { size:'auto', months:'6', goal:'max' };
+function loadPF() { try { return Object.assign({}, PF_DEF, JSON.parse(store.get('pf3','{}'))); } catch(e) { return Object.assign({}, PF_DEF); } }
+const savePF = () => store.set('pf3', JSON.stringify(S.pf));
 const usd = (x, dec=0) => isFinite(x) ? (x<0?'−':'')+'$'+Math.abs(x).toLocaleString('it-IT',{ maximumFractionDigits:dec, minimumFractionDigits:dec }) : '–';
 // ───── dollari e conti prop ─────
 // Ogni trade del Journal ha il suo PnL in $ per conto (colonna «PnL $»); se manca vale RR × rischio delle Impostazioni.
@@ -2718,131 +2740,168 @@ const fmtUk = v => isFinite(v) ? (v<=-0.5?'−':v>=0.5?'+':'')+'$'+usdK(Math.abs
 const withU = (txt, v, est) => { const u=fmtU(v, est); return u ? u+(txt?' · '+txt:'') : txt; };
 const usdWhat = () => nAcc()>1 ? (totView() ? nAcc()+' conti' : 'un conto') : '';
 const usdK = x => { const a=Math.abs(x); return (x<0?'−':'')+(a>=1e6 ? fmtN(a/1e6,a>=1e7?0:1)+'M' : a>=1e3 ? fmtN(a/1e3,a>=1e5?0:a%1000?1:0)+'k' : fmtN(a,0)); };
-// giornate dei trade filtrati: ogni giornata è l'elenco dei trade (R, punti di stop, $ a punto del micro) in ordine
+// giornate dei trade filtrati: ogni giornata è l'elenco dei trade (R, punti di stop, asset) nell'ordine in cui sono stati presi
 function pfDays(ts, m) { const by={};
-  ts.forEach(t=>{ const k=iso(t.d), sl=num(t.raw['SL Points'] ?? t.raw.SL); (by[k]=by[k]||[]).push({ r:m.rOf(t), sl:sl>0?sl:0, mv:/NQ/i.test(t.a||'')?2:5 }); });
+  ts.forEach(t=>{ const k=iso(t.d), sl=num(t.raw['SL Points'] ?? t.raw.SL), nq=/NQ/i.test(t.a||''); (by[k]=by[k]||[]).push({ r:m.rOf(t), sl:sl>0?sl:0, mv:nq?2:5, a:nq?'NQ':'ES' }); });
   return Object.values(by); }
-// quante giornate di trading a settimana (per tradurre i giorni simulati in settimane e mesi)
+// quante giornate di trading a settimana (per tradurre mesi e giornate)
 function pfPace(ts) { if (ts.length<2) return 3; const days=new Set(ts.map(t=>iso(t.d))).size, wk=Math.max(1, (ts[ts.length-1].d-ts[0].d)/(7*dayMs)); return Math.min(5, Math.max(.5, days/wk)); }
-function pfParams() { const P=S.pf, n=k=>numS(P[k]), dll=P.dll==='si';
-  return { risk: isFinite(n('risk'))&&n('risk')>0 ? n('risk') : (riskUsd()||200), comm:isFinite(n('comm'))?n('comm'):PF_RT.mini, acc: Math.max(1, Math.round(n('acc')||nAcc())),
-    size:P.size, dll: dll ? (n('dllAmt')||0) : 0, target:n('target'), mll:n('mll'), cons:n('cons')||100, fee:n('fee')||0, act:n('act')||0, lots:Math.max(1, Math.round(n('lots')||5)),
-    win:n('win')||0, winN:Math.max(1,Math.round(n('winN')||1)), cap:(n('cap')||Infinity)*(dll?2:1), capPct:n('capPct')||100, minPay:125,
-    split:n('split')||100, split2:n('split2')||n('split')||100, after:Math.round(n('after')||0), horizon:Math.max(10, Math.round(n('horizon')||120)), sims:+P.sims||3000 }; }
-function pfErrors() { const e={}, P=S.pf;
-  const chk=(k,min,max,lbl,opt)=>{ if (empty(P[k])) { if (!opt) e[k]='Inserisci '+lbl+'.'; return; } const v=numS(P[k]); if (!isFinite(v)) e[k]='Solo numeri, es. 2000.'; else if (v<min||v>max) e[k]='Valore fuori scala ('+fmtN(min,0)+'–'+fmtN(max,0)+').'; };
-  chk('risk',1,1e6,'il rischio',true); chk('comm',0,1e4,'le commissioni',true); chk('acc',1,50,'i conti',true);
-  chk('target',100,1e7,'il target'); chk('mll',100,1e7,'il limite di perdita'); chk('cons',1,100,'la consistenza',true); chk('fee',0,1e5,'il prezzo',true); chk('act',0,1e5,'l\'attivazione',true); chk('lots',1,100,'i contratti',true);
-  if (P.dll==='si') chk('dllAmt',50,1e6,'il Daily Loss Limit');
-  chk('win',0,1e6,'il giorno vincente',true); chk('winN',1,60,'i giorni vincenti'); chk('cap',1,1e7,'il payout massimo',true); chk('capPct',1,100,'la percentuale',true);
-  chk('split',1,100,'lo split',true); chk('split2',1,100,'lo split',true); chk('after',0,100,'il numero di payout',true); chk('horizon',10,1000,'i giorni');
-  return e; }
-// ── simulazione ──
-function pfSimulate(D0, p, pace) {
-  // contratti: micro quanti ne stanno nel rischio (almeno 1), entro il massimo consentito; 10 micro diventano 1 mini (costa meno)
-  const D=D0.map(day=>day.map(t=>({ r:t.r, sm:t.sl*t.mv, n0:t.sl>0 ? Math.max(1, Math.floor(p.risk/(t.sl*t.mv)+1e-9)) : 0 })));
-  const K=D.length, M=p.sims, pick=()=>D[(Math.random()*K)|0], cd=7/pace, MAXA=300, MAXJ=1500;
+function pfRng(seed) { let a=seed>>>0; return ()=>{ a=(a+0x6D2B79F5)>>>0; let t=a; t=Math.imul(t^t>>>15, t|1); t^=t+Math.imul(t^t>>>7, t|61); return ((t^t>>>14)>>>0)/4294967296; }; }
+// regole complete di un conto (taglia + DLL) con un piano (rE, rF = rischio a trade in valutazione e sul finanziato, B = saldo minimo per il payout)
+function pfConf(size, dll, plan) { const q=PF_PRE[size], d=dll==='si';
+  return Object.assign({ size, dllOn:d, dll:d?q.dllAmt:0, fee:d?q.feeD:q.feeN, target:q.target, mll:q.mll, lots:q.lots, cap:q.cap*(d?2:1) }, PF_RULE, plan); }
+// ── motore ──
+function pfEngine(D0, pace) {
+  const K=D0.length, cache=new Map(), cd=7/pace, MAXA=300, MAXJ=1500;
   const rt=n=>Math.floor(n/10)*PF_RT.mini+(n%10)*PF_RT.micro;
-  const val=(t,lots)=>{ if (!t.n0) return t.r*p.risk-p.comm; const n=Math.min(t.n0, lots*10); return t.r*n*t.sm-rt(n); };
-  const scale=PF_SCALE[p.size], lotsFor=b=>{ if (!scale) return p.lots; if (b<scale[0][0]) return scale[0][1]; for (const [lim,l] of scale) if (b<=lim) return l; return scale[scale.length-1][1]; };
-  // una giornata: col Daily Loss Limit la giornata si ferma (e la perdita si ferma) al limite; il limite di perdita del conto invece lo chiude
-  const play=(a, lots)=>{ const day=pick(); let dp=0;
-    for (let i=0;i<day.length;i++) { let v=val(day[i],lots); if (p.dll>0 && dp+v<=-p.dll) v=-p.dll-dp;
-      a.bal+=v; dp+=v; if (a.bal<=a.floor) return null; if (p.dll>0 && dp<=-p.dll) break; }
-    return dp; };
-  // valutazione: target con il giorno migliore entro la consistenza; il limite di perdita segue il saldo di fine giornata fino al saldo iniziale
-  const newEval=()=>({ bal:0, peak:0, floor:-p.mll, best:0, d:0 });
-  const evalDay=a=>{ a.d++; const dp=play(a, p.lots); if (dp===null) return -1; if (dp>a.best) a.best=dp; if (a.bal>a.peak) a.peak=a.bal; a.floor=Math.min(a.peak-p.mll,0);
-    if (a.bal>=p.target && a.best<=p.cons/100*a.bal+1e-9) return 1; return a.d>=MAXA ? -1 : 0; };
-  // conto finanziato: payout dopo winN giorni vincenti e solo col saldo almeno pari a quello dell'ultimo payout; dopo il primo il limite resta a $0
-  const newFund=()=>({ bal:0, peak:0, floor:-p.mll, lock:false, wd:0, pays:0, paid:0, need:0, d:0 });
-  const fundDay=a=>{ a.d++; const dp=play(a, lotsFor(a.bal)); if (dp===null) return -1;
-    if (dp>=p.win && dp>0) a.wd++; if (!a.lock) { if (a.bal>a.peak) a.peak=a.bal; a.floor=Math.min(a.peak-p.mll,0); }
-    if (a.wd>=p.winN && a.bal>=a.need) { const amt=Math.min(p.cap, a.bal*p.capPct/100);
-      if (amt>=p.minPay) { a.need=a.bal; a.bal-=amt; a.pays++; const got=amt*(a.pays<=p.after?p.split:p.split2)/100; a.paid+=got; a.wd=0; a.lock=true; a.floor=0; return got; } }
-    return 0; };
-  // abbonamento: si paga all'inizio e ogni 30 giorni di calendario (il rinnovo dà un reset gratis); un reset in più costa come il mese
-  const newSub=()=>({ cal:0, next:30, cred:0, cost:p.fee });
-  const subDay=s=>{ s.cal+=cd; while (s.cal>=s.next) { s.cost+=p.fee; s.cred=1; s.next+=30; } };
-  const subFail=s=>{ if (s.cred) s.cred=0; else s.cost+=p.fee; };
-  // 1) dalla prima valutazione al conto finanziato
-  const att=[], jDays=[], jCost=[], passD=[]; let tries=0, never=0;
-  for (let s=0;s<M;s++) { const sub=newSub(); let a=newEval(), n=1, d=0, ok=false;
-    while (d<MAXJ) { d++; subDay(sub); const r=evalDay(a);
-      if (r===1) { ok=true; passD.push(a.d); break; }
-      if (r===-1) { subFail(sub); n++; a=newEval(); } }
-    tries+=n; if (ok) { att.push(n); jDays.push(d); jCost.push(sub.cost+p.act); } else never++; }
-  // 2) un conto finanziato per «horizon» giornate
-  const H=p.horizon, alive=new Float64Array(H+1), paysN=[], paidL=[], first=[], blown=[];
-  for (let s=0;s<M;s++) { const a=newFund(); alive[0]++; let dead=false;
-    for (let d=1; d<=H; d++) { const r=fundDay(a); if (r===-1) { dead=true; blown.push(d); break; } alive[d]++; if (r>0 && a.pays===1) first.push(d); }
-    paysN.push(a.pays); paidL.push(a.paid); }
-  // 3) percorso completo in «horizon» giornate: valutazione → finanziato → se salta, nuova valutazione
-  const net=[], spent=[], cyFund=[], cyBlown=[], cyPaid=[];
-  for (let s=0;s<M;s++) { let sub=newSub(), a=newEval(), f=null, cost=0, paid=0, nf=0, nb=0;
-    for (let d=1; d<=H; d++) {
-      if (!f) { subDay(sub); const r=evalDay(a); if (r===1) { cost+=sub.cost+p.act; sub=null; f=newFund(); nf++; } else if (r===-1) { subFail(sub); a=newEval(); } }
-      else { const r=fundDay(f); if (r===-1) { nb++; f=null; sub=newSub(); a=newEval(); } else paid+=r; } }
-    if (sub) cost+=sub.cost;
-    net.push(paid-cost); spent.push(cost); cyFund.push(nf); cyBlown.push(nb); cyPaid.push(paid); }
-  const q=(a,f)=>{ if (!a.length) return NaN; const b=Float64Array.from(a).sort(); return b[Math.min(b.length-1, Math.max(0, Math.round(f*(b.length-1))))]; };
-  const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:NaN;
-  return { p, M, K, pace, pr:(M-never)/Math.max(1,tries), never:never/M, passQ:[q(passD,.25),q(passD,.5),q(passD,.75)], passD,
-    att, attMean:mean(att), attQ90:q(att,.9), jDaysQ:[q(jDays,.25),q(jDays,.5),q(jDays,.75)], jCostMean:mean(jCost), jCostQ90:q(jCost,.9),
-    alive:Array.from(alive).map(v=>v/M), aliveEnd:alive[H]/M, firstPr:first.length/M, firstQ:q(first,.5), paysN, paidMean:mean(paidL), paidMed:q(paidL,.5), paysMean:mean(paysN),
-    zeroPay:paysN.filter(x=>!x).length/M, blownMed:q(blown,.5),
-    net, netMean:mean(net), netMed:q(net,.5), netPos:net.filter(x=>x>0).length/M, spentMean:mean(spent), cyPaidMean:mean(cyPaid), cyFundMean:mean(cyFund), cyBlownMean:mean(cyBlown) };
+  // per un rischio: per ogni trade i micro che ci stanno con il suo stop (almeno 1; senza stop: R × rischio)
+  const prep=risk=>{ let v=cache.get(risk); if (!v) { v=D0.map(day=>day.map(t=>({ r:t.r, sm:t.sl*t.mv, n0:t.sl>0?Math.max(1, Math.floor(risk/(t.sl*t.mv)+1e-9)):0, risk }))); cache.set(risk,v); } return v; };
+  const val=(t,lots)=>{ if (!t.n0) return t.r*t.risk-PF_RT.mini; const n=Math.min(t.n0, lots*10); return t.r*n*t.sm-rt(n); };
+  function run(p, M, seed, H, all) {
+    const rnd=pfRng(seed), DE=prep(p.rE), DF=prep(p.rF), pick=()=>(rnd()*K)|0;
+    const sc=PF_SCALE[p.size], lotsFor=b=>{ if (b<sc[0][0]) return sc[0][1]; for (const [lim,l] of sc) if (b<=lim) return l; return sc[sc.length-1][1]; };
+    // una giornata: col Daily Loss Limit la giornata (e la perdita) si ferma al limite; il limite di perdita del conto invece lo chiude
+    const play=(a, day, lots)=>{ let dp=0;
+      for (let i=0;i<day.length;i++) { let v=val(day[i],lots); if (p.dll>0 && dp+v<=-p.dll) v=-p.dll-dp;
+        a.bal+=v; dp+=v; if (a.bal<=a.floor) return null; if (p.dll>0 && dp<=-p.dll) break; }
+      return dp; };
+    // valutazione: target con il giorno migliore entro la consistenza; il limite segue il saldo di fine giornata fino al saldo iniziale
+    const newEval=()=>({ bal:0, peak:0, floor:-p.mll, best:0, d:0 });
+    const evalDay=a=>{ a.d++; const dp=play(a, DE[pick()], p.lots); if (dp===null) return -1; if (dp>a.best) a.best=dp; if (a.bal>a.peak) a.peak=a.bal; a.floor=Math.min(a.peak-p.mll,0);
+      if (a.bal>=p.target && a.best<=p.cons/100*a.bal+1e-9) return 1; return a.d>=MAXA ? -1 : 0; };
+    // finanziato: payout dopo winN giorni vincenti, col saldo almeno pari a quello dell'ultimo payout e alla soglia del piano; dopo il primo il limite resta a $0
+    const newFund=()=>({ bal:0, peak:0, floor:-p.mll, lock:false, wd:0, pays:0, paid:0, need:0, d:0 });
+    const fundDay=a=>{ a.d++; const dp=play(a, DF[pick()], lotsFor(a.bal)); if (dp===null) return -1;
+      if (dp>=p.win && dp>0) a.wd++; if (!a.lock) { if (a.bal>a.peak) a.peak=a.bal; a.floor=Math.min(a.peak-p.mll,0); }
+      if (a.wd>=p.winN && a.bal>=a.need && a.bal>=p.B) { const amt=Math.min(p.cap, a.bal*p.capPct/100);
+        if (amt>=p.minPay) { a.need=a.bal; a.bal-=amt; a.pays++; const got=amt*(a.pays<=p.after?p.split:p.split2)/100; a.paid+=got; a.wd=0; a.lock=true; a.floor=0; return got; } }
+      return 0; };
+    // abbonamento: si paga all'inizio e ogni 30 giorni di calendario (il rinnovo dà un reset gratis); un reset in più costa come il mese
+    const newSub=()=>({ cal:0, next:30, cred:0, cost:p.fee });
+    const subDay=s=>{ s.cal+=cd; while (s.cal>=s.next) { s.cost+=p.fee; s.cred=1; s.next+=30; } };
+    const subFail=s=>{ if (s.cred) s.cred=0; else s.cost+=p.fee; };
+    const q=(a,f)=>{ if (!a.length) return NaN; const b=Float64Array.from(a).sort(); return b[Math.min(b.length-1, Math.max(0, Math.round(f*(b.length-1))))]; };
+    const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:NaN;
+    // percorso completo in H giornate: valutazione → finanziato → se salta, nuova valutazione
+    const net=[], spent=[], cyFund=[], cyBlown=[], cyPaid=[];
+    for (let s=0;s<M;s++) { let sub=newSub(), a=newEval(), f=null, cost=0, paid=0, nf=0, nb=0;
+      for (let d=1; d<=H; d++) {
+        if (!f) { subDay(sub); const r=evalDay(a); if (r===1) { cost+=sub.cost+p.act; sub=null; f=newFund(); nf++; } else if (r===-1) { subFail(sub); a=newEval(); } }
+        else { const r=fundDay(f); if (r===-1) { nb++; f=null; sub=newSub(); a=newEval(); } else paid+=r; } }
+      if (sub) cost+=sub.cost;
+      net.push(paid-cost); spent.push(cost); cyFund.push(nf); cyBlown.push(nb); cyPaid.push(paid); }
+    const out={ p, M, K, pace, H, net, netMean:mean(net), netMed:q(net,.5), netQ25:q(net,.25), netPos:net.filter(x=>x>0).length/M, spentMean:mean(spent), cyPaidMean:mean(cyPaid), cyFundMean:mean(cyFund), cyBlownMean:mean(cyBlown) };
+    if (!all) return out;
+    // dalla prima valutazione al conto finanziato
+    const att=[], jDays=[], jCost=[], passD=[]; let tries=0, never=0;
+    for (let s=0;s<M;s++) { const sub=newSub(); let a=newEval(), n=1, d=0, ok=false;
+      while (d<MAXJ) { d++; subDay(sub); const r=evalDay(a); if (r===1) { ok=true; passD.push(a.d); break; } if (r===-1) { subFail(sub); n++; a=newEval(); } }
+      tries+=n; if (ok) { att.push(n); jDays.push(d); jCost.push(sub.cost+p.act); } else never++; }
+    // un conto finanziato per H giornate
+    const alive=new Float64Array(H+1), paysN=[], paidL=[], first=[], blown=[];
+    for (let s=0;s<M;s++) { const a=newFund(); alive[0]++;
+      for (let d=1; d<=H; d++) { const r=fundDay(a); if (r===-1) { blown.push(d); break; } alive[d]++; if (r>0 && a.pays===1) first.push(d); }
+      paysN.push(a.pays); paidL.push(a.paid); }
+    return Object.assign(out, { pr:(M-never)/Math.max(1,tries), never:never/M, passQ:[q(passD,.25),q(passD,.5),q(passD,.75)], passD,
+      att, attMean:mean(att), attQ90:q(att,.9), jDaysQ:[q(jDays,.25),q(jDays,.5),q(jDays,.75)], jCostMean:mean(jCost), jCostQ90:q(jCost,.9),
+      alive:Array.from(alive).map(v=>v/M), aliveEnd:alive[H]/M, firstPr:first.length/M, firstQ:q(first,.5), paysN, paidMean:mean(paidL), paidMed:q(paidL,.5), paysMean:mean(paysN),
+      zeroPay:paysN.filter(x=>!x).length/M, blownMed:q(blown,.5) });
+  }
+  return { run };
+}
+// ── ricerca del piano migliore: per ogni conto, ottimizza a turno rischio sul finanziato, soglia di payout e rischio in valutazione
+// (stessi numeri casuali per tutti i piani, così il confronto è pulito); poi i migliori vengono ricontrollati con più simulazioni
+const pfRiskGrid = mll => [.05,.075,.1,.125,.15,.2,.25,.3,.4,.5].map(f=>Math.max(25, Math.round(f*mll/25)*25));
+const pfBGrid = mll => [0,.5,1,1.5,2,3].map(f=>Math.round(f*mll));
+async function pfOptimize(D, pace, H, sizes, goal, prog) {
+  const E=pfEngine(D, pace), M1=300, M2=1500, S1=1234, S2=777, tick=()=>new Promise(r=>setTimeout(r,0));
+  const key=p=>[p.size,p.dllOn?1:0,p.rE,p.rF,p.B].join('|'), c1=new Map(), c2=new Map();
+  const ev=(p,c,M,sd)=>{ const k=key(p); let v=c.get(k); if (!v) { const r=E.run(p,M,sd,H,false); v={ p, mean:goal==='safe'?r.netQ25:r.netMean, avg:r.netMean, pos:r.netPos }; c.set(k,v); } return v; };
+  const combos=[]; sizes.forEach(z=>['si','no'].forEach(d=>combos.push([z,d])));
+  const steps=combos.length*2*3+3; let done=0; const step=async()=>{ done++; prog(done/steps); await tick(); };
+  const bestOf=[];
+  for (const [z,d] of combos) { const mll=PF_PRE[z].mll, RG=pfRiskGrid(mll), BG=pfBGrid(mll); let cur=pfConf(z,d,{ rE:RG[2], rF:RG[2], B:BG[2] });
+    const opt=(k,grid)=>{ let b=null; for (const v of grid) { const c=ev(Object.assign({},cur,{[k]:v}),c1,M1,S1); if (!b||c.mean>b.mean) b=c; } cur=b.p; };
+    for (let pass=0; pass<2; pass++) { opt('rF',RG); await step(); opt('B',BG); await step(); opt('rE',RG); await step(); }
+    bestOf.push(cur); }
+  // ricontrollo: i migliori 8 e il migliore di ogni conto
+  const top=[...c1.values()].sort((a,b)=>b.mean-a.mean).slice(0,8).map(c=>c.p).concat(bestOf);
+  top.forEach(p=>ev(p,c2,M2,S2)); await step();
+  const val=[...c2.values()].sort((a,b)=>b.mean-a.mean), best=val[0].p;
+  const combo=combos.map(([z,d])=>{ const c=val.filter(v=>v.p.size===z && v.p.dllOn===(d==='si'))[0]; return { size:z, dll:d, mean:c.mean, avg:c.avg, pos:c.pos, p:c.p }; });
+  // come cambia il risultato muovendo una scelta alla volta (le altre restano quelle del piano migliore)
+  const mll=best.mll, curve=(k,grid)=>grid.map(v=>{ const c=ev(Object.assign({},best,{[k]:v}),c2,M2,S2); return { v, mean:c.mean, avg:c.avg, pos:c.pos }; });
+  const curves={ rF:curve('rF',pfRiskGrid(mll)) }; await step(); curves.rE=curve('rE',pfRiskGrid(mll)); curves.B=curve('B',pfBGrid(mll)); await step();
+  const res=E.run(best, 3000, 4242, H, true);
+  return Object.assign(res, { combo, curves, goal });
 }
 // ── pagina ──
+const pfMonths = () => Math.max(1, +S.pf.months||6);
+const pfKey = D => JSON.stringify([S.file, D.length, D.reduce((s,d)=>s+d.reduce((x,t)=>x+t.r+t.sl,0),0), S.pf, nAcc()]);
+const pfK = x => Math.abs(x)>=1000 ? (x<0?'−':'')+'$'+fmtN(Math.abs(x)/1000, Math.abs(x)%1000?1:0)+'k' : usd(x);
+const pfDllTxt = p => p.dllOn ? 'con Daily Loss Limit' : 'senza Daily Loss Limit';
 function renderMC() {
   const el=$('v-mc'); if (!S.loaded) { el.innerHTML=skeleton(); return; }
-  const m=curModel(), ts=filtered(m), D=pfDays(ts,m), P=S.pf, E=S.type==='EOW', pace=pfPace(ts), dll=P.dll==='si';
+  const m=curModel(), ts=filtered(m), D=pfDays(ts,m), P=S.pf, E=S.type==='EOW', pace=pfPace(ts), A=nAcc();
   const dayR=D.map(d=>d.reduce((x,t)=>x+t.r,0)), avgR=dayR.length?dayR.reduce((x,y)=>x+y,0)/dayR.length:NaN, posD=dayR.filter(x=>x>0).length/Math.max(1,dayR.length);
-  const noSl=D.reduce((s,d)=>s+d.filter(t=>!t.sl).length,0);
-  let html='<div class="stat-h rise"><div><div class="eyebrow">Prop firm · Monte Carlo</div><h1>'+words('Simula')+'</h1></div></div>'+fbar(20);
+  let html='<div class="stat-h rise"><div><div class="eyebrow">Prop firm · Topstep</div><h1>'+words('Simula')+'</h1></div></div>'+fbar(20);
   html+='<div class="card wide mc-src rise" style="--d:40ms"><div class="mc-src-ic">'+logo(30)+'</div><div><b>'+D.length+' giornate di trading · '+ts.length+' trade di '+S.file+'</b>'+
     '<span>'+(D.length?'una giornata rende in media '+fmtR(avgR,2)+' · '+pct(posD)+' positive · circa '+fmtN(pace,1)+' giornate a settimana'+(E?' · esito a '+tgt()+'R':''):'nessuna giornata con questi filtri')+'</span></div></div>';
   if (D.length<15) html+='<div class="warn rise">'+ic('alert',17,2)+'<span>'+(D.length?'Solo '+D.length+' giornate: la simulazione sarà poco affidabile. Allarga i filtri se puoi.':'Nessun trade con questi filtri: togli qualche filtro per simulare.')+'</span></div>';
-  const f=(k,lbl,ph,suf,hint)=>'<div class="field" data-f="pf-'+k+'"><label for="pf-'+k+'">'+lbl+'</label><div class="inwrap">'+(suf==='$'?'<i>$</i>':'')+'<input class="inp" id="pf-'+k+'" data-pf="'+k+'" type="text" inputmode="decimal" autocomplete="off" value="'+esc(P[k])+'" placeholder="'+esc(ph)+'">'+(suf==='%'?'<i class="r">%</i>':'')+'</div>'+(hint?'<span class="hint">'+hint+'</span>':'')+'<div class="ferr" id="err-pf-'+k+'"></div></div>';
-  const grid=a=>'<div class="'+(a.length===4?'g4':a.length===2?'g2':'g3')+'">'+a.join('')+'</div>';
-  const sc=PF_SCALE[P.size], scTxt=sc?sc.map(([lim,l],i)=>l+' '+(i===0?'sotto '+usd(lim):lim===Infinity?'oltre '+usd(sc[i-1][0]):'fino a '+usd(lim))).join(' · '):'';
-  html+='<div class="card wide rise pf-set" style="--d:80ms"><div class="card-h"><div class="h2">Regole e piano</div><span class="sub">Topstep'+(P.size!=='50K'?' · prezzi '+P.size+' da verificare':'')+'</span></div><div class="mc-form">'+
-    '<div class="pf-sec">Il tuo piano</div>'+grid([f('risk','Rischio a trade',String(riskUsd()||200),'$','per conto'), f('acc','Conti in copy',String(nAcc()),''), f('comm','Commissioni senza SL','3.78','$','solo per i trade senza punti di stop')])+
-    '<div class="pf-sec">Valutazione</div><div class="g2"><div class="field"><span class="flabel">Taglia</span>'+seg('pf-size',['50K','100K','150K'],P.size)+'</div>'+
-    '<div class="field"><span class="flabel">Daily Loss Limit</span>'+seg('pf-dll',[{v:'si',l:'Sì'},{v:'no',l:'No'}],P.dll)+'</div></div>'+
-    grid([f('target','Target di profitto','3000','$'), f('mll','Limite di perdita','2000','$','segue il saldo di fine giornata'), f('cons','Consistenza','50','%','solo in valutazione: giorno migliore sul profitto')].concat(dll?[f('dllAmt','Daily Loss Limit','1000','$','si ferma la giornata')]:[]))+
-    grid([f('fee','Prezzo al mese','85','$','anche il reset costa così'), f('act','Attivazione','0','$'), f('lots','Contratti massimi','5','','mini · 10 micro = 1')])+
-    '<div class="pf-sec">Conto finanziato</div>'+grid([f('win','Giorno vincente da','150','$'), f('winN','Giorni vincenti per payout','5',''), f('cap','Payout massimo','2000','$', dll&&numS(P.cap)>0?'col DLL raddoppia: '+usd(numS(P.cap)*2):'per richiesta'), f('capPct','Payout massimo sul saldo','50','%')])+
-    grid([f('split','Split','100','%'), f('after','Per i primi','5','','payout'), f('split2','Split dopo','90','%'), f('horizon','Giornate da simulare','120','')])+
-    (scTxt?'<p class="pf-scale">'+ic('chart',15,2)+'<span>Scaling plan '+P.size+': '+scTxt+' contratti. Commissioni Topstep $3,78 a mini e $1,22 a micro.</span></p>':'')+
-    '<div class="field"><span class="flabel">Simulazioni</span>'+seg('pf-sims',['1000','3000','10000'],P.sims)+'</div>'+
-    '<button type="button" class="btn" id="mc-run" data-act="mcrun"'+(D.length?'':' disabled')+'>'+ic('dice',18,2)+'Simula</button></div></div>';
+  const rules=Object.entries(PF_PRE).map(([z,q])=>'<li><b>'+z+'</b> target '+usd(q.target)+' · limite di perdita '+usd(q.mll)+' · DLL '+usd(q.dllAmt)+' · '+usd(q.feeD)+'/mese col DLL, '+usd(q.feeN)+' senza · '+q.lots+' contratti · payout fino a '+usd(q.cap)+' ('+usd(q.cap*2)+' col DLL)</li>').join('');
+  html+='<div class="card wide rise pf-set" style="--d:80ms"><div class="card-h"><div class="h2">Trova il piano migliore</div><span class="sub">'+A+' cont'+(A>1?'i':'o')+' in copy</span></div>'+
+    '<p class="pf-lead">Prova tutti i conti Topstep, con e senza Daily Loss Limit, il rischio a trade in valutazione e sul conto finanziato e il saldo da cui chiedere il payout, e ti dice cosa rende di più con i tuoi trade.</p>'+
+    '<div class="pf-opts"><div class="field"><span class="flabel">Conto</span>'+seg('pf-size',[{v:'auto',l:'Migliore'},'50K','100K','150K'],P.size)+'</div>'+
+    '<div class="field"><span class="flabel">Periodo</span>'+seg('pf-months',[{v:'3',l:'3 mesi'},{v:'6',l:'6 mesi'},{v:'12',l:'1 anno'}],P.months)+'</div>'+
+    '<div class="field"><span class="flabel">Obiettivo</span>'+seg('pf-goal',[{v:'max',l:'Guadagno'},{v:'safe',l:'Sicurezza'}],P.goal)+'</div></div>'+
+    '<p class="pf-goal">'+(P.goal==='safe'?'<b>Sicurezza:</b> il piano che rende di più anche quando va male (nel 25% peggiore dei casi).':'<b>Guadagno:</b> il piano con il netto medio più alto, anche se a volte va peggio.')+'</p>'+
+    '<button type="button" class="btn" id="mc-run" data-act="mcrun"'+(D.length?'':' disabled')+'>'+ic('spark',18,2)+'Trova il piano migliore</button><div class="pf-prog" id="pf-prog"><i></i></div>'+
+    '<details class="pf-rules"><summary>Regole Topstep usate</summary><ul>'+rules+'<li>Consistenza 50% solo in valutazione · payout dopo 5 giorni da $150, fino al 50% del saldo, solo tornando al saldo dell\'ultimo payout, minimo $125 · split 100% per 5 payout, poi 90% · attivazione gratis · scaling plan sul finanziato · commissioni $3,78 a mini e $1,22 a micro</li></ul><p>I valori di 100K e 150K sono da verificare.</p></details></div>';
   html+='<div id="mc-res"></div>';
-  S._pfD=D; S._pfPace=pace; S._pfNoSl=noSl;
+  S._pfD=D; S._pfPace=pace;
   enter(el, html, ()=>{ if (D.length && S.pfLast && S.pfLast.key===pfKey(D)) drawPF(S.pfLast.res, true); });
 }
-const pfKey = D => JSON.stringify([S.file, D.length, D.reduce((s,d)=>s+d.reduce((x,t)=>x+t.r+t.sl,0),0), S.pf, riskUsd(), nAcc()]);
 function runMCClick() {
-  const errs=pfErrors(); document.querySelectorAll('#v-mc [data-f]').forEach(w=>{ const k=w.dataset.f.slice(3), m=errs[k]; w.classList.toggle('bad',!!m); const e=w.querySelector('.ferr'); if (e) e.innerHTML=m?ic('alert',15,2)+'<span>'+esc(m)+'</span>':''; });
-  if (Object.keys(errs).length) { toast('Controlla i valori in rosso', true); return; }
   const D=S._pfD||[]; if (!D.length) return;
-  const b=$('mc-run'); b.disabled=true; b.innerHTML='<span class="spin"></span>Simulo…';
-  setTimeout(()=>{ const res=pfSimulate(D, pfParams(), S._pfPace); res.noSl=S._pfNoSl; S.pfLast={ key:pfKey(D), res };
-    b.disabled=false; b.innerHTML=ic('dice',18,2)+'Simula di nuovo'; drawPF(res); }, 40);
+  const b=$('mc-run'), pg=$('pf-prog'), bar=pg.querySelector('i'); b.disabled=true; pg.classList.add('on'); bar.style.width='0%';
+  const H=Math.max(20, Math.round(pfMonths()*4.345*S._pfPace)), sizes=S.pf.size==='auto'?Object.keys(PF_PRE):[S.pf.size], key=pfKey(D), t0=performance.now();
+  const lbl=f=>{ b.innerHTML='<span class="spin"></span>'+(f<.85?'Provo i piani… ':'Ricontrollo i migliori… ')+Math.round(f*100)+'%'; bar.style.width=Math.round(f*100)+'%'; };
+  lbl(0);
+  setTimeout(async ()=>{ try { const res=await pfOptimize(D, S._pfPace, H, sizes, S.pf.goal, lbl); res.ms=performance.now()-t0; S.pfLast={ key, res };
+      if (S.tab==='mc') drawPF(res); }
+    catch(e) { console.error(e); toast('Simulazione non riuscita', true); }
+    const b2=$('mc-run'); if (b2) { b2.disabled=false; b2.innerHTML=ic('spark',18,2)+'Ricalcola'; } const p2=$('pf-prog'); if (p2) p2.classList.remove('on'); }, 30);
 }
+// contratti per un rischio con lo stop tipico di ogni asset (mediana dei punti di stop dei trade filtrati)
+function pfLots(risk, lots) { const by={}; (S._pfD||[]).forEach(d=>d.forEach(t=>{ if (t.sl>0) (by[t.a]=by[t.a]||[]).push(t.sl); }));
+  return Object.entries(by).map(([a,v])=>{ v.sort((x,y)=>x-y); const sl=v[Math.floor(v.length/2)], mv=a==='NQ'?2:5, n=Math.min(lots*10, Math.max(1, Math.floor(risk/(sl*mv)+1e-9)));
+    const big=Math.floor(n/10), sm=n%10; return a+' stop '+fmtN(sl,sl%1?1:0)+' pt → '+[big?big+' '+a:'', sm?sm+' M'+a:''].filter(Boolean).join(' + '); }).join(' · '); }
 function drawPF(res, quiet) {
-  const p=res.p, box=$('mc-res'); if (!box) return; const A=p.acc, H=p.horizon, fd=d=>isFinite(d)?Math.round(d):'–', xA=A>1?' sui '+A+' conti':'';
+  const p=res.p, box=$('mc-res'); if (!box) return; const A=nAcc(), H=res.H, fd=d=>isFinite(d)?Math.round(d):'–', xA=A>1?' sui '+A+' conti':'';
+  const mesi=Math.round(H/res.pace/4.345), per=mesi>=12?'1 anno':mesi+' mesi';
   const wk=d=>!isFinite(d)?'':d/res.pace<1.5?'meno di 2 settimane':'circa '+fmtN(d/res.pace,d/res.pace<10?1:0)+' settimane';
-  const v1 = res.pr>=.995 ? 'Passi la valutazione quasi sempre al primo tentativo' : res.pr>0 ? 'Passi la valutazione '+pct(res.pr)+' delle volte: in media servono <b>'+fmtN(res.attMean,1)+' tentativi</b>'+(res.attQ90>1?' (nel 90% dei casi al massimo '+fd(res.attQ90)+')':'') : 'Con questi numeri non passi la valutazione';
-  let h='<div class="card wide pf-verdict rise"><div class="card-h"><div class="h2">'+ic('spark',18,2)+' In breve</div><span class="sub">'+res.M.toLocaleString('it-IT')+' simulazioni · '+res.K+' giornate</span></div><ul>'+
-    '<li><b>'+v1.replace(/<\/?b>/g,'')+'</b>.</li>'+
-    (res.pr>0?'<li>Per avere un conto finanziato servono di solito <b>'+fd(res.jDaysQ[1])+' giornate di trading</b> ('+wk(res.jDaysQ[1])+') e spendi in media <b>'+usd(res.jCostMean*A)+'</b>'+xA+'.</li>':'')+
-    '<li>Da finanziato arrivi al primo payout nel <b>'+pct(res.firstPr)+'</b> dei casi'+(isFinite(res.firstQ)?', di solito dopo <b>'+fd(res.firstQ)+' giornate</b>':'')+'; in '+H+' giornate prelevi in media <b>'+usd(res.paidMean*A)+'</b>'+xA+' e il conto è ancora vivo nel <b>'+pct(res.aliveEnd)+'</b>.</li>'+
-    '<li class="'+(res.netMean>=0?'ok':'ko')+'">Percorso completo in '+H+' giornate, con valutazioni, conti bruciati e nuovi tentativi: netto medio <b>'+fmtU(res.netMean*A)+'</b>'+xA+', positivo nel <b>'+pct(res.netPos)+'</b> dei casi.</li></ul></div>';
+  const sc=PF_SCALE[p.size], lt=(r,f)=>{ const s=pfLots(r, f?sc[sc.length-1][1]:p.lots), k=Math.max(1,Math.floor(p.mll/r+1e-9)); return '<span class="pf-lots">'+(k<=1?'un solo stop pieno ti porta al limite di perdita':k+' stop pieni di fila ti portano al limite di perdita')+(s?' · '+esc(s):'')+(f&&sc[0][1]<p.lots?' · all\'inizio lo scaling plan ne consente al massimo '+sc[0][1]+' (mini)':'')+'</span>'; };
+  const safe=res.goal==='safe', mLbl=safe?'netto nel caso sfavorevole':'netto medio';
+  // il piano, a passi
+  let h='<div class="card wide pf-plan rise"><div class="eyebrow">'+(safe?'Il piano più sicuro':'Il piano che rende di più')+' · '+per+'</div><div class="pf-plan-h"><div><h2>Topstep '+p.size+' '+pfDllTxt(p)+'</h2>'+
+    '<span>'+usd(p.fee)+' al mese'+(A>1?' × '+A+' conti in copy':'')+'</span></div><div class="pf-big"><b class="'+(res.netMean>=0?'pos':'neg')+'">'+fmtU(res.netMean*A)+'</b><span>netto medio'+xA+' · positivo nel '+pct(res.netPos)+' dei casi · 1 volta su 4 sotto '+fmtU(res.netQ25*A)+'</span></div></div><ol>'+
+    '<li><b>In valutazione rischia '+usd(p.rE)+' a trade.</b>'+lt(p.rE,false)+'</li>'+
+    '<li><b>Sul conto finanziato rischia '+usd(p.rF)+' a trade.</b>'+lt(p.rF,true)+'</li>'+
+    '<li><b>'+(p.B>0?'Chiedi il payout quando il saldo arriva ad almeno '+usd(p.B):'Chiedi il payout appena puoi')+'</b> (dopo 5 giorni da $150) e preleva il massimo: il 50% del saldo, fino a '+usd(p.cap)+'.</li>'+
+    '<li><b>Se il conto salta, ricomincia</b> con una nuova valutazione.</li></ol>'+
+    '<p class="pf-sum">Così passi la valutazione '+(res.pr>=.995?'quasi sempre al primo tentativo':pct(res.pr)+' delle volte ('+fmtN(res.attMean,1)+' tentativi in media)')+
+    (isFinite(res.jDaysQ[1])?' e hai un conto finanziato in circa '+fd(res.jDaysQ[1])+' giornate':'')+'; da finanziato arrivi al primo payout nel '+pct(res.firstPr)+' dei casi.</p></div>';
+  // perché questo piano
+  const pick=(a,b)=>a===b?' pick':'';
+  h+='<div class="pf-h rise">'+ic('chart',16,2)+'Perché questo piano · '+mLbl+' in '+per+(A>1?' · '+A+' conti':'')+'</div>';
+  h+=rows2([card('Quale conto conviene', 'il migliore piano per ogni conto', '<div class="chart" id="c-pf-cmp"></div>', 60),
+            card('Quanto rischiare sul finanziato', 'rischio a trade', '<div class="chart" id="c-pf-rf"></div>', 80),
+            card('Quanto rischiare in valutazione', 'rischio a trade', '<div class="chart" id="c-pf-re"></div>', 100),
+            card('Da che saldo chiedere il payout', 'saldo minimo del conto finanziato', '<div class="chart" id="c-pf-b"></div>', 120)]);
   const kp=(lbl, v, hint, cls, d)=>kpi(lbl, v, hint, d, cls), tone=(x,a,b)=>x>=a?'pos':x>=b?'':'neg';
   h+='<div class="pf-h rise">'+ic('target',16,2)+'Valutazione</div><div class="kgrid">'+
     kp('Passa la valutazione', numEl(res.pr*100,0)+'<small>%</small>', isFinite(res.passQ[1])?'quando passa, di solito in '+fd(res.passQ[1])+' giornate':'mai nelle simulazioni', tone(res.pr,.5,.25), 0)+
-    kp('Tentativi per passarla', isFinite(res.attMean)?numEl(res.attMean,1):'–', isFinite(res.attQ90)?'nel 90% dei casi al massimo '+fd(res.attQ90):'', '', 40)+
+    kp('Tentativi per passarla', isFinite(res.attMean)?numEl(res.attMean,1):'–', !isFinite(res.attQ90)?'':res.attQ90<=1?'di solito al primo tentativo':'nel 90% dei casi al massimo '+fd(res.attQ90), '', 40)+
     kp('Tempo per un conto finanziato', isFinite(res.jDaysQ[1])?numEl(res.jDaysQ[1],0)+'<small> gg</small>':'–', isFinite(res.jDaysQ[1])?wk(res.jDaysQ[1])+' · tentativi falliti compresi':'', '', 80)+
     kp('Spesa per un conto finanziato', isFinite(res.jCostMean)?usd(res.jCostMean*A):'–', isFinite(res.jCostQ90)?'abbonamenti e reset · 90%: fino a '+usd(res.jCostQ90*A)+(A>1?' · '+A+' conti':''):'', '', 120)+'</div>';
   h+='<div class="pf-h rise">'+ic('shield',16,2)+'Conto finanziato · '+H+' giornate</div><div class="kgrid">'+
@@ -2850,7 +2909,7 @@ function drawPF(res, quiet) {
     kp('Payout in media', numEl(res.paysMean,1), res.zeroPay>=.005?'nessun payout nel '+pct(res.zeroPay)+' dei casi':'almeno un payout quasi sempre', '', 40)+
     kp('Prelevato', usd(res.paidMean*A), 'in media'+xA+' · mediana '+usd(res.paidMed*A), sgn(res.paidMean), 80)+
     kp('Conto ancora vivo', numEl(res.aliveEnd*100,0)+'<small>%</small>', res.aliveEnd>.995?'quasi nessun conto bruciato':isFinite(res.blownMed)?'chi lo brucia, di solito dopo '+fd(res.blownMed)+' giornate':'', tone(res.aliveEnd,.6,.35), 120)+'</div>';
-  h+='<div class="pf-h rise">'+ic('refresh',16,2)+'Percorso completo · '+H+' giornate</div><div class="kgrid">'+
+  h+='<div class="pf-h rise">'+ic('refresh',16,2)+'Percorso completo · '+per+'</div><div class="kgrid">'+
     kp('Netto', fmtU(res.netMean*A), 'in media'+xA+' · mediana '+fmtU(res.netMed*A), sgn(res.netMean), 0)+
     kp('Netto positivo', numEl(res.netPos*100,0)+'<small>%</small>', 'dei percorsi chiude in guadagno', tone(res.netPos,.6,.4), 40)+
     kp('Conti finanziati', numEl(res.cyFundMean,1), 'ottenuti in media · '+fmtN(res.cyBlownMean,1)+' bruciati', '', 80)+
@@ -2859,18 +2918,23 @@ function drawPF(res, quiet) {
             card('Quanto ci vuole a passarla', 'giornate di trading della valutazione passata', '<div class="chart" id="c-pf-days"></div>', 320),
             card('Conti finanziati ancora vivi', 'giornata per giornata', '<div class="chart" id="c-pf-alive"></div>', 340),
             card('Payout ottenuti', 'su un conto finanziato in '+H+' giornate', '<div class="chart" id="c-pf-pays"></div>', 360),
-            card('Netto del percorso completo', H+' giornate'+(A>1?' · '+A+' conti':''), '<div class="chart" id="c-pf-net"></div>', 380)]);
-  h+='<p class="mc-note rise" style="--d:400ms">Ogni simulazione ripesca a caso, con reinserimento, le '+res.K+' giornate filtrate con i loro trade in ordine. '+
-    'Per ogni trade i contratti sono quelli che stanno in '+usd(p.risk)+' di rischio con il suo stop (micro, 10 diventano 1 mini; almeno 1 micro), entro '+p.lots+' mini in valutazione e lo scaling plan sul finanziato; commissioni Topstep a contratto'+(res.noSl?' ('+res.noSl+' trade senza stop: '+usd(p.risk)+' per R e '+usd(p.comm,2)+' di commissioni)':'')+'. '+
-    'Il limite di perdita segue il saldo di fine giornata ma si tocca anche durante il giorno'+(p.dll?'; il Daily Loss Limit di '+usd(p.dll)+' ferma la giornata':'')+'. '+
-    'Payout dopo '+p.winN+' giorni da almeno '+usd(p.win)+', fino al '+fmtN(p.capPct,0)+'% del saldo e '+usd(p.cap)+', e solo tornando al saldo dell\'ultimo payout; dopo il primo il limite di perdita resta a $0. '+
-    'L\'abbonamento si rinnova ogni 30 giorni (con un reset gratis), ogni altro reset costa '+usd(p.fee)+'; si smette di pagare quando passi. '+(A>1?'Con il copy trading i '+A+' conti fanno gli stessi trade: passano o saltano insieme, quindi costi e prelievi sono moltiplicati per '+A+'. ':'')+
+            card('Netto del percorso completo', per+(A>1?' · '+A+' conti':''), '<div class="chart" id="c-pf-net"></div>', 380)]);
+  h+='<p class="mc-note rise" style="--d:400ms">Il simulatore ripesca a caso, con reinserimento, le '+res.K+' giornate filtrate con i loro trade in ordine, e prova per ogni conto il rischio a trade (in valutazione e sul finanziato, da '+usd(pfRiskGrid(p.mll)[0])+' a '+usd(pfRiskGrid(p.mll)[9])+') e il saldo minimo per il payout: sceglie il piano con '+(safe?'il netto più alto nel 25% peggiore dei casi':'il netto medio più alto')+' in '+per+' ('+H+' giornate), poi lo ricontrolla con 1.500 percorsi nuovi e ne mostra i dettagli su 3.000. '+
+    'Per ogni trade i contratti sono i micro che stanno nel rischio con il suo stop (10 diventano 1 mini, almeno 1 micro), entro i limiti e lo scaling plan Topstep, con le commissioni reali. '+(A>1?'Con il copy trading i '+A+' conti fanno gli stessi trade: costi e prelievi sono moltiplicati per '+A+'. ':'')+
     'È una stima sul passato, non una previsione.</p>';
   box.innerHTML=h; box.classList.toggle('quiet', !!quiet); richMeta(box);
-  // grafici
+  // grafici del perché
+  const best=res.netMean, cf=v=>fmtU(v*A);
+  barChart($('c-pf-cmp'), res.combo.map(c=>({ v:c.mean*A, l:c.size+(c.dll==='si'?' DLL':''), tip:'Topstep '+c.size+' '+(c.dll==='si'?'con':'senza')+' DLL · '+(safe?'medio '+fmtU(c.avg*A)+' · ':'')+'positivo nel '+pct(c.pos), cls:(c.mean>=0?'p':'n')+(c.size===p.size&&c.p.dllOn===p.dllOn?' pick':'') })),
+    { h:170, fmt:v=>fmtU(v)+' '+mLbl, tickFmt:pfK, aria:mLbl+' per conto' });
+  const cv=(id,arr,k,lf,tf)=>barChart($(id), arr.map(c=>({ v:c.mean*A, l:lf(c.v), tip:tf(c.v)+' · '+(safe?'medio '+fmtU(c.avg*A)+' · ':'')+'positivo nel '+pct(c.pos), cls:(c.mean>=0?'p':'n')+pick(c.v,p[k]) })), { h:170, fmt:v=>fmtU(v)+' '+mLbl, tickFmt:pfK, aria:mLbl });
+  cv('c-pf-rf', res.curves.rF, 'rF', v=>pfK(v), v=>usd(v)+' a trade sul finanziato');
+  cv('c-pf-re', res.curves.rE, 'rE', v=>pfK(v), v=>usd(v)+' a trade in valutazione');
+  cv('c-pf-b', res.curves.B, 'B', v=>v?pfK(v):'subito', v=>v?'payout da '+usd(v)+' di saldo':'payout appena possibile');
+  // grafici del piano
   const at=res.att, AK=Math.min(10, Math.max(4, Math.ceil(isFinite(res.attQ90)?res.attQ90:4))), ad=[];
   for (let k=1;k<=AK;k++) { const n=at.filter(x=>k===AK?x>=k:x===k).length; ad.push({ v:Math.round(n/res.M*1000)/10, l:k===AK?k+'+':String(k), tip:(k===1?'passata al primo tentativo':k===AK?k+' tentativi o più':'passata al '+k+'° tentativo'), cls:'p' }); }
-  if (res.never>=.005) ad.push({ v:Math.round(res.never*1000)/10, l:'mai', tip:'mai passata in '+fmtN(1500,0)+' giornate', cls:'n' });
+  if (res.never>=.005) ad.push({ v:Math.round(res.never*1000)/10, l:'mai', tip:'mai passata', cls:'n' });
   barChart($('c-pf-att'), ad, { h:170, fmt:v=>fmtN(v,1)+'%', tickFmt:v=>fmtN(v,0)+'%', aria:'Tentativi per passare la valutazione' });
   const pq=res.passD, mx=Math.max(1, pq.length?Float64Array.from(pq).sort()[Math.floor(.98*(pq.length-1))]:1), nb=Math.min(12, Math.max(4, Math.ceil(mx/3))), w=Math.max(1,Math.ceil(mx/nb)), cnt=new Array(nb).fill(0); pq.forEach(d=>cnt[Math.min(nb-1, Math.floor((d-1)/w))]++);
   barChart($('c-pf-days'), cnt.map((c,i)=>({ v:Math.round(c/Math.max(1,pq.length)*1000)/10, l:i===nb-1?(i*w+1)+'+':(i*w+1)+'', tip:i===nb-1?(i*w+1)+' giornate o più':(w===1?(i+1)+'':(i*w+1)+'–'+((i+1)*w))+' giornate', cls:'p' })), { h:170, fmt:v=>fmtN(v,1)+'% delle valutazioni passate', tickFmt:v=>fmtN(v,0)+'%', aria:'Giornate per passare la valutazione' });
@@ -2881,12 +2945,10 @@ function drawPF(res, quiet) {
   for (let a=1; a<=top; a+=pw) { const z=a+pw-1, last=z>=top, lb=pw===1?(last&&sp[res.M-1]>a?a+'+':String(a)):(last?a+'+':a+'–'+z);
     pd.push({ v:Math.round(nP(x=>x>=a&&(last||x<=z))*1000)/10, l:lb, tip:lb+' payout in '+H+' giornate', cls:'p' }); }
   barChart($('c-pf-pays'), pd, { h:170, fmt:v=>fmtN(v,1)+'% dei conti', tickFmt:v=>fmtN(v,0)+'%', aria:'Distribuzione dei payout' });
-  // netto: fasce «tonde» tra il 2° e il 98° percentile
   const ns=Float64Array.from(res.net).map(x=>x*A).sort(), lo=ns[Math.floor(.02*(res.M-1))], hi=ns[Math.floor(.98*(res.M-1))], raw=Math.max(1,(hi-lo)/9),
     mag=Math.pow(10,Math.floor(Math.log10(raw))), bw=[1,2,2.5,5,10].map(k=>k*mag).find(k=>k>=raw), b0=Math.floor(lo/bw)*bw, nbn=Math.max(1, Math.ceil((hi-b0)/bw)), nc=new Array(nbn).fill(0);
   ns.forEach(x=>nc[Math.min(nbn-1, Math.max(0, Math.floor((x-b0)/bw)))]++);
-  const kf=x=>Math.abs(x)>=1000?(x<0?'−':'')+'$'+fmtN(Math.abs(x)/1000, Math.abs(x)%1000?1:0)+'k':usd(x);
-  barChart($('c-pf-net'), nc.map((c,i)=>{ const a=b0+i*bw; return { v:Math.round(c/res.M*1000)/10, l:kf(a), tip:(i===0?'fino a '+kf(a+bw):i===nbn-1?'da '+kf(a)+' in su':'da '+kf(a)+' a '+kf(a+bw)), cls:a+bw/2>=0?'p':'n' }; }), { h:190, fmt:v=>fmtN(v,1)+'% dei percorsi', tickFmt:v=>fmtN(v,0)+'%', aria:'Distribuzione del netto del percorso completo' });
+  barChart($('c-pf-net'), nc.map((c,i)=>{ const a=b0+i*bw; return { v:Math.round(c/res.M*1000)/10, l:pfK(a), tip:(i===0?'fino a '+pfK(a+bw):i===nbn-1?'da '+pfK(a)+' in su':'da '+pfK(a)+' a '+pfK(a+bw)), cls:a+bw/2>=0?'p':'n' }; }), { h:190, fmt:v=>fmtN(v,1)+'% dei percorsi', tickFmt:v=>fmtN(v,0)+'%', aria:'Distribuzione del netto del percorso completo' });
   if (!quiet) { countUp(box, 0); setTimeout(()=>box.scrollIntoView({ behavior:'smooth', block:'start' }), 60); }
 }
 
@@ -3229,9 +3291,9 @@ document.addEventListener('click', e => {
   const sg=b.closest('[data-seg]');
   if (b.closest('[data-seg=dper]')) { S.dper=b.dataset.v; store.set('dper',S.dper); renderCurrent(true); return; }
   if (b.closest('[data-seg=per]')) { S.per=b.dataset.v; store.set('per',S.per); renderCurrent(true); return; }
-  if (sg && sg.dataset.seg==='pf-size') { const q=PF_PRE[b.dataset.v]; S.pf.size=b.dataset.v; if (q) Object.assign(S.pf, { target:q.target, mll:q.mll, dllAmt:q.dllAmt, cap:q.cap, lots:q.lots, fee:S.pf.dll==='si'?q.feeD:q.feeN }); savePF(); renderCurrent(true); return; }
-  if (sg && sg.dataset.seg==='pf-dll') { const q=PF_PRE[S.pf.size]; S.pf.dll=b.dataset.v; if (q) S.pf.fee=b.dataset.v==='si'?q.feeD:q.feeN; savePF(); renderCurrent(true); return; }
-  if (sg && sg.dataset.seg==='pf-sims') { S.pf.sims=b.dataset.v; savePF(); setSeg(sg,b.dataset.v); return; }
+  if (sg && sg.dataset.seg.indexOf('pf-')===0) { const k=sg.dataset.seg.slice(3); S.pf[k]=b.dataset.v; savePF(); setSeg(sg,b.dataset.v);
+    if (k==='goal') { const g=$('v-mc').querySelector('.pf-goal'); if (g) g.innerHTML=b.dataset.v==='safe'?'<b>Sicurezza:</b> il piano che rende di più anche quando va male (nel 25% peggiore dei casi).':'<b>Guadagno:</b> il piano con il netto medio più alto, anche se a volte va peggio.'; }
+    return; }
   if (b.closest('[data-lf]')) { S[b.dataset.k]=b.dataset.v; S.lmore=60; renderList(); return; }
 });
 $('sh-body').addEventListener('input', e => {
@@ -3246,9 +3308,6 @@ document.addEventListener('change', e => { const t=e.target, ds=t.dataset||{};
 });
 document.addEventListener('change', e => { const k=e.target.dataset && e.target.dataset.hp; if (!k) return;
   S.cust[k]=e.target.value; store.set('cust', JSON.stringify(S.cust)); renderCurrent(true); });
-document.addEventListener('input', e => { const k=e.target.dataset && e.target.dataset.pf; if (!k) return; S.pf[k]=e.target.value; savePF();
-  const w=e.target.closest('.field'); if (w && w.classList.contains('bad')) w.classList.remove('bad');
-  const b=$('mc-run'); if (b && !b.disabled) b.innerHTML=ic('dice',18,2)+'Simula'; });
 $('sh-body').addEventListener('focusout', e => { const k=e.target.dataset.k; if (k && S.sheet==='form' && !S.touched[k]) { S.touched[k]=true; refresh(); } });
 $('scrim').addEventListener('click', closeSheet);
 // scorciatoie (PC): 1–9 pagine della barra laterale, N nuovo trade, F filtri, ⌘K / Ctrl+K palette comandi
