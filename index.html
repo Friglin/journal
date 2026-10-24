@@ -1171,7 +1171,7 @@ const L = {
   errs: ['FOMO','TP spostato','SL spostato','Ingresso anticipato','Uscita anticipata','Size sbagliata','Fuori piano','Altro'],
 };
 const APP = 'Edgebook';
-const BUILD = '2026-10-23.35';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
+const BUILD = '2026-10-24.1';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
 let updChk=0;
 function checkUpdate() {
   if (viaScript() || location.protocol==='file:' || Date.now()-updChk<60000) return; updChk=Date.now();
@@ -2191,7 +2191,8 @@ function renderCal() {
   const U=usdOn(), dayU = k => byDay[k] ? usdSum(byDay[k],m) : 0;
   const dayR = k => byDay[k] ? byDay[k].reduce((s,t)=>s+m.rOf(t),0) : 0, ks=Object.keys(byDay), mx=Math.max(1,...ks.map(k=>Math.abs(dayR(k))));
   const mt=ts.filter(t=>t.d>=first && t.d<=last), a=agg(mt,m), pos=ks.filter(k=>dayR(k)>0).length, neg=ks.filter(k=>dayR(k)<0).length;
-  const best=ks.slice().sort((x,y)=>dayR(y)-dayR(x))[0], worst=ks.slice().sort((x,y)=>dayR(x)-dayR(y))[0];
+  // a parità di R decide il risultato in $ (se c'è)
+  const tie=(x,y)=>U?dayU(x)-dayU(y):0, best=ks.slice().sort((x,y)=>dayR(y)-dayR(x)||tie(y,x))[0], worst=ks.slice().sort((x,y)=>dayR(x)-dayR(y)||tie(x,y))[0];
   let h='<div class="stat-h rise"><div><div class="eyebrow">'+S.file+' · R per giorno</div><h1>'+words('Calendario')+'</h1></div><span class="mut num">'+mt.length+' trade</span></div>'+fbar(20);
   h+='<div class="card wide calcard rise" style="--d:60ms"><div class="cal-h"><button type="button" class="icon-btn" data-cal="-1" aria-label="Mese precedente">'+ic('chev',18,2).replace('<svg','<svg style="transform:rotate(180deg)"')+'</button>'+
      '<div><b>'+MESI_F[M-1].replace(/^./,c=>c.toUpperCase())+' '+Y+'</b><span class="'+sgn(a.R)+'">'+fmtR(a.R)+(U?' · '+fmtU(usdSum(mt,m)):'')+' · '+pos+' giorni verdi · '+neg+' rossi</span></div>'+
