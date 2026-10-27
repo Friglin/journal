@@ -1171,7 +1171,7 @@ const L = {
   errs: ['FOMO','TP spostato','SL spostato','Ingresso anticipato','Uscita anticipata','Size sbagliata','Fuori piano','Altro'],
 };
 const APP = 'Edgebook';
-const BUILD = '2026-10-24.1';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
+const BUILD = '2026-10-27.1';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
 let updChk=0;
 function checkUpdate() {
   if (viaScript() || location.protocol==='file:' || Date.now()-updChk<60000) return; updChk=Date.now();
@@ -3437,7 +3437,13 @@ async function save() {
     catch(e) { if (!netErr(e)) throw e; res = await verifySaved(file, d, edit); if (!res) throw e; }
     const D=S.data[file];
     if (D && res.h) D.h=res.h;   // il foglio ha una colonna nuova (PnL $)
-    if (D) { const k=D.rows.findIndex(a=>a[0]===res.row[0]); if (k>=0) D.rows[k]=res.row; else D.rows.push(res.row); cacheSet(file,D); }
+    if (D) { const nr=res.row[0], k=D.rows.findIndex(a=>a[0]===nr);
+      if (edit || (k>=0 && JSON.stringify(D.rows[k])===JSON.stringify(res.row))) { if (k>=0) D.rows[k]=res.row; else D.rows.push(res.row); }
+      else {   // trade più vecchio inserito in mezzo al foglio: i trade da quella riga in giù scendono di uno
+        D.rows.forEach(a=>{ if (a[0]>=nr) a[0]++; });
+        const j=D.rows.findIndex(a=>a[0]>nr); if (j>=0) D.rows.splice(j,0,res.row); else D.rows.push(res.row);
+        if (S.file===file) { S.rows.forEach(r=>{ if (r!==prov && r._row!=null && r._row>=nr) r._row++; }); if (S.edit && S.edit.row>=nr) S.edit.row++; } }
+      cacheSet(file,D); }
     if (S.file===file) { const i2=S.rows.indexOf(prov), obj=D?unpack(D.h,res.row):Object.assign({}, prov, { _row:res.row[0], _pending:false });
       if (i2>=0) { S.rows[i2]=obj; touchRows(); } else if (D) { applyData(D); touchRows(); }   // nel frattempo è arrivata una rilettura del foglio
       if (S.flash===prov) S.flash=obj; if (!S.sheet) renderCurrent(true); }
