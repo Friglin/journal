@@ -1229,7 +1229,7 @@ const L = {
   errs: ['FOMO','TP spostato','SL spostato','Ingresso anticipato','Uscita anticipata','Size sbagliata','Fuori piano','Altro'],
 };
 const APP = 'Edgebook';
-const BUILD = '2026-10-27.5';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
+const BUILD = '2026-10-27.6';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
 let updChk=0;
 function checkUpdate() {
   if (viaScript() || location.protocol==='file:' || Date.now()-updChk<60000) return; updChk=Date.now();
@@ -1278,7 +1278,14 @@ function normProp() { const P=Object.assign({ view:'tot' }, CFG.prop||{});
 normProp();
 const saveCfg = () => store.set('cfg', JSON.stringify(CFG));
 let USER = CFG.name.trim() || 'trader';
-let SESS = [mins(CFG.s0), mins(CFG.s1)];   // primo e ultimo ingresso, ora italiana
+let SESS = [mins(CFG.s0), mins(CFG.s1)];   // primo e ultimo ingresso, ora italiana, con Wall Street che apre alle 15:30
+// Nelle settimane in cui Italia e USA cambiano l'ora in date diverse (2–3 settimane a marzo, una tra ottobre e novembre)
+// Wall Street apre alle 14:30 italiane: sessione, fasce orarie e avvisi si spostano con lei. Nel foglio resta l'ora reale.
+const NYSH={};
+const nyShift = dIso => { if (!dIso) return 0; if (!(dIso in NYSH)) { const o=mins(nyOpenIt(dIso)); NYSH[dIso]=isFinite(o)?o-930:0; } return NYSH[dIso]; };
+const sessOf = dIso => { const sh=nyShift(dIso); return [SESS[0]+sh, SESS[1]+sh]; };
+const hmMin = m => p2(Math.floor(m/60))+':'+p2(m%60);
+const sessTxt = dIso => { const x=sessOf(dIso); return hmMin(x[0])+'–'+hmMin(x[1]); };
 function applyTheme() { if (CFG.theme==='light' || CFG.theme==='dark') document.documentElement.dataset.theme=CFG.theme; else delete document.documentElement.dataset.theme;
   document.documentElement.classList.toggle('rm', CFG.motion==='reduce' || (CFG.motion==='auto' && matchMedia('(prefers-reduced-motion: reduce)').matches)); }
 // colonne facoltative (Direzione, Esecuzione…): il modulo e le statistiche le usano solo se esistono nel foglio
@@ -1416,7 +1423,7 @@ function toast(msg, err) {
 function norm(r) {
   const d=pdate(r.Data), o=mins(r.Ora), max=num(r['Max Real RR']); let best=bestNum(r['Best Real RR']);
   if (!isFinite(best) && isFinite(max)) best=Math.min(5,Math.floor(max+1e-9));
-  return { row:r._row, a:r.Asset, d, ym: d? d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0') : '', o, out:r.Outcome, em:r.EM, idea:r['5m Idea'], news:r.News,
+  return { row:r._row, a:r.Asset, d, on: d && isFinite(o) ? o-nyShift(iso(d)) : o, ym: d? d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0') : '', o, out:r.Outcome, em:r.EM, idea:r['5m Idea'], news:r.News,
            lvn:r['Coming from LVN'], smt:r.SMT, clean: r['1m Clean STR']===true||r['1m Clean STR']==='TRUE', best, max, rr:num(r.RR), tp:r.TP,
            h:[1,2,3,4,5].map(k=>mins(r['Holding time '+k+'rr'])), hold:mins(r['Holding time']), day: d? L.days[(d.getDay()+6)%7] : '',
            dir:r.Direzione, exe:r.Esecuzione, pnl:num(r['PnL $']), errs:splitL(r.Errori), note:r.Note, cc2:/^s[iì]$/i.test(String(r['2° CC']||'').trim()), raw:r };
@@ -1779,12 +1786,13 @@ function filtClick(b) {
 
 // ───────────────────────── HOME ─────────────────────────
 function sessionInfo() {
-  const it = romeDate(Date.now()), m=it.getHours()*60+it.getMinutes(), wd=it.getDay();   // formattatore già pronto (toLocaleString ne creava uno a ogni chiamata)
+  const it = romeDate(Date.now()), m=it.getHours()*60+it.getMinutes(), wd=it.getDay(), ss=sessOf(iso(it));   // formattatore già pronto (toLocaleString ne creava uno a ogni chiamata)
   const fm = x => (x>=60 ? Math.floor(x/60)+' h ' : '')+String(x%60).padStart(x>=60?2:1,'0')+' min';
-  if (wd>=1 && wd<=5 && m>=SESS[0] && m<SESS[1]) return { open:true, txt:'Sessione aperta · chiude tra '+fm(SESS[1]-m) };
-  if (wd>=1 && wd<=5 && m<SESS[0]) return { open:false, txt:'La sessione inizia tra '+fm(SESS[0]-m) };
+  if (wd>=1 && wd<=5 && m>=ss[0] && m<ss[1]) return { open:true, txt:'Sessione aperta · chiude tra '+fm(ss[1]-m) };
+  if (wd>=1 && wd<=5 && m<ss[0]) return { open:false, txt:'La sessione inizia tra '+fm(ss[0]-m) };
   let add=1; while ([0,6].includes((wd+add)%7)) add++;
-  return { open:false, txt: add===1 ? 'Sessione domani alle '+CFG.s0 : 'Prossima sessione '+GIORNI[(wd+add)%7]+' alle '+CFG.s0 };
+  const s1=hmMin(sessOf(iso(addDays(it,add)))[0]);
+  return { open:false, txt: add===1 ? 'Sessione domani alle '+s1 : 'Prossima sessione '+GIORNI[(wd+add)%7]+' alle '+s1 };
 }
 const greeting = () => { const h=new Date().getHours(); return (h<5 ? 'Buonanotte' : h<13 ? 'Buongiorno' : h<18 ? 'Buon pomeriggio' : 'Buonasera')+', '+USER; };
 
@@ -1944,7 +1952,8 @@ function openNewPick() {
     '<button type="button" data-newf="'+x[0]+'" style="--k:'+k+'">'+ic(x[1],24,1.8)+'<b>'+x[2]+'</b><span>'+x[3]+'</span></button>').join('')+'</div>';
   $('sh-foot').innerHTML=''; openSheet();
 }
-const bandOf = t => (L.bands.find(b=>t.o>=b[1]&&t.o<b[2])||['altro'])[0];
+// fascia oraria come se Wall Street aprisse alle 15:30 (t.on): nelle settimane del cambio d'ora un trade delle 14:58 conta come 15:58
+const bandOf = t => (L.bands.find(b=>t.on>=b[1]&&t.on<b[2])||['altro'])[0];
 function bestGroup(ts, m, keyFn, keys, dir) {
   let best=null; keys.forEach(k=>{ const g=ts.filter(t=>{ const v=keyFn(t); return Array.isArray(v) ? v.includes(k) : v===k; }); if (g.length<3) return; const a=agg(g,m); if (!best || dir*a.R>dir*best.a.R) best={k,a}; }); return best;
 }
@@ -2028,8 +2037,8 @@ function newsEvents() {
   NEV={ src:S.news, out:((S.news && S.news.ev) || []).map(mapEv) };
   return NEV.out;
 }
-const inSess = e => !e.tbd && e.mm>=SESS[0]-15 && e.mm<=SESS[1];   // dentro la sessione (o nei 15 minuti prima dell'apertura)
-const when = e => e.tbd ? 'orario da definire' : e.mm<SESS[0]-15 ? 'prima della sessione' : e.mm<=SESS[1] ? 'in sessione' : 'dopo la sessione';
+const inSess = e => { const x=sessOf(e.day); return !e.tbd && e.mm>=x[0]-15 && e.mm<=x[1]; };   // dentro la sessione (o nei 15 minuti prima dell'apertura)
+const when = e => { const x=sessOf(e.day); return e.tbd ? 'orario da definire' : e.mm<x[0]-15 ? 'prima della sessione' : e.mm<=x[1] ? 'in sessione' : 'dopo la sessione'; };
 const TRUMP_LINKS = [['Diretta Casa Bianca','https://www.youtube.com/@WhiteHouse/streams'],['C-SPAN','https://www.c-span.org/live/']];
 // versione corta per le righe del calendario: «tra 1 h 59 min» → «1h 59m»
 const cdS = ms => cdTxt(ms).replace(/^tra /,'').replace(/ h /,'h ').replace(/ min\b/,'m').replace(/ giorn[oi]/,' g');
@@ -2124,7 +2133,7 @@ function newsToday(g, all, now, nextT) {
 // sunto del periodo: le news importanti raggruppate per tipo, quando escono rispetto alla sessione e cosa possono comportare
 function newsSummary(ev, per) {
   const lab={ d:'oggi', w:'questa settimana', n:'la prossima settimana' }[per], key=ev.filter(e=>e.imp==='High'||e.trump);
-  const nyW=[...new Set(ev.map(e=>e.day))].map(d=>[d,nyOpenIt(d)]).filter(x=>x[1] && x[1]!==CFG.s0);
+  const nyW=[...new Set(ev.map(e=>e.day))].map(d=>[d,nyOpenIt(d)]).filter(x=>x[1] && nyShift(x[0]));
   let h='<div class="card wide nsum rise" style="--d:110ms"><div class="card-h"><div class="h2">'+ic('spark',18,2)+' Cosa può comportare '+lab+'</div><span class="sub">'+key.length+' news ad alto impatto</span></div>';
   if (nyW.length) h+='<p class="ns-warn">'+ic('alert',15,2)+'<span>Cambio dell\'ora: '+[...new Set(nyW.map(x=>x[1]))].map(o=>'Wall Street apre alle <b>'+o+'</b>')+' ora italiana '+(nyW.length>1?'('+nyW.map(x=>dayShort(x[0])).join(', ')+')':dayShort(nyW[0][0]))+'. Anche le news delle 14:30 escono un\'ora prima.</span></p>';
   if (!key.length) h+='<p class="mut">Nessuna news USD ad alto impatto: giornate guidate dal flusso normale del mercato.</p>';
@@ -2205,11 +2214,11 @@ function briefing() {
   const lossLim=num(CFG.lossR);
   let st;
   if (weekend) st={ c:'off', t:'Mercati chiusi', s:'Oggi niente trading: è il momento della revisione della settimana (EOW).' };
-  else if (rn.getHours()*60+rn.getMinutes() > SESS[1]) st={ c:'off', t:'Sessione finita', s: n ? (won?'Giornata chiusa in positivo.':rT<0?'Una giornata storta fa parte del piano.':'Giornata chiusa.') : 'Nessun trade: se non c\'era un setup valido, è la scelta giusta.' };
+  else if (rn.getHours()*60+rn.getMinutes() > sessOf(t)[1]) st={ c:'off', t:'Sessione finita', s: n ? (won?'Giornata chiusa in positivo.':rT<0?'Una giornata storta fa parte del piano.':'Giornata chiusa.') : 'Nessun trade: se non c\'era un setup valido, è la scelta giusta.' };
   else if (won) st={ c:'done', t:'Giornata chiusa', s:'Hai preso il TP: il piano dice stop per oggi.' };
   else if (n>=2) st={ c:'done', t:'Limite raggiunto', s:'Hai fatto i 2 trade massimi del piano.' };
   else if (isFinite(lossLim) && lossLim>0 && rT<=-lossLim) st={ c:'done', t:'Limite di perdita raggiunto', s:'Oggi sei a '+fmtR(rT,2)+': il tuo limite è −'+fmtN(lossLim,1)+' R.' };
-  else st={ c:'go', t: n ? 'Al massimo un altro trade' : 'Nessun trade ancora', s:'Entra solo se si presenta un setup valido · ingressi dalle '+CFG.s0+' alle '+CFG.s1+'.' };
+  else st={ c:'go', t: n ? 'Al massimo un altro trade' : 'Nessun trade ancora', s:'Entra solo se si presenta un setup valido · ingressi dalle '+hmMin(sessOf(t)[0])+' alle '+hmMin(sessOf(t)[1])+'.' };
   let h='<div class="brief"><div class="bcol">', h2='';
   const ev = S.news && !newsOld() ? newsEvents().filter(e=>e.day===t && (e.imp==='High' || e.trump)) : null, cat = S.news && !newsOld() && !weekend ? newsCat(t) : '';
   const nx = ev && ev.find(e=>!e.tbd && e.t>now-60000), notes = weekend ? [] : dayNotes(t, wdN, cat);
@@ -2435,6 +2444,7 @@ function renderSet() {
      '<div class="field"><span class="flabel">Animazioni</span>'+seg('cfg-motion',[{v:'full',l:'Complete'},{v:'auto',l:'Come il sistema'},{v:'reduce',l:'Ridotte'}],C.motion||'full')+
      '<span class="hint">«Come il sistema» le riduce se nel PC o nel telefono è attivo «riduci movimento» (su Windows: effetti di animazione disattivati).</span></div>',40);
   h+=sec('Sessione e piano','ora italiana','<div class="g2">'+fld2('Primo ingresso','<input class="inp" type="time" data-cfg="s0" value="'+esc(C.s0)+'">')+fld2('Ultimo ingresso','<input class="inp" type="time" data-cfg="s1" value="'+esc(C.s1)+'">')+'</div>'+
+     '<p class="hint" style="margin:-4px 0 12px">Orari con Wall Street che apre alle 15:30. Nelle settimane del cambio d\'ora, quando apre alle 14:30, l\'app sposta da sola la sessione e le fasce orarie. Nel foglio scrivi sempre l\'ora reale.</p>'+
      fld2('Limite di perdita giornaliero (R)','<input class="inp" inputmode="decimal" data-cfg="lossR" value="'+esc(C.lossR)+'" placeholder="es. 2">','Oltre questo, la Panoramica ti dice di fermarti.'),70);
   h+=sec('Prop firm e dollari','copy trading',propSet(fld2),85);
   h+=sec('Filtri all\'apertura dell\'EOW','il Journal parte sempre senza filtri','<div class="g2"><div class="field"><span class="flabel">Asset</span>'+seg('cfg-asset',[{v:'',l:'Tutti'},'ES','NQ'],C.asset)+'</div>'+
@@ -2495,7 +2505,7 @@ function cfgChanged(k) {
 const REV_A = ['ES','NQ'];
 function revWeek() {   // lunedì della settimana da rivedere
   const r=romeDate(Date.now()), mon=pdIso(weekOf(iso(r))), wd=(r.getDay()+6)%7;
-  const after = wd>4 || (wd===4 && r.getHours()*60+r.getMinutes() >= mins(CFG.s1||'18:30'));
+  const after = wd>4 || (wd===4 && r.getHours()*60+r.getMinutes() >= sessOf(iso(r))[1]);
   return iso(addDays(mon, after ? 0 : -7));
 }
 function revState() { const wk=revWeek(); let v=CFG.rev;
@@ -3471,7 +3481,7 @@ function compute() {
   const o=mins(f.Ora), h={};
   if (E) { for (let k=1;k<=5;k++){ const t=mins(f['t'+k]); if (k<=best && isFinite(t) && isFinite(o) && t>=o) h[k]=hhmm(holdMin(t-o)); } }
   const ox=mins(f.Uscita), hold = !E && isFinite(o) && isFinite(ox) && ox>o ? hhmm(holdMin(ox-o)) : '';
-  if (isFinite(o) && (o<SESS[0] || o>SESS[1])) w.push('Ora fuori dalla sessione '+CFG.s0+'–'+CFG.s1+'.');
+  { const x=sessOf(f.Data); if (isFinite(o) && (o<x[0] || o>x[1])) w.push('Ora fuori dalla sessione '+sessTxt(f.Data)+(nyShift(f.Data)?' (quel giorno Wall Street apre alle '+nyOpenIt(f.Data)+')':'')+'.'); }
   if (E && out==='Win' && isFinite(dd) && isFinite(sl) && dd>=sl) w.push('SL DD ≥ SL ma l\'esito è Win: controlla.');
   if (!E) { const pv=pnlVal(f.pnl, rr); if (isFinite(pv) && isFinite(rr) && ((rr>0 && pv<0) || (rr<0 && pv>0))) w.push('PnL e RR hanno segno diverso: controlla.'); }
   const dup = S.rows.find(r => r.Asset===f.Asset && r.Data===fmtIt(f.Data) && String(r.Ora).slice(0,5)===String(f.Ora||'').slice(0,5) && (!S.edit || r._row!==S.edit.row));
