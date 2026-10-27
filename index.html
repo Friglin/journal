@@ -116,7 +116,6 @@ main { padding-bottom:calc(150px + env(safe-area-inset-bottom,0px)); }
 .rr-list { display:flex; flex-direction:column; margin-top:12px; border:1px solid var(--line); border-radius:14px; }
 .rr-list > div { display:grid; grid-template-columns:1fr auto auto; gap:12px; padding:10px 14px; font-size:13.5px; color:var(--fg2); } .rr-list > div + div { border-top:1px solid var(--line); }
 .rr-list b { font-variant-numeric:tabular-nums; }
-.rr-why { margin-top:10px; }
 .rr-verdict b { display:block; font-size:14.5px; } .rr-verdict span { display:block; font-size:13px; color:var(--fg2); margin-top:2px; } .rr-verdict .ic { flex:none; margin-top:1px; }
 .rr-how { margin-top:12px; border-top:1px solid var(--line); padding-top:10px; } .rr-how summary { cursor:pointer; list-style:none; display:inline-flex; align-items:center; gap:6px; font-weight:600; font-size:13.5px; color:var(--accent); }
 .rr-how summary::-webkit-details-marker { display:none; } .rr-how summary .ic { transition:transform 260ms var(--e-out); } .rr-how[open] summary .ic { transform:rotate(90deg); }
@@ -1230,7 +1229,7 @@ const L = {
   errs: ['FOMO','TP spostato','SL spostato','Ingresso anticipato','Uscita anticipata','Size sbagliata','Fuori piano','Altro'],
 };
 const APP = 'Edgebook';
-const BUILD = '2026-10-27.4';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
+const BUILD = '2026-10-27.5';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
 let updChk=0;
 function checkUpdate() {
   if (viaScript() || location.protocol==='file:' || Date.now()-updChk<60000) return; updChk=Date.now();
@@ -2353,29 +2352,22 @@ function discErr(ts) {
   else b+='<p class="ds-note">Nessun errore nel periodo.</p>';
   return dcard('Trade validi ed errori', 'esecuzione del piano', b);
 }
-// esecuzione: quanto vale davvero in R ogni trade, dal PnL scritto e dal rischio delle Impostazioni.
-// La differenza tra RR reale e teorico ha due cause, che qui si separano con una retta sui trade (PnL = rischio × RR − costi):
-// - i costi (commissioni e slippage): circa fissi a trade, rendono ogni loss più cara di 1 R e ogni vincente un po' più magro;
-// - la size: il rischio effettivo per R diverso da quello impostato.
-// Per costruzione Σ PnL = rischio·ΣRR − costi·n, quindi le due parti sommate danno esattamente la differenza in dollari.
-function execFit(P) {
-  const n=P.length, xs=P.map(t=>t.rr), ys=P.map(t=>t.pnl);
-  if (n<8 || new Set(xs).size<2) return null;
-  const mx=xs.reduce((a,b)=>a+b,0)/n, my=ys.reduce((a,b)=>a+b,0)/n;
-  let sxy=0, sxx=0; for (let i=0;i<n;i++) { sxy+=(xs[i]-mx)*(ys[i]-my); sxx+=(xs[i]-mx)**2; }
-  const a=sxy/sxx, c=a*mx-my;   // rischio effettivo per R, costo medio a trade
-  return a>0 && isFinite(c) ? { a, c } : null;
-}
+// esecuzione: quanto vale davvero in R ogni trade, dal PnL scritto e dal rischio delle Impostazioni. La differenza tra RR
+// reale e teorico mette insieme commissioni, slippage e size: senza il numero di contratti di ogni trade non si possono
+// separare in modo affidabile, quindi non si stimano.
+// rischio per R dei trade (mediana di |PnL ÷ RR|, RR di almeno ±0,5): serve solo a capire se il rischio impostato è sbagliato
+function riskSeen(P) { const v=P.filter(t=>Math.abs(t.rr)>=0.5).map(t=>Math.abs(t.pnl/t.rr)).sort((x,y)=>x-y);
+  return v.length>=3 ? v[Math.floor(v.length/2)] : NaN; }
 function discExec(ts) {
   const k=riskUsd(), P=ts.filter(t=>isFinite(t.pnl) && isFinite(t.rr)), miss=ts.length-P.length;
   if (!k) return { html: dcard('RR teorico e RR reale', 'esecuzione', '<p class="ds-note">Imposta il <b>rischio per trade</b> nelle Impostazioni: serve per trasformare il PnL di ogni trade in R e confrontarlo con l\'RR che scrivi.</p><button type="button" class="btn sec sm" data-nav="set">Apri le Impostazioni</button>', 'wide') };
   if (!P.length) return { html: dcard('RR teorico e RR reale', 'esecuzione', '<p class="ds-note">Nessun trade del periodo ha il PnL scritto. Aggiungilo nei trade (campo «PnL su un conto») per vedere quanto ti costano slippage, commissioni e size.</p>', 'wide') };
   const rp=t=>t.pnl/k, gap=t=>rp(t)-t.rr, sum=(a,f)=>a.reduce((s,t)=>s+f(t),0);
   const Rt=sum(P,t=>t.rr), Rp=sum(P,rp), G=Rp-Rt;
-  // con pochi trade nel periodo costi e rischio effettivo si stimano su tutto lo storico del Journal
-  const Fp=execFit(P), Fall=Fp ? null : execFit((rowsOf('Journal')||[]).filter(t=>isFinite(t.pnl) && isFinite(t.rr))), F=Fp||Fall, cost=F?Math.max(0,F.c):0;
-  // rischio di ogni trade senza i costi: (PnL + costi) ÷ RR, sui trade con RR di almeno ±0,5
-  const RK=P.filter(t=>Math.abs(t.rr)>=0.5).map(t=>({ t, r:Math.abs((t.pnl+cost)/t.rr) })), band=0.1;
+  // con pochi trade nel periodo il rischio visto nei trade si guarda su tutto il Journal
+  const Pall=(rowsOf('Journal')||[]).filter(t=>isFinite(t.pnl) && isFinite(t.rr)), rsP=riskSeen(P), rs=isFinite(rsP)?rsP:riskSeen(Pall), rsAll=!isFinite(rsP);
+  // rischio di ogni trade: |PnL ÷ RR|, sui trade con RR di almeno ±0,5 (commissioni e slippage comprese)
+  const RK=P.filter(t=>Math.abs(t.rr)>=0.5).map(t=>({ t, r:Math.abs(t.pnl/t.rr) })), band=0.1;
   const inB=RK.filter(x=>Math.abs(x.r/k-1)<=band).length, over=RK.filter(x=>x.r>k*(1+band)).length, under=RK.length-inB-over;
   const avR=RK.length ? RK.reduce((s,x)=>s+x.r,0)/RK.length : NaN;
   const Ls=P.filter(t=>t.rr<=-0.95 && t.rr>=-1.05), Ws=P.filter(t=>t.rr>0), Bs=P.filter(t=>t.rr===0);
@@ -2386,13 +2378,8 @@ function discExec(ts) {
   const near=Math.abs(G)<0.05*Math.max(1,Math.abs(Rt)), good=G>=0, nT=P.length, tr=n=>n+(n===1?' trade':' trade');
   const head = near ? 'Il conto torna con quello che hai scritto' : good ? 'Sul conto è entrato più di quanto hai scritto' : 'Sul conto è entrato meno di quanto hai scritto';
   // il rischio delle Impostazioni non torna con i trade: tutto il resto della pagina sarebbe fuori scala
-  const bad = F && Math.abs(F.a/k-1)>0.25;
-  const warn = bad ? '<div class="rr-warn">'+ic('alert',18,2.2)+'<div><b>Il rischio impostato non torna con i tuoi trade</b><span>Nelle Impostazioni il rischio è <b>'+usd(k)+'</b>, ma dal PnL dei tuoi trade ogni R vale circa <b>'+usd(F.a)+'</b>'+(Fall?' (stima su tutto il Journal)':'')+'. Se rischi davvero '+usd(F.a)+' a trade aggiorna il rischio: i numeri qui sotto tornano. Se invece rischi '+usd(k)+', il PnL scritto è più basso del previsto: controlla che sia quello di un solo conto.</span><button type="button" class="btn sec sm" data-nav="set">Apri le Impostazioni</button></div></div>' : '';
-  // da dove viene la differenza (in dollari su un conto): costi a trade e il resto (size, slippage oltre la media)
-  const costU=-cost*nT, restU=G*k-costU;
-  const why = F ? '<div class="ds-cost rr-why"><div><span>Costi · commissioni e slippage</span><b class="num '+sgn(costU)+'">'+fmtU(costU)+'</b><em>circa '+usd(cost)+' a trade × '+tr(nT)+(Fall?' · stima su tutto il Journal':'')+'</em></div>'+
-      '<div><span>Size e il resto</span><b class="num '+sgn(restU)+'">'+fmtU(restU)+'</b><em>'+(Math.abs(restU)<Math.max(15,0.05*k)?'nessuna differenza di size':restU<0?'hai rischiato meno di '+usd(k)+' nei vincenti o più nelle loss':'hai rischiato più di '+usd(k)+' nei vincenti o meno nelle loss')+'</em></div></div>'
-    : '<p class="ds-note">Servono almeno 8 trade con PnL, tra vinti e persi, per dividere la differenza tra costi e size.</p>';
+  const bad = isFinite(rs) && Math.abs(rs/k-1)>0.25;
+  const warn = bad ? '<div class="rr-warn">'+ic('alert',18,2.2)+'<div><b>Il rischio impostato non torna con i tuoi trade</b><span>Nelle Impostazioni il rischio è <b>'+usd(k)+'</b>, ma dal PnL dei tuoi trade ogni R vale circa <b>'+usd(rs)+'</b>'+(rsAll?' (su tutto il Journal)':'')+'. Se rischi davvero circa '+usd(rs)+' a trade aggiorna il rischio: i numeri qui sotto tornano. Se invece rischi '+usd(k)+', il PnL scritto è più basso del previsto: controlla che sia quello di un solo conto.</span><button type="button" class="btn sec sm" data-nav="set">Apri le Impostazioni</button></div></div>' : '';
   // con pochi trade il dettaglio dice più di ogni media
   const list = nT<=6 ? '<div class="rr-list">'+P.map(t=>'<div><span>'+t.d.getDate()+' '+MESI[t.d.getMonth()]+' · '+esc(t.a)+'</span><span>scritto <b class="'+sgn(t.rr)+'">'+fmtN(t.rr,2,true)+' R</b></span><span>'+fmtU(t.pnl)+' = <b class="'+sgn(rp(t))+'">'+fmtN(rp(t),2,true)+' R</b></span></div>').join('')+'</div>' : '';
   let h=dcard('RR teorico e RR reale', tr(nT)+' con PnL'+(miss?' · '+miss+' senza, esclusi':'')+' · rischio '+usd(k),
@@ -2400,44 +2387,41 @@ function discExec(ts) {
       '<div class="rr-row"><div class="rr-l"><b>RR teorico</b><span>quello che scrivi nel trade</span></div>'+bar(Rt,'t')+'<b class="num rr-v '+sgn(Rt)+'">'+fmtN(Rt,1,true)+' R</b></div>'+
       '<div class="rr-row"><div class="rr-l"><b>RR reale</b><span>il PnL diviso '+usd(k)+'</span></div>'+bar(Rp,'r')+'<b class="num rr-v '+sgn(Rp)+'">'+fmtN(Rp,1,true)+' R</b></div></div>'+
     '<div class="rr-verdict '+(near||good?'ok':'ko')+'">'+ic(near||good?'trendUp':'trendDn',18,2.2)+'<div><b>'+head+'</b><span>'+(near?'Differenza di '+fmtU(G*k)+' in '+tr(nT)+'.':fmtU(G*k)+' in '+tr(nT)+' ('+fmtN(G,2,true)+' R)'+(nT>1?', in media '+fmtU(G*k/nT)+' a trade':'')+'.')+'</span></div></div>'+
-    list+why+
+    list+
     '<details class="rr-how"><summary>'+ic('chev',15,2.2)+'Come si legge</summary><div>'+
       '<p><b>RR teorico</b> è l\'RR che scrivi tu: −1 allo stop, +2 a 2R; con la gestione in prova +3 a target pieno e +1,5 se il resto torna a +1R. È quello che avresti con un rischio sempre esattamente di '+usd(k)+' e senza costi.</p>'+
       '<p><b>RR reale</b> è quanto è entrato davvero sul conto, misurato in R: PnL ÷ '+usd(k)+'. Una loss da −$230 vale −1,15 R, non −1.</p>'+
       (exT?'<p class="rr-ex"><b>Esempio dal tuo Journal</b> · '+exT.d.getDate()+' '+MESI[exT.d.getMonth()]+' '+esc(exT.a)+': hai scritto <b>'+fmtN(exT.rr,2,true)+' R</b>, il PnL è '+fmtU(exT.pnl)+' → '+fmtU(exT.pnl)+' ÷ '+usd(k)+' = <b>'+fmtN(exR,2,true)+' R</b>.</p>':'')+
-      '<p>La differenza ha due cause. I <b>costi</b> (commissioni e slippage) sono circa fissi a trade: rendono ogni loss più cara di 1 R e ogni vincente un po\' più magro. La <b>size</b> è il rischio effettivo per R diverso da '+usd(k)+'. Le due parti si stimano insieme da tutti i trade con PnL e sommate danno la differenza totale.</p></div></details>', 'wide');
+      '<p>La differenza mette insieme <b>commissioni</b>, <b>slippage</b> e <b>size</b> diversa dal previsto. Più è vicina a 0, più la tua esecuzione è precisa.</p></div></details>', 'wide');
   const side=[];
-  side.push(dcard('Rischio per trade', 'senza i costi · obiettivo '+usd(k)+' ± 10%',
+  side.push(dcard('Rischio per trade', 'obiettivo '+usd(k)+' ± 10%',
     (RK.length ? '<div class="ds-lead"><b class="num">'+pct(inB/RK.length)+'</b><span>dei trade nel range '+usd(k*(1-band))+'–'+usd(k*(1+band))+'</span></div>'+
       '<div class="rk-bar"><i class="un" style="width:'+(100*under/RK.length)+'%"></i><i class="in" style="width:'+(100*inB/RK.length)+'%"></i><i class="ov" style="width:'+(100*over/RK.length)+'%"></i></div>'+
       '<div class="rk-leg"><span><i class="un"></i>Sotto: '+under+'</span><span><i class="in"></i>Nel range: '+inB+'</span><span><i class="ov"></i>Sopra: '+over+'</span></div>'+
-      '<p class="ds-note">Rischio medio <b>'+usd(avR)+'</b> ('+fmtN((avR/k-1)*100,0,true)+'% rispetto a '+usd(k)+'). Si calcola come (PnL + costi) ÷ RR'+(cost?', togliendo i circa '+usd(cost)+' di costi a trade: così una loss non sembra a rischio più alto solo per commissioni e slippage':'')+'. Solo trade con RR di almeno ±0,5.</p>'
+      '<p class="ds-note">Rischio medio <b>'+usd(avR)+'</b> ('+fmtN((avR/k-1)*100,0,true)+'% rispetto a '+usd(k)+'). Si calcola come PnL ÷ RR, sui trade con RR di almeno ±0,5: commissioni e slippage sono compresi, quindi le loss tendono a sembrare un po\' sopra e i vincenti un po\' sotto.</p>'
     : '<div class="empty-row">Servono trade con RR di almeno ±0,5.</div>')));
-  const lossC=isFinite(lossR) ? lossR-cost/k : NaN;
   side.push(dcard('Loss e trade vincenti', 'quanto pesano davvero',
     '<div class="ds-cost">'+
       '<div><span>Una loss piena (−1 R)</span><b class="num '+(lossR>1.02?'neg':'')+'">'+(isFinite(lossR)?'−'+fmtN(lossR,2)+' R':'–')+'</b><em>'+(isFinite(lossR)?'in media '+usd(lossR*k)+' · '+Ls.length+' loss':'nessuna loss con PnL')+'</em></div>'+
       '<div><span>Un trade vincente</span><b class="num '+sgn(winG)+'">'+(isFinite(winG)?fmtN(winG,2,true)+' R':'–')+'</b><em>'+(isFinite(winG)?'RR reale meno teorico · '+Ws.length+' trade':'nessun trade vincente con PnL')+'</em></div></div>'+
     (Bs.length ? '<p class="ds-note">I pareggi (RR 0) ti lasciano in media <b class="'+sgn(beU)+'">'+fmtU(beU)+'</b> ('+Bs.length+' trade): commissioni e slippage.</p>' : '')+
-    '<p class="ds-note">'+(!isFinite(lossR) ? '' : lossR<=1.05 ? 'Le loss restano vicine a 1 R: la size è sotto controllo.'
-      : cost && lossC<=1+0.1 ? 'Le loss costano più di 1 R soprattutto per i costi (circa '+usd(cost)+' a trade, '+fmtN(cost/k,2)+' R): al netto dei costi valgono '+fmtN(lossC,2)+' R, dentro il ±10% sulla size.'
-      : 'Le loss costano più di 1 R anche al netto dei costi: controlla lo stop e la size prima di entrare.')+'</p>'));
+    '<p class="ds-note">'+(!isFinite(lossR)?'':lossR>1.1?'Le loss ti costano più di 1,1 R: controlla lo stop e la size prima di entrare.':lossR<0.9?'Le loss costano meno di 1 R: rischi meno di '+usd(k)+' a trade, oppure il rischio nelle Impostazioni è troppo alto.':'Le loss restano vicine a 1 R: la size è sotto controllo.')+'</p>'));
   h+=rows2(side);
   // andamento mese per mese: si vede se stai migliorando
   const ms=[...new Set(P.map(t=>t.ym))].sort();
   if (ms.length>1) { let tb='<div class="tbl-wrap"><table class="ex-t"><tr><th>Mese</th><th>Trade</th><th>RR teorico</th><th>RR reale</th><th>Differenza</th><th>Rischio medio</th></tr>';
-    ms.slice().reverse().forEach(ym=>{ const g=P.filter(t=>t.ym===ym), a=sum(g,t=>t.rr), b2=sum(g,rp), rk=g.filter(t=>Math.abs(t.rr)>=0.5).map(t=>Math.abs((t.pnl+cost)/t.rr)), mo=+ym.slice(5)-1;
+    ms.slice().reverse().forEach(ym=>{ const g=P.filter(t=>t.ym===ym), a=sum(g,t=>t.rr), b2=sum(g,rp), rk=g.filter(t=>Math.abs(t.rr)>=0.5).map(t=>Math.abs(t.pnl/t.rr)), mo=+ym.slice(5)-1;
       tb+='<tr><td>'+MESI_F[mo].replace(/^./,c=>c.toUpperCase())+'</td><td class="num">'+g.length+'</td><td class="num">'+fmtN(a,1,true)+'</td><td class="num">'+fmtN(b2,1,true)+'</td><td class="num '+sgn(b2-a)+'"><b>'+fmtN(b2-a,2,true)+'</b></td><td class="num">'+(rk.length?usd(rk.reduce((x,y)=>x+y,0)/rk.length):'–')+'</td></tr>'; });
-    h+=dcard('Mese per mese', 'più la differenza è vicina a 0, più l\'esecuzione è precisa · rischio senza i costi', tb+'</table></div>', 'wide'); }
+    h+=dcard('Mese per mese', 'più la differenza è vicina a 0, più l\'esecuzione è precisa · rischio = PnL ÷ RR', tb+'</table></div>', 'wide'); }
   // rischio reale trade per trade
   const last=RK.slice(-40);
-  if (last.length>=3) h+=dcard('Rischio trade per trade', 'ultimi '+last.length+' · senza i costi · barra = differenza da '+usd(k), '<div class="chart" id="c-rk"></div>', 'wide');
+  if (last.length>=3) h+=dcard('Rischio trade per trade', 'ultimi '+last.length+' · rischio = PnL ÷ RR · barra = differenza da '+usd(k), '<div class="chart" id="c-rk"></div>', 'wide');
   // trade da rivedere: quelli che hanno perso più R rispetto all'RR scritto
   const worst=P.filter(t=>gap(t)<-0.1).sort((a,b)=>gap(a)-gap(b)).slice(0,5);
-  if (worst.length) h+=dcard('Trade da rivedere', 'quelli che ti sono costati di più', worst.map(t=>'<button type="button" class="trow" data-open="Journal:'+t.row+'"><span class="badge '+(t.out==='Win'?'w':t.out==='Loss'?'l':'')+'">'+esc(t.a)+'</span><span class="tmain"><span class="t1"><span class="tt">'+esc(t.idea||'Trade')+'</span></span><span class="t2">'+t.d.getDate()+' '+MESI[t.d.getMonth()]+' · teorico '+fmtN(t.rr,2,true)+' · reale '+fmtN(rp(t),2,true)+(Math.abs(t.rr)>=0.5?' · rischio '+usd(Math.abs((t.pnl+cost)/t.rr)):'')+'</span></span><span class="tres"><b class="neg">'+fmtN(gap(t),2,true)+' R</b><span>'+fmtU(gap(t)*k)+'</span></span>'+ic('chev',16,2)+'</button>').join(''), 'wide');
+  if (worst.length) h+=dcard('Trade da rivedere', 'quelli che ti sono costati di più', worst.map(t=>'<button type="button" class="trow" data-open="Journal:'+t.row+'"><span class="badge '+(t.out==='Win'?'w':t.out==='Loss'?'l':'')+'">'+esc(t.a)+'</span><span class="tmain"><span class="t1"><span class="tt">'+esc(t.idea||'Trade')+'</span></span><span class="t2">'+t.d.getDate()+' '+MESI[t.d.getMonth()]+' · teorico '+fmtN(t.rr,2,true)+' · reale '+fmtN(rp(t),2,true)+(Math.abs(t.rr)>=0.5?' · rischio '+usd(Math.abs(t.pnl/t.rr)):'')+'</span></span><span class="tres"><b class="neg">'+fmtN(gap(t),2,true)+' R</b><span>'+fmtU(gap(t)*k)+'</span></span>'+ic('chev',16,2)+'</button>').join(''), 'wide');
   const after = () => { const c=$('c-rk'); if (!c) return;
-    barChart(c, last.map(x=>{ const d=x.r-k, o=d>k*band, u=d<-k*band; return { v:d, l:x.t.d.getDate()+' '+MESI[x.t.d.getMonth()], cls:(d>=0?'p':'n')+(o?' ov':u?' un':' z'), tip:' · '+x.t.d.getDate()+' '+MESI[x.t.d.getMonth()]+' '+x.t.a+' · rischio '+usd(x.r)+' senza i costi (RR '+fmtN(x.t.rr,2,true)+', PnL '+fmtU(x.t.pnl)+')' }; }),
-      { h:170, fmt:v=>(v>=0?'+':'')+usd(v), tickFmt:v=>(v>0?'+':'')+fmtN(v,0), aria:'Rischio per trade senza i costi rispetto al rischio impostato' }); };
+    barChart(c, last.map(x=>{ const d=x.r-k, o=d>k*band, u=d<-k*band; return { v:d, l:x.t.d.getDate()+' '+MESI[x.t.d.getMonth()], cls:(d>=0?'p':'n')+(o?' ov':u?' un':' z'), tip:' · '+x.t.d.getDate()+' '+MESI[x.t.d.getMonth()]+' '+x.t.a+' · rischio '+usd(x.r)+' (RR '+fmtN(x.t.rr,2,true)+', PnL '+fmtU(x.t.pnl)+')' }; }),
+      { h:170, fmt:v=>(v>=0?'+':'')+usd(v), tickFmt:v=>(v>0?'+':'')+fmtN(v,0), aria:'Rischio per trade rispetto al rischio impostato' }); };
   return { html:h, after };
 }
 
