@@ -1114,6 +1114,59 @@ nav.bar button:active .pill { transform:scale(.88); }
 /* 15 · meno movimento: niente spostamenti, solo dissolvenze brevi che spiegano cosa è cambiato */
 :root.rm .blk, :root.rm .sheet.open .fsec, :root.rm .sheet.open .more button { animation-name:mFade !important; animation-duration:220ms !important; animation-delay:0s !important; }
 :root.rm .toast, :root.rm .toast.show { transform:translate(-50%,0) !important; filter:none !important; transition-duration:160ms !important; }
+/* revisione settimanale EOW */
+.rv-hero { background:var(--accent); color:#fff; border-radius:24px; padding:20px; display:flex; flex-direction:column; gap:12px; box-shadow:0 18px 40px -22px color-mix(in srgb,var(--accent) 80%,transparent); }
+.rv-hero.done { background:var(--win); }
+.rv-top { display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:12px; font-weight:600; letter-spacing:.04em; }
+.rv-top em { font-style:normal; padding:4px 9px; border-radius:99px; background:rgba(255,255,255,.2); }
+.rv-t { font-family:var(--display); font-size:23px; font-weight:600; line-height:1.2; letter-spacing:-.02em; }
+.rv-hero p { margin:0; font-size:14.5px; line-height:1.45; opacity:.94; }
+.rv-bars { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:6px; }
+.rv-bars span { display:flex; flex-direction:column; align-items:center; gap:5px; font-size:12px; font-weight:600; }
+.rv-bars i { width:100%; height:6px; border-radius:3px; background:rgba(255,255,255,.3); }
+.rv-bars .half i { background:linear-gradient(90deg,#fff 50%,rgba(255,255,255,.3) 50%); } .rv-bars .on i { background:#fff; }
+.rv-acts { display:flex; gap:10px; }
+.rv-acts .btn { height:46px; padding:0 16px; }
+.rv-w { flex:1; background:#fff !important; color:var(--accent) !important; } .rv-hero.done .rv-w { color:var(--win) !important; }
+.rv-g { background:rgba(255,255,255,.18) !important; color:#fff !important; }
+.rv-sum { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.rv-sum > div { padding:12px; border-radius:14px; background:rgba(255,255,255,.16); display:flex; flex-direction:column; gap:2px; }
+.rv-sum span { font-size:12.5px; font-weight:600; opacity:.85; } .rv-sum b { font-family:var(--display); font-size:17px; font-weight:600; }
+.rv-sum.g { grid-template-columns:repeat(3,minmax(0,1fr)); }
+.rv-sum.g > div { background:var(--sunk); } .rv-sum.g span { opacity:1; color:var(--fg2); font-weight:500; }
+.rv-start { display:flex; flex-direction:column; gap:10px; padding:22px 20px; }
+.rv-start p { margin:0; color:var(--fg2); } .rv-start p b { color:var(--fg); }
+.rv-start .btn { margin-top:6px; }
+.rv-ic { width:44px; height:44px; border-radius:13px; background:var(--accent-soft); color:var(--accent); display:flex; align-items:center; justify-content:center; }
+.rv-ic.ok { border-radius:50%; background:var(--win-soft); color:var(--win); }
+.rv-path { padding:0; overflow:hidden; }
+.rv-ph { display:flex; align-items:center; gap:10px; padding:12px 16px; font-family:var(--display); font-weight:600; color:var(--fg2); }
+.rv-ph em { margin-left:auto; font-family:var(--sans); font-style:normal; font-weight:500; font-size:12.5px; }
+.rv-ph.on { background:var(--accent-soft); color:var(--accent); }
+.rv-ph:not(.on) { border-top:1px solid var(--line); }
+.rv-pr { display:flex; align-items:center; padding:11px 16px; border-top:1px solid var(--line); } .rv-pr > span:first-child { width:130px; }
+.rv-note { margin:0; font-size:12.5px; color:var(--fg3); line-height:1.45; } .rv-note.c { text-align:center; }
+.rv-foot { display:flex; flex-direction:column; gap:10px; margin-top:4px; }
+.rv-foot .btn { width:100%; }
+.rv-links { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; }
+.rv-bar { display:flex; align-items:center; gap:12px; }
+.rv-bar > div { flex:1; display:flex; flex-direction:column; gap:6px; font-size:12.5px; font-weight:600; color:var(--fg2); }
+.rv-bar i { height:6px; border-radius:3px; background:var(--sunk); overflow:hidden; } .rv-bar i b { display:block; height:100%; border-radius:3px; background:var(--accent); transition:width .4s; }
+.rv-assets { display:flex; gap:8px; } .rv-assets em { font-style:normal; opacity:.65; margin-left:4px; }
+.rv-days { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:6px; }
+.rv-days button { border:1px solid var(--line); background:var(--surface); border-radius:13px; padding:8px 0; font-size:13px; font-weight:650; color:var(--fg2); display:flex; flex-direction:column; align-items:center; gap:1px; min-height:48px; }
+.rv-days button span { font-size:11.5px; font-weight:500; }
+.rv-days .ok { background:var(--win-soft); border-color:transparent; color:var(--win); }
+.rv-days .cur { background:var(--accent); border-color:transparent; color:#fff; }
+.rv-news { display:flex; flex-direction:column; gap:10px; }
+.rv-news .card-h { display:flex; align-items:center; justify-content:space-between; }
+.rv-news p { margin:0; font-size:13.5px; }
+.rv-nl { display:flex; flex-direction:column; gap:8px; font-size:14px; }
+.rv-nl > div { display:flex; align-items:center; gap:10px; } .rv-nl .num { width:46px; flex:none; color:var(--fg2); }
+.rv-nl i { width:8px; height:8px; border-radius:50%; flex:none; background:var(--fg3); } .rv-nl i.hi { background:var(--loss); } .rv-nl i.md { background:var(--warn); } .rv-nl i.ho { background:var(--accent); }
+.rv-ok { display:flex; align-items:center; gap:6px; color:var(--win); font-weight:600; font-size:12.5px !important; }
+.rv-back { display:flex; align-items:center; gap:12px; text-align:left; color:var(--fg); font:inherit; cursor:pointer; padding:14px 16px; }
+.rv-back > span { flex:1; display:flex; flex-direction:column; } .rv-back em { font-style:normal; font-size:12.5px; color:var(--fg2); } .rv-back > .ic:first-child { color:var(--accent); }
 </style>
 </head>
 <body>
@@ -1171,7 +1224,7 @@ const L = {
   errs: ['FOMO','TP spostato','SL spostato','Ingresso anticipato','Uscita anticipata','Size sbagliata','Fuori piano','Altro'],
 };
 const APP = 'Edgebook';
-const BUILD = '2026-10-27.1';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
+const BUILD = '2026-10-27.2';   // cambia a ogni pubblicazione: se online c'è una versione più nuova, l'app si aggiorna da sola
 let updChk=0;
 function checkUpdate() {
   if (viaScript() || location.protocol==='file:' || Date.now()-updChk<60000) return; updChk=Date.now();
@@ -1786,6 +1839,7 @@ function renderHome() {
   const now=new Date(), ses=sessionInfo();
   let h='<div class="hello"><div><div class="eyebrow">'+GIORNI[now.getDay()]+' '+now.getDate()+' '+MESI_F[now.getMonth()]+'</div><h1>'+words(greeting())+'</h1></div>'+
     '<span class="sess'+(ses.open?' open':'')+'" id="sess"><i></i>'+ses.txt+'</span></div>';
+  h += revHomeCard();
   if (!S.loaded) { enter(el, h+skeleton()); return; }
   const T=tgt(), m=curModel(), ALL=filtered(m,true), ts=inRange(ALL,periodRange(S.per,0)), prev=inRange(ALL,periodRange(S.per,1));
   const a=agg(ts,m), pa=agg(prev,m), E=S.type==='EOW';
@@ -1898,10 +1952,13 @@ S.trump = (()=>{ try { const v=JSON.parse(localStorage.getItem('tj.trump2')||'nu
 S.news = (()=>{ try { return JSON.parse(localStorage.getItem('tj.news')||'null'); } catch(e) { return null; } })();
 S.nsAI = {};
 let newsP=null, newsErr='', newsTry=0, newsRetry=null, newsRetryN=0;
+// calendario di un'altra settimana (app rimasta aperta in background, o salvato giorni fa): non va mostrato come se fosse questa
+const newsOld = () => { if (!S.news) return false; const t=todayIso(), wd=(pdIso(t).getDay()+6)%7;
+  return wd<5 && weekOf(iso(romeDate(S.news.at||S.news.got||0)))!==weekOf(t); };
 function loadNews(force) {
   if (newsP) return newsP;
-  if (!force && S.news && Date.now()-S.news.got < NEWS_TTL) return Promise.resolve(S.news);
-  if (!force && Date.now()-newsTry < 60000) return Promise.reject(new Error(newsErr||'attendi'));   // dopo un errore: al massimo un tentativo al minuto
+  if (!force && S.news && !newsOld() && Date.now()-S.news.got < NEWS_TTL) return Promise.resolve(S.news);
+  if (!force && Date.now()-newsTry < (newsOld() ? 10000 : 60000)) return Promise.reject(new Error(newsErr||'attendi'));   // dopo un errore: al massimo un tentativo al minuto (10 s se il calendario è vecchio)
   newsTry=Date.now();
   newsP = call('news', !!force).then(d=>{ d.got=Date.now(); S.news=d; newsErr=''; newsRetryN=0; try { localStorage.setItem('tj.news', JSON.stringify(d)); } catch(e) {} newsBadge(); return d; })
     .catch(e=>{ newsErr = /Funzione sconosciuta/.test(e.message||'') ? 'OLD' : (e.message||String(e));
@@ -1958,11 +2015,12 @@ const implOf = t => NEWS_IMPL.find(x=>x[0].test(t));
 const IMP = { High:['hi','Alto'], Medium:['md','Medio'], Low:['lo','Basso'], Holiday:['ho','Festività'] };
 const LBL_IT = { 'All Day':'Tutto il giorno', 'Tentative':'Da definire' };
 let NEV={ src:undefined, out:[] };   // gli eventi cambiano solo quando arriva un calendario nuovo
+function mapEv(e) { const r=romeDate(e.t), ny=nyHM(e.t), tbd = !!e.lbl || (ny.getHours()===0 && ny.getMinutes()===0 && !e.url);
+  return Object.assign({}, e, { r, day:iso(r), hm: tbd ? (LBL_IT[e.lbl] || e.lbl || (e.imp==='Holiday'?'Tutto il giorno':'Da definire')) : p2(r.getHours())+':'+p2(r.getMinutes()), mm:r.getHours()*60+r.getMinutes(),
+    tbd, trump:/trump/i.test(e.title), imp2:(IMP[e.imp]||['lo',e.imp||''])[0], impL:(IMP[e.imp]||['',e.imp||''])[1] }); }
 function newsEvents() {
   if (NEV.src===S.news) return NEV.out;
-  NEV={ src:S.news, out:((S.news && S.news.ev) || []).map(e=>{ const r=romeDate(e.t), ny=nyHM(e.t), tbd = !!e.lbl || (ny.getHours()===0 && ny.getMinutes()===0 && !e.url);
-    return Object.assign({}, e, { r, day:iso(r), hm: tbd ? (LBL_IT[e.lbl] || e.lbl || (e.imp==='Holiday'?'Tutto il giorno':'Da definire')) : p2(r.getHours())+':'+p2(r.getMinutes()), mm:r.getHours()*60+r.getMinutes(),
-      tbd, trump:/trump/i.test(e.title), imp2:(IMP[e.imp]||['lo',e.imp||''])[0], impL:(IMP[e.imp]||['',e.imp||''])[1] }); }) };
+  NEV={ src:S.news, out:((S.news && S.news.ev) || []).map(mapEv) };
   return NEV.out;
 }
 const inSess = e => !e.tbd && e.mm>=SESS[0]-15 && e.mm<=SESS[1];   // dentro la sessione (o nei 15 minuti prima dell'apertura)
@@ -2088,8 +2146,9 @@ function renderNews() {
   const el=$('v-news'); loadNews().catch(()=>{}); loadTrump().catch(()=>{});
   let h='<div class="stat-h rise"><div><div class="eyebrow">Calendario USD · ora italiana</div><h1>'+words('News')+'</h1></div>'+
     '<button type="button" class="btn sec sm" data-act="newsref"'+(newsP?' disabled':'')+'>'+(newsP?'<span class="spin"></span>Aggiorno…':ic('refresh',16,2)+'Aggiorna')+'</button></div>';
-  if (!S.news) {
-    h += newsErr==='OLD' ? emptyState('Aggiorna lo script', 'Per le news serve il nuovo Code.gs: sostituiscilo nel progetto Apps Script e fai un nuovo deployment (Gestisci deployment → modifica → Nuova versione).')
+  if (!S.news || newsOld()) {
+    if (S.news) h += '<p class="nsrc">'+ic('clock',14,2)+'<span>'+(newsErr && !newsP && !newsRetry ? 'Non riesco ad aggiornare il calendario ('+esc(newsErr)+'): tocca Aggiorna.' : 'Aggiorno il calendario di questa settimana…')+'</span></p>';
+    h += S.news ? (newsErr && !newsP && !newsRetry ? '' : skeleton()) : newsErr==='OLD' ? emptyState('Aggiorna lo script', 'Per le news serve il nuovo Code.gs: sostituiscilo nel progetto Apps Script e fai un nuovo deployment (Gestisci deployment → modifica → Nuova versione).')
        : newsErr && !newsRetry && !newsP ? emptyState('News non disponibili', esc(newsErr)+'. Tocca Aggiorna per riprovare.') : skeleton();
     enter(el,h); return;
   }
@@ -2117,6 +2176,7 @@ function renderNews() {
     (S.news.stale?' · <b>ForexFactory non risponde: sto mostrando l\'ultimo calendario salvato</b>':'')+'. Orari, impatto e valori sono quelli di ForexFactory; tocca una news per aprirla sul sito. La fine dei discorsi non viene mai annunciata.</span></p>';
   enter(el,h);
 }
+setInterval(()=>{ if (!document.hidden && (S.tab==='news' || S.tab==='home')) loadNews().catch(()=>{}); }, 60000);   // a pagina aperta il calendario si aggiorna da solo (ogni 15 minuti)
 setInterval(()=>{ if (document.hidden) return; const now=Date.now(); document.querySelectorAll('[data-cd]').forEach(x=>{ const v=(x.dataset.cds?cdS:cdTxt)(+x.dataset.cd-now); if (x.textContent!==v) x.textContent=v; }); }, 1000);
 
 // ───────────────────────── OGGI: riepilogo della giornata ─────────────────────────
@@ -2146,7 +2206,7 @@ function briefing() {
   else if (isFinite(lossLim) && lossLim>0 && rT<=-lossLim) st={ c:'done', t:'Limite di perdita raggiunto', s:'Oggi sei a '+fmtR(rT,2)+': il tuo limite è −'+fmtN(lossLim,1)+' R.' };
   else st={ c:'go', t: n ? 'Al massimo un altro trade' : 'Nessun trade ancora', s:'Entra solo se si presenta un setup valido · ingressi dalle '+CFG.s0+' alle '+CFG.s1+'.' };
   let h='<div class="brief"><div class="bcol">', h2='';
-  const ev = S.news ? newsEvents().filter(e=>e.day===t && (e.imp==='High' || e.trump)) : null, cat = S.news && !weekend ? newsCat(t) : '';
+  const ev = S.news && !newsOld() ? newsEvents().filter(e=>e.day===t && (e.imp==='High' || e.trump)) : null, cat = S.news && !newsOld() && !weekend ? newsCat(t) : '';
   const nx = ev && ev.find(e=>!e.tbd && e.t>now-60000), notes = weekend ? [] : dayNotes(t, wdN, cat);
   let nb='';
   if (weekend) nb='';
@@ -2383,7 +2443,7 @@ function propChanged(rerender) { syncTouch('prop'); if (rerender && S.tab==='set
 // rischio e conti uguali su tutti i dispositivi, salvati nello script (appSettings). Ogni impostazione ha la sua data
 // di modifica e per ciascuna vince la più recente: cambiare il rischio sul PC non riporta indietro i conti cambiati sul telefono.
 // Prima di salvare si rilegge il server e si uniscono le due versioni.
-const SYNC_KEYS=['risk','prop']; let pushT=0;
+const SYNC_KEYS=['risk','prop','rev']; let pushT=0;
 const syncTs = () => (CFG.syncTs = CFG.syncTs || {});
 function syncTouch(k) { syncTs()[k]=Date.now(); saveCfg(); pushSettings(); }
 function syncMerge(o) {
@@ -2407,6 +2467,140 @@ function cfgChanged(k) {
   saveCfg();
 }
 
+// ───────────────────────── REVISIONE SETTIMANALE (EOW) ─────────────────────────
+// Ogni weekend la settimana appena finita si rivede nell'EOW: prima ES da lunedì a venerdì, poi NQ. Parte il venerdì dopo la
+// fine della sessione (Impostazioni → sessione) e resta finché non è completa, anche nei giorni dopo. Ogni giorno mostra le
+// news USD e le scrive nel trade (Red se c'è almeno un evento ad alto impatto, Orange se medio, anche fuori sessione).
+// Lo stato (CFG.rev) è sincronizzato tra i dispositivi come rischio e conti: { wk: lunedì, ES:[giorni fatti], NQ:[…], fin }.
+const REV_A = ['ES','NQ'];
+function revWeek() {   // lunedì della settimana da rivedere
+  const r=romeDate(Date.now()), mon=pdIso(weekOf(iso(r))), wd=(r.getDay()+6)%7;
+  const after = wd>4 || (wd===4 && r.getHours()*60+r.getMinutes() >= mins(CFG.s1||'18:30'));
+  return iso(addDays(mon, after ? 0 : -7));
+}
+function revState() { const wk=revWeek(); let v=CFG.rev;
+  if (!v || v.wk!==wk) v={ wk, ES:[], NQ:[], fin:false };
+  return v; }
+const revDays = wk => [0,1,2,3,4].map(i=>iso(addDays(pdIso(wk),i)));
+const revDue = () => !revState().fin;
+function revSave(v) { CFG.rev=v; syncTouch('rev'); }
+function revPos(v) {   // dove sei: l'asset e il giorno scelti, se no il primo giorno ancora da fare
+  const days=revDays(v.wk);
+  if (S.revSel && S.revSel.wk===v.wk) return S.revSel;
+  for (const a of REV_A) { const d=days.find(x=>!v[a].includes(x)); if (d) return { wk:v.wk, a, d }; }
+  return { wk:v.wk, a:'NQ', d:days[4] };
+}
+S.revLater = (()=>{ try { return sessionStorage.getItem('tj.revLater')===revWeek(); } catch(e) { return false; } })();
+// news della settimana: dall'archivio dello script (newsWeek), intanto dal calendario già scaricato
+S.nw = (()=>{ try { return JSON.parse(localStorage.getItem('tj.nw')||'{}')||{}; } catch(e) { return {}; } })();
+const nwP={};
+function revNewsLoad(wk) {
+  const c=S.nw[wk], end=pdIso(wk).getTime()+5*dayMs;
+  if ((c && c.got>end+6*3600000) || nwP[wk]) return;   // già preso a settimana finita
+  nwP[wk]=call('newsWeek', wk).then(d=>{ S.nw={ [wk]:{ ev:d.ev, got:Date.now() } }; try { localStorage.setItem('tj.nw', JSON.stringify(S.nw)); } catch(e) {} })
+    .catch(e=>{ S.nwErr = /sconosciuta/i.test(e.message||'') ? 'OLD' : (e.message||String(e)); })
+    .finally(()=>{ setTimeout(()=>{ delete nwP[wk]; }, 60000); if (S.tab==='list' && !S.sheet) renderCurrent(true); });
+}
+function revNews(wk) {
+  const c=S.nw[wk]; if (c && c.ev && c.ev.length) return c.ev.map(mapEv);
+  const ev=newsEvents().filter(e=>weekOf(e.day)===wk); return ev.length ? ev : null;
+}
+const catOf = ev => ev.some(e=>e.cur==='USD' && e.imp==='High') ? 'Red News' : ev.some(e=>e.cur==='USD' && e.imp==='Medium') ? 'Orange News' : 'No News Day';
+const catCls = c => c==='Red News'?'hi':c==='Orange News'?'md':'';
+const catLbl = c => ({ 'Red News':'Red', 'Orange News':'Orange', 'No News Day':'Nessuna news' })[c] || c;
+const revAsset = t => /NQ/i.test(t.a||'') ? 'NQ' : 'ES';
+const revTrades = (a, d) => S.file==='EOW' ? all().filter(t=>iso(t.d)===d && revAsset(t)===a) : [];
+const dayName = d => { const x=pdIso(d); return GIORNI[x.getDay()].replace(/^./,c=>c.toUpperCase())+' '+x.getDate(); };
+
+// carta in Home finché la revisione non è fatta
+function revHomeCard() {
+  if (!revDue() || S.revLater) return '';
+  const v=revState(), days=revDays(v.wk), n=v.ES.length+v.NQ.length, a=v.ES.length<5?'ES':'NQ', d0=pdIso(days[0]), d4=pdIso(days[4]);
+  return '<div class="rv-hero rise"><div class="rv-top"><span>Revisione · '+d0.getDate()+(d0.getMonth()!==d4.getMonth()?' '+MESI[d0.getMonth()]:'')+'–'+d4.getDate()+' '+MESI_F[d4.getMonth()]+'</span><em>'+n+' / 10 giorni</em></div>'+
+    '<div class="rv-t">'+(n?'Riprendiamo la revisione':'Pronto a rivedere la settimana?')+'</div>'+
+    '<p>'+(n?'Sei a '+a+', '+dayName(revPos(v).d).toLowerCase()+'. ':'Iniziamo da ES, come al solito. ')+'Le news di ogni giorno sono già compilate.</p>'+
+    '<div class="rv-bars">'+days.map((d,i)=>'<span class="'+(v.ES.includes(d)&&v.NQ.includes(d)?'on':v.ES.includes(d)?'half':'')+'"><i></i>'+['Lun','Mar','Mer','Gio','Ven'][i]+'</span>').join('')+'</div>'+
+    '<div class="rv-acts"><button type="button" class="btn rv-w" data-act="rvgo">'+(n?'Riprendi da '+a:'Inizia da ES')+ic('chev',18,2.2)+'</button><button type="button" class="btn rv-g" data-act="rvlater">Più tardi</button></div></div>';
+}
+
+// pagina Trade dell'EOW durante la revisione
+function renderReview() {
+  const el=$('v-list'), v=revState(), days=revDays(v.wk), m=curModel(), E=true; revNewsLoad(v.wk);
+  const nev=revNews(v.wk), dev = d => nev ? nev.filter(e=>e.day===d) : null, cat = d => nev ? catOf(dev(d)) : '';
+  const d0=pdIso(days[0]), d4=pdIso(days[4]), wkL=d0.getDate()+(d0.getMonth()!==d4.getMonth()?' '+MESI[d0.getMonth()]:'')+'–'+d4.getDate()+' '+MESI_F[d4.getMonth()];
+  const chip = d => { const c=cat(d); return c ? '<span class="ncat '+catCls(c)+'">'+catLbl(c)+'</span>' : '<span class="ncat">…</span>'; };
+  const sum = a => { const ts=all().filter(t=>revAsset(t)===a && weekOf(iso(t.d))===v.wk), R=ts.reduce((s,t)=>s+m.rOf(t),0);
+    return { n:ts.length, R, empty:days.filter(d=>!ts.some(t=>iso(t.d)===d)).length }; };
+  let h='<div class="stat-h rise"><div><div class="eyebrow">Revisione settimanale · EOW</div><h1>'+words('Settimana '+wkL)+'</h1></div></div>';
+  const noNews = !nev ? '<p class="rv-note">'+(S.nwErr==='OLD' ? 'Per le news delle settimane passate aggiorna Code.gs (Distribuisci → Nuova versione).' : S.nwErr ? 'News non disponibili ('+esc(S.nwErr)+'): scegli tu il tipo di news nel trade.' : 'Carico le news della settimana…')+'</p>' : '';
+  const started = v.ES.length+v.NQ.length>0 || S.revGo;
+  if (v.fin) {   // appena completata
+    const s1=sum('ES'), s2=sum('NQ');
+    h+='<div class="rv-hero done rise"><div class="rv-t">Settimana rivista</div><p>'+wkL+' · ES e NQ completi. La carta in Home torna venerdì prossimo dopo le '+esc(CFG.s1)+'.</p>'+
+      '<div class="rv-sum">'+[['ES',s1],['NQ',s2]].map(([a,s])=>'<div><span>'+a+'</span><b>'+s.n+' trade · '+fmtRc(s.R,0)+'</b></div>').join('')+'</div>'+
+      '<div class="rv-acts"><button type="button" class="btn rv-w" data-nav="stats">Vai all\'analisi</button><button type="button" class="btn rv-g" data-act="rvall">Vedi i trade</button></div></div>';
+    enter(el,h); return;
+  }
+  if (!started) {
+    h+='<div class="card rv-start rise"><span class="rv-ic">'+ic('cal',24,2)+'</span><div class="rv-t">Pronto a rivedere la settimana?</div><p>Iniziamo da <b>ES</b> come al solito, poi passiamo a NQ.</p></div>';
+    h+='<h2 class="sect">Il percorso · 10 giorni</h2><div class="card rv-path rise"><div class="rv-ph on">1 · ES <em>si parte da qui</em></div>'+
+      days.map(d=>'<div class="rv-pr"><span>'+dayName(d)+'</span>'+chip(d)+'</div>').join('')+
+      '<div class="rv-ph">2 · NQ <em>stessi 5 giorni, news già pronte</em></div></div>'+noNews+
+      '<p class="rv-note">News USD dal calendario ForexFactory: Red se c\'è almeno un evento ad alto impatto, Orange se ce n\'è uno a medio impatto, altrimenti No News Day.</p>'+
+      '<div class="rv-foot"><button type="button" class="btn" data-act="rvstart">Inizia da ES · '+dayName(days[0]).toLowerCase()+ic('chev',18,2.2)+'</button>'+
+      '<div class="rv-links"><button type="button" class="lnk" data-act="rvall">Mostra tutti i trade</button><button type="button" class="lnk" data-act="rvskip">Già fatta: segna come completata</button></div></div>';
+    enter(el,h); return;
+  }
+  const p=revPos(v);
+  if (p.a==='NQ' && !v.NQ.length && !S.revNQ && !(S.revSel && S.revSel.a==='NQ')) {   // ES finito: passaggio a NQ
+    const s=sum('ES');
+    h+='<div class="card rv-start rise"><span class="rv-ic ok">'+ic('check',22,2.6)+'</span><div class="rv-t">ES fatto</div>'+
+      '<div class="rv-sum g">'+'<div><b>'+s.n+'</b><span>trade</span></div><div><b class="'+sgn(s.R)+'">'+fmtRc(s.R,0)+'</b><span>a '+tgt()+'R</span></div><div><b>'+s.empty+'</b><span>giorni senza trade</span></div></div>'+
+      '<p>Ora tocca a <b>NQ</b>: stessi giorni, stesse news.</p><button type="button" class="btn" data-act="rvnq">Passa a NQ · '+dayName(days[0]).toLowerCase()+ic('chev',18,2.2)+'</button></div>';
+    enter(el,h); return;
+  }
+  const a=p.a, d=p.d, k=REV_A.indexOf(a)*5+days.indexOf(d)+1, done=v[a], ev=dev(d), c=cat(d), ts=revTrades(a,d);
+  h='<div class="rv-bar rise"><div><span>Revisione '+a+' · giorno '+k+' di 10</span><i><b style="width:'+((v.ES.length+v.NQ.length)*10)+'%"></b></i></div>'+
+    '<button type="button" class="lnk" data-act="rvall">Tutti i trade</button></div>';
+  h+='<div class="rv-assets rise">'+REV_A.map(x=>'<button type="button" class="chip'+(x===a?' on':'')+'" data-rva="'+x+'">'+x+' <em>'+v[x].length+'/5</em></button>').join('')+'</div>';
+  h+='<div class="rv-days rise">'+days.map((x,i)=>{ const n=revTrades(a,x).length, ok=done.includes(x);
+    return '<button type="button" class="'+(x===d?'cur':ok?'ok':'')+'" data-rvd="'+x+'">'+['Lun','Mar','Mer','Gio','Ven'][i]+'<span>'+(ok?(n?n+' trade':'nessuno'):x===d?'ora':n?n+' trade':'–')+'</span></button>'; }).join('')+'</div>';
+  h+='<div class="stat-h rise"><h1>'+words(GIORNI[pdIso(d).getDay()].replace(/^./,ch=>ch.toUpperCase())+' '+pdIso(d).getDate()+' '+MESI_F[pdIso(d).getMonth()])+'</h1></div>';
+  const key = ev ? ev.filter(e=>e.imp==='High'||e.imp==='Medium'||e.imp==='Holiday'||e.trump) : [];
+  h+='<div class="card rv-news rise"><div class="card-h"><span class="eyebrow">News del giorno</span>'+(c?'<span class="ncat '+catCls(c)+'">'+c+'</span>':'')+'</div>'+
+    (!ev ? noNews : key.length ? '<div class="rv-nl">'+key.map(e=>'<div><span class="num">'+esc(e.hm)+'</span><i class="'+e.imp2+'"></i><span>'+esc(newsIt(e.title))+'</span></div>').join('')+'</div>' : '<p class="mut">Nessuna news USD ad alto o medio impatto.</p>')+
+    (c?'<p class="rv-ok">'+ic('check',15,2.4)+'Scritta in automatico in ogni trade di questo giorno</p>':'')+'</div>';
+  h+='<div class="dayh rise"><span>Trade '+a+' di questo giorno</span><span>'+(ts.length?ts.length+(ts.length===1?' inserito':' inseriti'):'nessuno')+'</span></div>';
+  if (ts.length) h+='<div class="dayc rise">'+ts.map(t=>trow(t,m,true)).join('')+'</div>';
+  const last = k===10, nextD = days[days.indexOf(d)+1];
+  h+='<div class="rv-foot"><button type="button" class="btn sec" data-act="rvadd">'+ic('plus',18,2.4)+(ts.length?'Aggiungi un altro trade':'Aggiungi un trade')+'</button>'+
+    '<button type="button" class="btn" data-act="rvnext">'+(done.includes(d)?'Giorno già fatto · ':'Giorno fatto · ')+(last?'chiudi la revisione':nextD?'avanti a '+GIORNI[pdIso(nextD).getDay()]:'avanti a NQ')+ic('chev',18,2.2)+'</button>'+
+    '<p class="rv-note c">Nessun setup? «Giorno fatto» lo segna come giorno senza trade.</p></div>';
+  enter(el,h);
+}
+function revClick(b) {
+  const v=revState();
+  if (b.dataset.act==='rvgo') { S.revAll=false; navTo('list:EOW'); return true; }
+  if (b.dataset.act==='rvlater') { S.revLater=true; try { sessionStorage.setItem('tj.revLater', v.wk); } catch(e) {} renderCurrent(true); return true; }
+  if (b.dataset.act==='rvstart') { S.revGo=true; S.revSel=null; renderCurrent(true); window.scrollTo({ top:0 }); return true; }
+  if (b.dataset.act==='rvall') { S.revAll=true; renderCurrent(true); window.scrollTo({ top:0 }); return true; }
+  if (b.dataset.act==='rvback') { S.revAll=false; renderCurrent(true); window.scrollTo({ top:0 }); return true; }
+  if (b.dataset.act==='rvskip') { revSave(Object.assign(v, { ES:revDays(v.wk), NQ:revDays(v.wk), fin:true })); S.revAll=true; toast('Revisione segnata come fatta'); renderCurrent(true); return true; }
+  if (b.dataset.act==='rvnq') { S.revNQ=true; S.revSel={ wk:v.wk, a:'NQ', d:revDays(v.wk)[0] }; renderCurrent(true); window.scrollTo({ top:0 }); return true; }
+  if (b.dataset.rva) { const a=b.dataset.rva, days=revDays(v.wk); S.revNQ = S.revNQ || a==='NQ'; S.revSel={ wk:v.wk, a, d:days.find(x=>!v[a].includes(x)) || days[0] }; renderCurrent(true); return true; }
+  if (b.dataset.rvd) { const p=revPos(v); S.revSel={ wk:v.wk, a:p.a, d:b.dataset.rvd }; renderCurrent(true); return true; }
+  const inRev = S.tab==='list' && S.file==='EOW' && revDue() && !S.revAll && (v.ES.length+v.NQ.length>0 || S.revGo);
+  if (b.dataset.act==='rvadd' || (b.id==='fab' && inRev)) { const p=revPos(v), ev=revNews(v.wk);
+    openForm(null, { Asset:p.a, Data:p.d, News: ev ? catOf(ev.filter(e=>e.day===p.d)) : undefined }); return true; }
+  if (b.dataset.act==='rvnext') { const p=revPos(v), days=revDays(v.wk);
+    if (!v[p.a].includes(p.d)) v[p.a]=[...v[p.a], p.d];
+    v.fin = REV_A.every(a=>days.every(d=>v[a].includes(d)));
+    S.revSel=null; if (p.a==='NQ') S.revNQ=true;
+    const nx=days[days.indexOf(p.d)+1]; if (!v.fin && nx && v[p.a].includes(nx) === false) S.revSel={ wk:v.wk, a:p.a, d:nx };
+    if (v.fin) S.revJust=true; revSave(v); if (v.fin) setTimeout(confetti, 200); renderCurrent(true); window.scrollTo({ top:0 }); return true; }
+  return false;
+}
+
 // ───────────────────────── TRADE ─────────────────────────
 const isFlash = t => t.raw===S.flash && performance.now()-S.flashT < 1800;
 // R senza zeri inutili: −1 R, +2 R, +2,84 R
@@ -2428,11 +2622,14 @@ function trow(t, m, noDate) {
 }
 function renderList() {
   const el=$('v-list'); if (!S.loaded) { el.innerHTML=skeleton(); return; }
+  const rv = S.file==='EOW' && (revDue() || S.revJust);
+  if (rv && !S.revAll) { renderReview(); return; }
   const m=curModel(), E=S.type==='EOW', base=filtered(m);
   let ts=base.slice().reverse();
   if (S.lo) ts=ts.filter(t=> S.lo==='Win'?m.isWin(t): S.lo==='Loss'?m.isLoss(t): !m.isWin(t)&&!m.isLoss(t));
   const oo=[{v:'',l:'Tutti'},{v:'Win',l:'Vinti'},{v:'Loss',l:'Persi'}]; if (!E) oo.push({v:'BE',l:'Pareggio'});
   let html='<div class="stat-h rise"><div><h1>'+words('Trade')+'</h1></div><span class="mut num">'+ts.length+' su '+S.rows.length+'</span></div>'+fbar(20);
+  if (rv && revDue()) html+='<button type="button" class="card rv-back rise" data-act="rvback">'+ic('cal',18,2)+'<span><b>Revisione della settimana in corso</b><em>'+(revState().ES.length+revState().NQ.length)+' / 10 giorni</em></span>'+ic('chev',16,2)+'</button>';
   html+='<div class="toolbar rise" style="--d:40ms" data-lf="1">'+oo.map(o=>'<button type="button" class="chip'+(S.lo===o.v?' on':'')+'" data-k="lo" data-v="'+o.v+'">'+o.l+'</button>').join('')+'</div>';
   if (!ts.length) html+=emptyState('Nessun trade', S.rows.length?'Nessun trade con questi filtri.':'Il foglio '+S.file+' è vuoto: inserisci il primo trade.', S.rows.length?null:'Nuovo trade');
   const shown=ts.slice(0,S.lmore); let day='', grp=[], i=0;
@@ -3176,7 +3373,7 @@ function drawPass(R, quiet) {
 }
 
 // ───────────────────────── SCHEDA: nuovo / modifica trade ─────────────────────────
-function openForm(row) {
+function openForm(row, pre) {
   S.sheet='form'; S.edit=null;
   if (row) {
     const r=S.rows.find(x=>x._row===row); if (!r) return; const E=S.type==='EOW', p=String(r.Data).split('/');
@@ -3191,9 +3388,10 @@ function openForm(row) {
   } else {
     const last=all().slice(-1)[0];
     S.f = { Data: iso(new Date()), Asset: last?last.a:'ES', clean:true, Errori:[] };
+    if (pre) { Object.keys(pre).forEach(k=>{ if (pre[k]!==undefined) S.f[k]=pre[k]; }); S.f._newsAuto=!!pre.News; }
   }
   S.f.cleanS = S.f.clean ? 'Sì' : 'No'; S.touched={}; S.tried=false;
-  $('sh-sub').textContent = S.file+(S.edit?' · riga '+S.edit.row:''); $('sh-title').innerHTML = words(S.edit ? 'Modifica trade' : 'Nuovo trade');
+  $('sh-sub').textContent = S.file+(S.edit?' · riga '+S.edit.row:pre?' · revisione '+S.f.Asset:''); $('sh-title').innerHTML = words(S.edit ? 'Modifica trade' : 'Nuovo trade');
   renderForm(); openSheet();
 }
 const fin = (k, type, ph, extra) => '<input class="inp" id="fi-'+k+'" data-k="'+k+'" type="'+type+'" placeholder="'+esc(ph||'')+'" value="'+esc(S.f[k]??'')+'" '+(extra||'')+'>';
@@ -3216,7 +3414,7 @@ function renderForm() {
   h+='<div class="fsec"><div class="fsec-h"><div class="h2">Anteprima</div><span id="fx-out"></span></div><div class="ruler" id="fx-ruler"></div><div class="calc" id="fx-calc"></div><div class="warns" id="fx-warn"></div></div>';
   h+='<div class="fsec"><div class="fsec-h"><div class="h2">Contesto</div></div>'+
     fld('Idea',fspan('Idea 5m'),chips('Idea',L.idea,f.Idea))+
-    fld('News',fspan('News'),seg('News',[{v:'No News Day',l:'Nessuna'},{v:'Orange News',l:'Orange'},{v:'Red News',l:'Red'}],f.News))+
+    fld('News',fspan(f._newsAuto?'News · dal calendario della revisione':'News'),seg('News',[{v:'No News Day',l:'Nessuna'},{v:'Orange News',l:'Orange'},{v:'Red News',l:'Red'}],f.News))+
     '<div class="g2">'+fld('LVN',fspan('Coming from LVN'),seg('LVN',[{v:'Si',l:'Sì'},'No'],f.LVN))+fld('cleanS',fspan('1m clean'),seg('cleanS',['Sì','No'],f.cleanS))+'</div>'+
     fld('SMT',fspan('SMT'),seg('SMT',[{v:'SMT a favore',l:'A favore'},{v:'SMT a sfavore',l:'A sfavore'},{v:'No SMT',l:'Nessuna'}],f.SMT))+'</div>';
   if (E) {
@@ -3472,6 +3670,7 @@ document.addEventListener('click', e => {
   if (b.dataset.act==='pal') { palToggle(true, true); return; }
   if (b.closest('#pal')) { const i=+b.dataset.pi; if (isFinite(i)) palRun(i); return; }
   if (b.dataset.nav) { navTo(b.dataset.nav); return; }
+  if (revClick(b)) return;
   if (b.dataset.bar) { if (b.dataset.bar==='more') openMore(); else navTo(b.dataset.bar); return; }
   if (b.closest('#fileSeg')) { switchFile(b.dataset.v); return; }
   if (b.dataset.act==='sbcol') { const c=document.documentElement.classList.toggle('sbc'); store.set('sbc', c?'1':''); setTimeout(moveInd, 60); setTimeout(moveInd, 560); return; }
@@ -3581,7 +3780,7 @@ $('setupForm').addEventListener('submit', async e => {
   catch(x) { if ($('setup').hidden) showSetup(); $('su-err').innerHTML=ic('alert',15,2)+'<span>'+esc(x.message==='Chiave non valida'?'La chiave non è valida: controllala e riprova.':x.message==='NETWORK'?'Lo script non risponde: apri l\'URL nel browser e controlla che il deployment sia «Chiunque» con il Code.gs nuovo.':'Non riesco a collegarmi: '+x.message)+'</span>'; }
   finally { b.disabled=false; b.textContent='Collega'; }
 });
-document.addEventListener('visibilitychange', () => { if (document.visibilityState==='visible') { checkUpdate(); pullSettings(); } if (document.visibilityState==='visible' && S.loaded && !S.sheet && Date.now()-(fetchedAt[S.file]||0) > FRESH_MS) load(true); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState==='visible') { checkUpdate(); pullSettings(); loadNews().catch(()=>{}); if (S.tab==='news' || S.tab==='home') renderCurrent(true); } if (document.visibilityState==='visible' && S.loaded && !S.sheet && Date.now()-(fetchedAt[S.file]||0) > FRESH_MS) load(true); });
 applyTheme(); if (store.get('sbc','')==='1') document.documentElement.classList.add('sbc');
 { const [t,f]=location.hash.slice(1).split('/'); if (f==='EOW'||f==='Journal') { S.file=f; S.type=f==='EOW'?'EOW':'JOURNAL'; S.filt=S.filtBy[f]; }
   if (VIEWS.includes(t) && t!=='home') { S.tab=t; VIEWS.forEach(v=>{ $('v-'+v).hidden = v!==t; }); } }
