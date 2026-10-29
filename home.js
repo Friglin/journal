@@ -475,4 +475,4 @@ function briefing() {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['home.js'] = '2026-10-28.1';
+EB_V['home.js'] = '2026-10-29.1';

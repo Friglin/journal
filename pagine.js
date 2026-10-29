@@ -272,7 +272,8 @@ const nwP={};
 function revNewsLoad(wk) {
   const c=S.nw[wk], end=pdIso(wk).getTime()+5*dayMs;
   if ((c && c.got>end+6*3600000) || nwP[wk]) return;   // già preso a settimana finita
-  nwP[wk]=call('newsWeek', wk).then(d=>{ S.nw={ [wk]:{ ev:d.ev, got:Date.now() } }; try { localStorage.setItem('tj.nw', JSON.stringify(S.nw)); } catch(e) {} })
+  nwP[wk]=call('newsWeek', wk).then(d=>{ const o=Object.assign({}, S.nw, { [wk]:{ ev:d.ev, got:Date.now() } }); S.nw={};   // le ultime 8 settimane
+    Object.keys(o).sort().slice(-8).forEach(k=>{ S.nw[k]=o[k]; }); try { localStorage.setItem('tj.nw', JSON.stringify(S.nw)); } catch(e) {} if (S.sheet==='form') formNewsAuto(); })
     .catch(e=>{ S.nwErr = /sconosciuta/i.test(e.message||'') ? 'OLD' : (e.message||String(e)); })
     .finally(()=>{ setTimeout(()=>{ delete nwP[wk]; }, 60000); if (S.tab==='list' && !S.sheet) renderCurrent(true); });
 }
@@ -280,6 +281,10 @@ function revNews(wk) {
   const c=S.nw[wk]; if (c && c.ev && c.ev.length) return c.ev.map(mapEv);
   const ev=newsEvents().filter(e=>weekOf(e.day)===wk); return ev.length ? ev : null;
 }
+// categoria di news di un giorno dal calendario: dall'archivio della settimana o dal calendario scaricato; '' se non si sa
+function newsCatOf(dIso) { const wk=weekOf(dIso), c=S.nw[wk];
+  const ev = c && c.ev && c.ev.length ? c.ev.map(mapEv) : (newsEvents().some(e=>weekOf(e.day)===wk) ? newsEvents().filter(e=>weekOf(e.day)===wk) : null);
+  return ev ? catOf(ev.filter(e=>e.day===dIso)) : ''; }
 const catOf = ev => ev.some(e=>e.cur==='USD' && e.imp==='High') ? 'Red News' : ev.some(e=>e.cur==='USD' && e.imp==='Medium') ? 'Orange News' : 'No News Day';
 const catCls = c => c==='Red News'?'hi':c==='Orange News'?'md':'';
 const catLbl = c => ({ 'Red News':'Red', 'Orange News':'Orange', 'No News Day':'Nessuna news' })[c] || c;
@@ -417,4 +422,4 @@ function renderList() {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['pagine.js'] = '2026-10-28.1';
+EB_V['pagine.js'] = '2026-10-29.1';

@@ -17,11 +17,12 @@ function openForm(row, pre) {
   } else {
     const last=all().slice(-1)[0];
     S.f = { Data: iso(new Date()), Asset: last?last.a:'ES', clean:true, Errori:[] };
-    if (pre) { Object.keys(pre).forEach(k=>{ if (pre[k]!==undefined) S.f[k]=pre[k]; }); S.f._newsAuto=!!pre.News; }
+    if (pre) Object.keys(pre).forEach(k=>{ if (pre[k]!==undefined) S.f[k]=pre[k]; });
+    S.f._newsAuto=true;   // trade nuovo: la news si compila dal calendario finché non la scegli tu
   }
   S.f.cleanS = S.f.clean ? 'Sì' : 'No'; S.touched={}; S.tried=false;
   $('sh-sub').textContent = S.file+(S.edit?' · riga '+S.edit.row:pre?' · revisione '+S.f.Asset:''); $('sh-title').innerHTML = words(S.edit ? 'Modifica trade' : 'Nuovo trade');
-  renderForm(); openSheet();
+  renderForm(); openSheet(); formNewsAuto();
 }
 const fin = (k, type, ph, extra) => '<input class="inp" id="fi-'+k+'" data-k="'+k+'" type="'+type+'" placeholder="'+esc(ph||'')+'" value="'+esc(S.f[k]??'')+'" '+(extra||'')+'>';
 const ferr = k => '<div class="ferr" id="err-'+k+'"></div>';
@@ -32,6 +33,17 @@ const stagger = () => $('sh-body').querySelectorAll('.fsec').forEach((el,i)=>el.
 const linksNote = (f, ph) => fld('L5',flbl('L5','Screenshot 5m · link TradingView (facoltativo)'),fin('L5','url','https://www.tradingview.com/x/…'))+
   fld('L1',flbl('L1','Screenshot 1m · link TradingView (facoltativo)'),fin('L1','url','https://www.tradingview.com/x/…'))+'<div class="thumbs" id="fx-th"></div>'+
   '<div class="field"><label for="fi-Note">Note (facoltative)</label><textarea class="inp" id="fi-Note" data-k="Note" placeholder="'+esc(ph)+'">'+esc(f.Note||'')+'</textarea></div>';
+// news del trade nuovo dal calendario della sua data (Red se c'è un evento USD ad alto impatto, Orange se medio):
+// si aggiorna se cambi la data e si ferma appena scegli tu la news; le settimane passate arrivano dall'archivio dello script
+function formNewsAuto() {
+  const f=S.f; if (S.sheet!=='form' || S.edit || !f._newsAuto || !f.Data) return;
+  const c=newsCatOf(f.Data), wait=!c && weekOf(f.Data)<weekOf(todayIso());
+  if (wait) revNewsLoad(weekOf(f.Data));   // settimana passata non ancora in memoria: la chiede allo script
+  f.News=c;   // finché non si sa resta vuota: meglio sceglierla che salvare quella di un altro giorno
+  const sg=document.querySelector('#sh-body [data-seg="News"]'); if (sg) setSeg(sg, c);
+  const l=document.querySelector('#sh-body [data-f="News"] .flabel'); if (l) l.textContent=c ? 'News · dal calendario' : wait ? 'News · carico il calendario…' : 'News';
+  if (typeof refresh==='function' && sg) refresh();
+}
 function renderForm() {
   const E=S.type==='EOW', f=S.f;
   let h='<div class="fsec"><div class="fsec-h"><div class="h2">Trade</div></div>'+fld('Asset','',seg('Asset',L.asset,f.Asset))+
@@ -43,7 +55,7 @@ function renderForm() {
   h+='<div class="fsec"><div class="fsec-h"><div class="h2">Anteprima</div><span id="fx-out"></span></div><div class="ruler" id="fx-ruler"></div><div class="calc" id="fx-calc"></div><div class="warns" id="fx-warn"></div></div>';
   h+='<div class="fsec"><div class="fsec-h"><div class="h2">Contesto</div></div>'+
     fld('Idea',fspan('Idea 5m'),chips('Idea',L.idea,f.Idea))+
-    fld('News',fspan(f._newsAuto?'News · dal calendario della revisione':'News'),seg('News',[{v:'No News Day',l:'Nessuna'},{v:'Orange News',l:'Orange'},{v:'Red News',l:'Red'}],f.News))+
+    fld('News',fspan(f._newsAuto&&f.News?'News · dal calendario':'News'),seg('News',[{v:'No News Day',l:'Nessuna'},{v:'Orange News',l:'Orange'},{v:'Red News',l:'Red'}],f.News))+
     '<div class="g2">'+fld('LVN',fspan('Coming from LVN'),seg('LVN',[{v:'Si',l:'Sì'},'No'],f.LVN))+fld('cleanS',fspan('1m clean'),seg('cleanS',['Sì','No'],f.cleanS))+'</div>'+
     fld('SMT',fspan('SMT'),seg('SMT',[{v:'SMT a favore',l:'A favore'},{v:'SMT a sfavore',l:'A sfavore'},{v:'No SMT',l:'Nessuna'}],f.SMT))+'</div>';
   if (E) {
@@ -229,7 +241,7 @@ window.addEventListener('resize', () => { const el=$('lb'); if (el && el.classLi
 function tvImg(u) { const m=/tradingview\.com\/x\/([A-Za-z0-9]+)/.exec(u||''); return m ? 'https://s3.tradingview.com/snapshots/'+m[1][0].toLowerCase()+'/'+m[1]+'.png' : null; }
 function formClick(b) {
   const sg=b.closest('[data-seg]'), ch=b.closest('[data-chips]');
-  if (sg) { const k=sg.dataset.seg, v=b.dataset.v; S.f[k]=v; S.touched[k]=true; setSeg(sg,v); if (k==='cleanS') S.f.clean = v==='Sì'; if (k==='Esecuzione') $('fx-errs').hidden = v!=='Errore'; refresh(); return; }
+  if (sg) { const k=sg.dataset.seg, v=b.dataset.v; S.f[k]=v; S.touched[k]=true; setSeg(sg,v); if (k==='News' && S.f._newsAuto) { S.f._newsAuto=false; const l=sg.closest('[data-f]').querySelector('.flabel'); if (l) l.textContent='News'; } if (k==='cleanS') S.f.clean = v==='Sì'; if (k==='Esecuzione') $('fx-errs').hidden = v!=='Errore'; refresh(); return; }
   if (ch && ch.dataset.multi) { const k=ch.dataset.chips, v=b.dataset.v, a=S.f[k]||[]; S.f[k]=a.includes(v)?a.filter(x=>x!==v):[...a,v]; S.touched[k]=true; b.classList.toggle('on'); refresh(); return; }
   if (ch) { const k=ch.dataset.chips, v=b.dataset.v; S.f[k] = S.f[k]===v ? '' : v; S.touched[k]=true; ch.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on', c.dataset.v===S.f[k])); refresh(); return; }
   if (b.dataset.now) { const k=b.dataset.now; S.f[k]=nowHM(); S.touched[k]=true; $('fi-'+k).value=S.f[k]; refresh(); }
@@ -354,7 +366,7 @@ document.addEventListener('click', e => {
 });
 $('sh-body').addEventListener('input', e => {
   const k=e.target.dataset.k, fk=e.target.dataset.fk;
-  if (k && S.sheet==='form') { S.f[k]=e.target.value; refresh(); }
+  if (k && S.sheet==='form') { S.f[k]=e.target.value; if (k==='Data') formNewsAuto(); refresh(); }
   if (fk && S.sheet==='filt') { S.cust[fk]=e.target.value; store.set('cust', JSON.stringify(S.cust)); if (S.per!=='c') { setPer('c'); document.querySelectorAll('#sh-body [data-chips=quick] .chip').forEach(c=>c.classList.toggle('on', c.dataset.v==='c')); } renderCurrent(true); filtFoot(); }
 });
 document.addEventListener('change', e => { const c=e.target.dataset && e.target.dataset.cfg; if (!c) return;
@@ -423,4 +435,4 @@ if (!viaScript() && !(store.get('api','') && store.get('key',''))) showSetup(); 
 }
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['scheda.js'] = '2026-10-28.1';
+EB_V['scheda.js'] = '2026-10-29.1';

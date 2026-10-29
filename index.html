@@ -18,7 +18,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="app.css?v=2026-10-28.1">
+<link rel="stylesheet" href="app.css?v=2026-10-29.1">
 </head>
 <body>
 <a class="skip" href="#main">Vai al contenuto</a>
@@ -66,7 +66,7 @@
 <script>
 // versione dell'app: cambia a ogni pubblicazione con tools/build.py, che la scrive qui, nei ?v= e in ogni file.
 // Se online c'è una versione più nuova, l'app si aggiorna da sola (checkUpdate in core.js legge questa riga).
-const BUILD = '2026-10-28.1';
+const BUILD = '2026-10-29.1';
 // ogni file JS, se è stato letto tutto, si segna in EB_V con la sua versione; app.css la scrive in --eb-build
 const EB_V = {}, EB_FILES = ['core.js', 'home.js', 'pagine.js', 'analisi.js', 'simula.js', 'scheda.js'];
 // avvio: parte solo se tutti i file sono della stessa versione. Se no (copia vecchia in cache, file mancante) li
@@ -87,12 +87,12 @@ function ebStart() {
   if (typeof boot === 'function') boot();
 }
 </script>
-<script src="core.js?v=2026-10-28.1"></script>
-<script src="home.js?v=2026-10-28.1"></script>
-<script src="pagine.js?v=2026-10-28.1"></script>
-<script src="analisi.js?v=2026-10-28.1"></script>
-<script src="simula.js?v=2026-10-28.1"></script>
-<script src="scheda.js?v=2026-10-28.1"></script>
+<script src="core.js?v=2026-10-29.1"></script>
+<script src="home.js?v=2026-10-29.1"></script>
+<script src="pagine.js?v=2026-10-29.1"></script>
+<script src="analisi.js?v=2026-10-29.1"></script>
+<script src="simula.js?v=2026-10-29.1"></script>
+<script src="scheda.js?v=2026-10-29.1"></script>
 <script>ebStart();</script>
 </body>
 </html>
