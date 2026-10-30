@@ -272,7 +272,7 @@ const nwP={};
 function revNewsLoad(wk) {
   const c=S.nw[wk], end=pdIso(wk).getTime()+5*dayMs;
   if ((c && c.got>end+6*3600000) || nwP[wk]) return;   // già preso a settimana finita
-  nwP[wk]=call('newsWeek', wk).then(d=>{ const o=Object.assign({}, S.nw, { [wk]:{ ev:d.ev, got:Date.now() } }); S.nw={};   // le ultime 8 settimane
+  nwP[wk]=call('newsWeek', wk).then(d=>{ if (!d || !Array.isArray(d.ev)) throw new Error('lo script ha risposto senza news'); S.nwErr=''; const o=Object.assign({}, S.nw, { [wk]:{ ev:d.ev, got:Date.now() } }); S.nw={};   // le ultime 8 settimane
     Object.keys(o).sort().slice(-8).forEach(k=>{ S.nw[k]=o[k]; }); try { localStorage.setItem('tj.nw', JSON.stringify(S.nw)); } catch(e) {} if (S.sheet==='form') formNewsAuto(); })
     .catch(e=>{ S.nwErr = /sconosciuta/i.test(e.message||'') ? 'OLD' : (e.message||String(e)); })
     .finally(()=>{ setTimeout(()=>{ delete nwP[wk]; }, 60000); if (S.tab==='list' && !S.sheet) renderCurrent(true); });
@@ -305,7 +305,7 @@ function revHomeCard() {
 
 // pagina Trade dell'EOW durante la revisione
 function renderReview() {
-  const el=$('v-list'), v=revState(), days=revDays(v.wk), m=curModel(), E=true; revNewsLoad(v.wk);
+  const el=$('v-list'), v=revState(), days=revDays(v.wk), m=curModel(); revNewsLoad(v.wk);
   const nev=revNews(v.wk), dev = d => nev ? nev.filter(e=>e.day===d) : null, cat = d => nev ? catOf(dev(d)) : '';
   const d0=pdIso(days[0]), d4=pdIso(days[4]), wkL=d0.getDate()+(d0.getMonth()!==d4.getMonth()?' '+MESI[d0.getMonth()]:'')+'–'+d4.getDate()+' '+MESI_F[d4.getMonth()];
   const chip = d => { const c=cat(d); return c ? '<span class="ncat '+catCls(c)+'">'+catLbl(c)+'</span>' : '<span class="ncat">…</span>'; };
@@ -422,4 +422,4 @@ function renderList() {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['pagine.js'] = '2026-10-29.1';
+EB_V['pagine.js'] = '2026-10-30.1';

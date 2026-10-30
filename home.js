@@ -191,7 +191,7 @@ function loadNews(force) {
   if (!force && S.news && !newsOld() && Date.now()-S.news.got < NEWS_TTL) return Promise.resolve(S.news);
   if (!force && Date.now()-newsTry < (newsOld() ? 10000 : 60000)) return Promise.reject(new Error(newsErr||'attendi'));   // dopo un errore: al massimo un tentativo al minuto (10 s se il calendario è vecchio)
   newsTry=Date.now();
-  newsP = call('news', !!force).then(d=>{ d.got=Date.now(); S.news=d; newsErr=''; newsRetryN=0; try { localStorage.setItem('tj.news', JSON.stringify(d)); } catch(e) {} newsBadge(); return d; })
+  newsP = call('news', !!force).then(d=>{ if (!d || !Array.isArray(d.ev)) throw new Error('lo script ha risposto senza calendario'); d.got=Date.now(); S.news=d; newsErr=''; newsRetryN=0; try { localStorage.setItem('tj.news', JSON.stringify(d)); } catch(e) {} newsBadge(); return d; })
     .catch(e=>{ newsErr = /Funzione sconosciuta/.test(e.message||'') ? 'OLD' : (e.message||String(e));
       // un errore al primo caricamento capita (script appena svegliato, ForexFactory lento): un secondo tentativo da solo
       if (newsErr!=='OLD' && !newsRetry && newsRetryN++<1) newsRetry=setTimeout(()=>{ newsRetry=null; newsTry=0; loadNews().catch(()=>{}); }, 5000);
@@ -277,7 +277,7 @@ function loadTrump(force) {
   if (!force && S.trump && Date.now()-S.trump.got < TR_TTL) return Promise.resolve(S.trump);
   if (!force && Date.now()-trTry < 45000) return Promise.reject(new Error(trErr||'attendi'));
   trTry=Date.now(); const wasLive = !!(S.trump && S.trump.live);
-  trP = call('trumpNews', !!force).then(d=>{ d.got=Date.now(); S.trump=d; trErr=''; newsBadge();
+  trP = call('trumpNews', !!force).then(d=>{ if (!d || typeof d!=='object') throw new Error('lo script ha risposto senza dati'); d.got=Date.now(); S.trump=d; trErr=''; newsBadge();
       try { localStorage.setItem('tj.trump2', JSON.stringify(d)); } catch(e) {}
       if (d.live && !wasLive && !document.hidden) toast('Trump sta parlando ora: la diretta è nella pagina News');
       return d; })
@@ -475,4 +475,4 @@ function briefing() {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['home.js'] = '2026-10-29.1';
+EB_V['home.js'] = '2026-10-30.1';

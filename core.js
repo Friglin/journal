@@ -92,6 +92,9 @@ async function verifySaved(file, d, edit) {
   }
   return null;
 }
+// le risposte di Claude (coach, chat, sunto delle news) devono essere un testo: una risposta vuota diventa un errore leggibile
+const AI_FN=['coach','chat','newsSunto'];
+const aiOk = (fn, r) => { if (AI_FN.includes(fn) && !(typeof r==='string' && r.trim())) throw new Error('Risposta vuota da Claude: riprova.'); return r; };
 function call(fn, ...args) {
   if (viaScript()) return new Promise((res, rej) => google.script.run.withSuccessHandler(res).withFailureHandler(e=>rej(e))[fn](...args));
   const url=store.get('api',''), key=store.get('key','');
@@ -102,7 +105,7 @@ function call(fn, ...args) {
     .catch(() => { throw new Error('NETWORK'); })
     .finally(() => clearTimeout(to))
     .then(r => { if (!r.ok) throw new Error('Il server ha risposto '+r.status); return r.json(); })
-    .then(d => { if (d.ok) return d.result; if (d.error==='CHIAVE_ERRATA') { showSetup('La chiave non è valida: controllala e riprova.'); throw new Error('Chiave non valida'); } throw new Error(d.error); });
+    .then(d => { if (d.ok) return aiOk(fn, d.result); if (d.error==='CHIAVE_ERRATA') { showSetup('La chiave non è valida: controllala e riprova.'); throw new Error('Chiave non valida'); } throw new Error(d.error); });
 }
 
 // icone (tratto 1.8, stile lineare)
@@ -568,4 +571,4 @@ function filtClick(b) {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['core.js'] = '2026-10-29.1';
+EB_V['core.js'] = '2026-10-30.1';
