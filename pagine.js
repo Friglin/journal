@@ -71,8 +71,8 @@ function renderDisc() {
   if (!J) { el.innerHTML=h+skeleton();
     if (!S.discLoad) { S.discLoad=true; fetchFile('Journal').then(()=>{ S.discLoad=false; if (S.tab==='disc') renderCurrent(); }).catch(()=>{ S.discLoad=false; if (S.tab==='disc') el.innerHTML=h+emptyState('Journal non raggiungibile', 'Non riesco a leggere il foglio: riprova tra poco.'); }); }
     return; }
-  const per=S.dper||'m', now=new Date(), ts=inRange(J, periodRange(per,0));
-  const lbl={ w:wkLbl().toLowerCase(), m:MESI_F[now.getMonth()]+' '+now.getFullYear(), '3m':'ultimi 3 mesi', y:String(now.getFullYear()), all:'da sempre' }[per];
+  const per=S.dper||'m', now=new Date(), ts=inRange(J, periodRange(per,0,'JOURNAL'));
+  const lbl={ w:wkLbl('JOURNAL').toLowerCase(), m:MESI_F[now.getMonth()]+' '+now.getFullYear(), '3m':'ultimi 3 mesi', y:String(now.getFullYear()), all:'da sempre' }[per];
   h+='<div class="perseg">'+seg('dper',[{v:'w',l:'Sett.'},{v:'m',l:'Mese'},{v:'3m',l:'3M'},{v:'y',l:'Anno'},{v:'all',l:'Tutto'}],per)+'</div>';
   if (!ts.length) { enter(el, h+emptyState('Nessun trade reale', 'Nel periodo scelto ('+lbl+') non ci sono trade nel Journal.')); return; }
   const ex=discExec(ts);
@@ -426,4 +426,4 @@ function renderList() {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['pagine.js'] = '2026-10-31.1';
+EB_V['pagine.js'] = '2026-10-31.2';

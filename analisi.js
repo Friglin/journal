@@ -293,4 +293,4 @@ async function delTrade() {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['analisi.js'] = '2026-10-31.1';
+EB_V['analisi.js'] = '2026-10-31.2';

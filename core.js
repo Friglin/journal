@@ -234,13 +234,14 @@ function agg(ts, m) {
   return { n, w, l, be:n-w-l, R, pf: gl>0 ? gp/gl : (gp>0 ? Infinity : NaN), exp: n ? R/n : NaN, dd, wr: (w+l) ? w/(w+l) : NaN, wrAll: n ? w/n : NaN };
 }
 // EOW = end of week: la «settimana» è quella scorsa, ormai chiusa · Journal: la settimana in corso
-const wkOff = () => S.type==='EOW' ? 1 : 0;
-const wkLbl = () => S.type==='EOW' ? 'Settimana scorsa' : 'Questa settimana';
+// EOW: la «settimana scorsa» è l'ultima settimana di borsa chiusa, la stessa della revisione: da venerdì a fine sessione
+// è quella appena finita (sabato 31/10 → 26–30/10), prima è quella precedente. Journal: la settimana in corso.
+const wkLbl = (type=S.type) => type==='EOW' ? 'Settimana scorsa' : 'Questa settimana';
 const dayMs = 864e5, addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate()+n);
 const pdIso = s => { const p=String(s||'').split('-').map(Number); return p.length===3 && p[0] ? new Date(p[0],p[1]-1,p[2]) : null; };
-function periodRange(per, back) { // back=1: periodo precedente
+function periodRange(per, back, type=S.type) { // back=1: periodo precedente · type: 'EOW' o 'JOURNAL' (di base il file aperto)
   const now=new Date(); let a,b;
-  if (per==='w') { const mon=addDays(now, -((now.getDay()+6)%7)); a=addDays(mon, -7*(back+wkOff())); b=addDays(a, 7); }
+  if (per==='w') { const mon = type==='EOW' ? pdIso(revWeek()) : addDays(now, -((now.getDay()+6)%7)); a=addDays(mon, -7*back); b=addDays(a, 7); }
   else if (per==='c') { const f=pdIso(S.cust.from), t=pdIso(S.cust.to); if (!f || !t || t<f) return back ? null : [new Date(2000,0,1), new Date(2100,0,1)];
     const len=Math.round((t-f)/dayMs)+1; a=addDays(f, -len*back); b=addDays(a, len); }
   else if (per==='m') { a=new Date(now.getFullYear(), now.getMonth()-back, 1); b=new Date(now.getFullYear(), now.getMonth()-back+1, 1); }
@@ -572,4 +573,4 @@ function filtClick(b) {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['core.js'] = '2026-10-31.1';
+EB_V['core.js'] = '2026-10-31.2';
