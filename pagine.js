@@ -253,15 +253,17 @@ function revWeek() {   // lunedì della settimana da rivedere
   const after = wd>4 || (wd===4 && r.getHours()*60+r.getMinutes() >= sessOf(iso(r))[1]);
   return iso(addDays(mon, after ? 0 : -7));
 }
+// CFG.rev: { wk, ES:[giorni fatti], NQ:[…], fin, go: iniziata, nq: passata a NQ, pos:{a,d} giorno su cui sei, pause }
 function revState() { const wk=revWeek(); let v=CFG.rev;
   if (!v || v.wk!==wk) v={ wk, ES:[], NQ:[], fin:false };
   return v; }
+const revStarted = v => v.ES.length+v.NQ.length>0 || !!v.go;
 const revDays = wk => [0,1,2,3,4].map(i=>iso(addDays(pdIso(wk),i)));
 const revDue = () => !revState().fin;
 function revSave(v) { CFG.rev=v; syncTouch('rev'); }
 function revPos(v) {   // dove sei: l'asset e il giorno scelti, se no il primo giorno ancora da fare
   const days=revDays(v.wk);
-  if (S.revSel && S.revSel.wk===v.wk) return S.revSel;
+  if (v.pos && REV_A.includes(v.pos.a) && days.includes(v.pos.d)) return { wk:v.wk, a:v.pos.a, d:v.pos.d };
   for (const a of REV_A) { const d=days.find(x=>!v[a].includes(x)); if (d) return { wk:v.wk, a, d }; }
   return { wk:v.wk, a:'NQ', d:days[4] };
 }
@@ -295,12 +297,12 @@ const dayName = d => { const x=pdIso(d); return GIORNI[x.getDay()].replace(/^./,
 // carta in Home finché la revisione non è fatta
 function revHomeCard() {
   if (!revDue() || S.revLater) return '';
-  const v=revState(), days=revDays(v.wk), n=v.ES.length+v.NQ.length, a=v.ES.length<5?'ES':'NQ', d0=pdIso(days[0]), d4=pdIso(days[4]);
+  const v=revState(), days=revDays(v.wk), n=v.ES.length+v.NQ.length, d0=pdIso(days[0]), d4=pdIso(days[4]);
   return '<div class="rv-hero rise"><div class="rv-top"><span>Revisione · '+d0.getDate()+(d0.getMonth()!==d4.getMonth()?' '+MESI[d0.getMonth()]:'')+'–'+d4.getDate()+' '+MESI_F[d4.getMonth()]+'</span><em>'+n+' / 10 giorni</em></div>'+
-    '<div class="rv-t">'+(n?'Riprendiamo la revisione':'Pronto a rivedere la settimana?')+'</div>'+
-    '<p>'+(n?'Sei a '+a+', '+dayName(revPos(v).d).toLowerCase()+'. ':'Iniziamo da ES, come al solito. ')+'Le news di ogni giorno sono già compilate.</p>'+
+    '<div class="rv-t">'+(v.pause?'Revisione in pausa':n||revStarted(v)?'Riprendiamo la revisione':'Pronto a rivedere la settimana?')+'</div>'+
+    '<p>'+(revStarted(v)?'Sei a '+revPos(v).a+', '+dayName(revPos(v).d).toLowerCase()+'. ':'Iniziamo da ES, come al solito. ')+'Le news di ogni giorno sono già compilate.</p>'+
     '<div class="rv-bars">'+days.map((d,i)=>'<span class="'+(v.ES.includes(d)&&v.NQ.includes(d)?'on':v.ES.includes(d)?'half':'')+'"><i></i>'+['Lun','Mar','Mer','Gio','Ven'][i]+'</span>').join('')+'</div>'+
-    '<div class="rv-acts"><button type="button" class="btn rv-w" data-act="rvgo">'+(n?'Riprendi da '+a:'Inizia da ES')+ic('chev',18,2.2)+'</button><button type="button" class="btn rv-g" data-act="rvlater">Più tardi</button></div></div>';
+    '<div class="rv-acts"><button type="button" class="btn rv-w" data-act="rvgo">'+(revStarted(v)?'Riprendi da '+revPos(v).a:'Inizia da ES')+ic('chev',18,2.2)+'</button><button type="button" class="btn rv-g" data-act="rvlater">Più tardi</button></div></div>';
 }
 
 // pagina Trade dell'EOW durante la revisione
@@ -313,7 +315,7 @@ function renderReview() {
     return { n:ts.length, R, empty:days.filter(d=>!ts.some(t=>iso(t.d)===d)).length }; };
   let h='<div class="stat-h rise"><div><div class="eyebrow">Revisione settimanale · EOW</div><h1>'+words('Settimana '+wkL)+'</h1></div></div>';
   const noNews = !nev ? '<p class="rv-note">'+(S.nwErr==='OLD' ? 'Per le news delle settimane passate aggiorna Code.gs (Distribuisci → Nuova versione).' : S.nwErr ? 'News non disponibili ('+esc(S.nwErr)+'): scegli tu il tipo di news nel trade.' : 'Carico le news della settimana…')+'</p>' : '';
-  const started = v.ES.length+v.NQ.length>0 || S.revGo;
+  const started = revStarted(v);
   if (v.fin) {   // appena completata
     const s1=sum('ES'), s2=sum('NQ');
     h+='<div class="rv-hero done rise"><div class="rv-t">Settimana rivista</div><p>'+wkL+' · ES e NQ completi. La carta in Home torna venerdì prossimo dopo le '+esc(CFG.s1)+'.</p>'+
@@ -328,11 +330,11 @@ function renderReview() {
       '<div class="rv-ph">2 · NQ <em>stessi 5 giorni, news già pronte</em></div></div>'+noNews+
       '<p class="rv-note">News USD dal calendario ForexFactory: Red se c\'è almeno un evento ad alto impatto, Orange se ce n\'è uno a medio impatto, altrimenti No News Day.</p>'+
       '<div class="rv-foot"><button type="button" class="btn" data-act="rvstart">Inizia da ES · '+dayName(days[0]).toLowerCase()+ic('chev',18,2.2)+'</button>'+
-      '<div class="rv-links"><button type="button" class="lnk" data-act="rvall">Mostra tutti i trade</button><button type="button" class="lnk" data-act="rvskip">Già fatta: segna come completata</button></div></div>';
+      '<div class="rv-links"><button type="button" class="lnk" data-act="rvpause">Più tardi: mostra i trade</button><button type="button" class="lnk" data-act="rvskip">Già fatta: segna come completata</button></div></div>';
     enter(el,h); return;
   }
   const p=revPos(v);
-  if (p.a==='NQ' && !v.NQ.length && !S.revNQ && !(S.revSel && S.revSel.a==='NQ')) {   // ES finito: passaggio a NQ
+  if (p.a==='NQ' && !v.NQ.length && !v.nq) {   // ES finito: passaggio a NQ
     const s=sum('ES');
     h+='<div class="card rv-start rise"><span class="rv-ic ok">'+ic('check',22,2.6)+'</span><div class="rv-t">ES fatto</div>'+
       '<div class="rv-sum g">'+'<div><b>'+s.n+'</b><span>trade</span></div><div><b class="'+sgn(s.R)+'">'+fmtRc(s.R,0)+'</b><span>a '+tgt()+'R</span></div><div><b>'+s.empty+'</b><span>giorni senza trade</span></div></div>'+
@@ -341,7 +343,7 @@ function renderReview() {
   }
   const a=p.a, d=p.d, k=REV_A.indexOf(a)*5+days.indexOf(d)+1, done=v[a], ev=dev(d), c=cat(d), ts=revTrades(a,d);
   h='<div class="rv-bar rise"><div><span>Revisione '+a+' · giorno '+k+' di 10</span><i><b style="width:'+((v.ES.length+v.NQ.length)*10)+'%"></b></i></div>'+
-    '<button type="button" class="lnk" data-act="rvall">Tutti i trade</button></div>';
+    '<button type="button" class="lnk" data-act="rvpause">'+ic('pause',14,2.4)+'Pausa</button></div>';
   h+='<div class="rv-assets rise">'+REV_A.map(x=>'<button type="button" class="chip'+(x===a?' on':'')+'" data-rva="'+x+'">'+x+' <em>'+v[x].length+'/5</em></button>').join('')+'</div>';
   h+='<div class="rv-days rise">'+days.map((x,i)=>{ const n=revTrades(a,x).length, ok=done.includes(x);
     return '<button type="button" class="'+(x===d?'cur':ok?'ok':'')+'" data-rvd="'+x+'">'+['Lun','Mar','Mer','Gio','Ven'][i]+'<span>'+(ok?(n?n+' trade':'nessuno'):x===d?'ora':n?n+' trade':'–')+'</span></button>'; }).join('')+'</div>';
@@ -360,23 +362,24 @@ function renderReview() {
 }
 function revClick(b) {
   const v=revState();
-  if (b.dataset.act==='rvgo') { S.revAll=false; navTo('list:EOW'); return true; }
+  // pausa: la revisione resta dov'è (giorno compreso) su tutti i dispositivi; Trade torna all'elenco normale
+  if (b.dataset.act==='rvpause') { v.pause=true; revSave(v); S.revLater=false; toast('Revisione in pausa: la riprendi da qui quando vuoi'); renderCurrent(true); window.scrollTo({ top:0 }); return true; }
+  if (b.dataset.act==='rvgo' || b.dataset.act==='rvback') { if (v.pause) { v.pause=false; revSave(v); } S.revAll=false; navTo('list:EOW'); renderCurrent(true); window.scrollTo({ top:0 }); return true; }
   if (b.dataset.act==='rvlater') { S.revLater=true; try { sessionStorage.setItem('tj.revLater', v.wk); } catch(e) {} renderCurrent(true); return true; }
-  if (b.dataset.act==='rvstart') { S.revGo=true; S.revSel=null; renderCurrent(true); window.scrollTo({ top:0 }); return true; }
+  if (b.dataset.act==='rvstart') { v.go=true; v.pos=null; revSave(v); renderCurrent(true); window.scrollTo({ top:0 }); return true; }
   if (b.dataset.act==='rvall') { S.revAll=true; renderCurrent(true); window.scrollTo({ top:0 }); return true; }
-  if (b.dataset.act==='rvback') { S.revAll=false; renderCurrent(true); window.scrollTo({ top:0 }); return true; }
   if (b.dataset.act==='rvskip') { revSave(Object.assign(v, { ES:revDays(v.wk), NQ:revDays(v.wk), fin:true })); S.revAll=true; toast('Revisione segnata come fatta'); renderCurrent(true); return true; }
-  if (b.dataset.act==='rvnq') { S.revNQ=true; S.revSel={ wk:v.wk, a:'NQ', d:revDays(v.wk)[0] }; renderCurrent(true); window.scrollTo({ top:0 }); return true; }
-  if (b.dataset.rva) { const a=b.dataset.rva, days=revDays(v.wk); S.revNQ = S.revNQ || a==='NQ'; S.revSel={ wk:v.wk, a, d:days.find(x=>!v[a].includes(x)) || days[0] }; renderCurrent(true); return true; }
-  if (b.dataset.rvd) { const p=revPos(v); S.revSel={ wk:v.wk, a:p.a, d:b.dataset.rvd }; renderCurrent(true); return true; }
-  const inRev = S.tab==='list' && S.file==='EOW' && revDue() && !S.revAll && (v.ES.length+v.NQ.length>0 || S.revGo);
+  if (b.dataset.act==='rvnq') { v.nq=true; v.pos={ a:'NQ', d:revDays(v.wk)[0] }; revSave(v); renderCurrent(true); window.scrollTo({ top:0 }); return true; }
+  if (b.dataset.rva) { const a=b.dataset.rva, days=revDays(v.wk); if (a==='NQ') v.nq=true; v.pos={ a, d:days.find(x=>!v[a].includes(x)) || days[0] }; revSave(v); renderCurrent(true); return true; }
+  if (b.dataset.rvd) { const p=revPos(v); v.pos={ a:p.a, d:b.dataset.rvd }; revSave(v); renderCurrent(true); return true; }
+  const inRev = S.tab==='list' && S.file==='EOW' && revDue() && !S.revAll && !v.pause && revStarted(v);
   if (b.dataset.act==='rvadd' || (b.id==='fab' && inRev)) { const p=revPos(v), ev=revNews(v.wk);
     openForm(null, { Asset:p.a, Data:p.d, News: ev ? catOf(ev.filter(e=>e.day===p.d)) : undefined }); return true; }
   if (b.dataset.act==='rvnext') { const p=revPos(v), days=revDays(v.wk);
     if (!v[p.a].includes(p.d)) v[p.a]=[...v[p.a], p.d];
     v.fin = REV_A.every(a=>days.every(d=>v[a].includes(d)));
-    S.revSel=null; if (p.a==='NQ') S.revNQ=true;
-    const nx=days[days.indexOf(p.d)+1]; if (!v.fin && nx && v[p.a].includes(nx) === false) S.revSel={ wk:v.wk, a:p.a, d:nx };
+    v.pos=null; if (p.a==='NQ') v.nq=true;
+    const nx=days[days.indexOf(p.d)+1]; if (!v.fin && nx && v[p.a].includes(nx) === false) v.pos={ a:p.a, d:nx };
     if (v.fin) S.revJust=true; revSave(v); if (v.fin) setTimeout(confetti, 200); renderCurrent(true); window.scrollTo({ top:0 }); return true; }
   return false;
 }
@@ -403,13 +406,14 @@ function trow(t, m, noDate) {
 function renderList() {
   const el=$('v-list'); if (!S.loaded) { el.innerHTML=skeleton(); return; }
   const rv = S.file==='EOW' && (revDue() || S.revJust);
-  if (rv && !S.revAll) { renderReview(); return; }
+  if (rv && !S.revAll && !(revDue() && revState().pause)) { renderReview(); return; }
   const m=curModel(), E=S.type==='EOW', base=filtered(m);
   let ts=base.slice().reverse();
   if (S.lo) ts=ts.filter(t=> S.lo==='Win'?m.isWin(t): S.lo==='Loss'?m.isLoss(t): !m.isWin(t)&&!m.isLoss(t));
   const oo=[{v:'',l:'Tutti'},{v:'Win',l:'Vinti'},{v:'Loss',l:'Persi'}]; if (!E) oo.push({v:'BE',l:'Pareggio'});
   let html='<div class="stat-h rise"><div><h1>'+words('Trade')+'</h1></div><span class="mut num">'+ts.length+' su '+S.rows.length+'</span></div>'+fbar(20);
-  if (rv && revDue()) html+='<button type="button" class="card rv-back rise" data-act="rvback">'+ic('cal',18,2)+'<span><b>Revisione della settimana in corso</b><em>'+(revState().ES.length+revState().NQ.length)+' / 10 giorni</em></span>'+ic('chev',16,2)+'</button>';
+  if (rv && revDue()) { const v=revState(), p=revPos(v);
+    html+='<button type="button" class="card rv-back rise" data-act="rvback">'+ic(v.pause?'pause':'cal',18,2.2)+'<span><b>'+(v.pause?'Revisione in pausa':'Revisione della settimana in corso')+'</b><em>'+(revStarted(v)?'Riprendi da '+p.a+', '+dayName(p.d).toLowerCase()+' · ':'')+(v.ES.length+v.NQ.length)+' / 10 giorni</em></span>'+ic('chev',16,2)+'</button>'; }
   html+='<div class="toolbar rise" style="--d:40ms" data-lf="1">'+oo.map(o=>'<button type="button" class="chip'+(S.lo===o.v?' on':'')+'" data-k="lo" data-v="'+o.v+'">'+o.l+'</button>').join('')+'</div>';
   if (!ts.length) html+=emptyState('Nessun trade', S.rows.length?'Nessun trade con questi filtri.':'Il foglio '+S.file+' è vuoto: inserisci il primo trade.', S.rows.length?null:'Nuovo trade');
   const shown=ts.slice(0,S.lmore); let day='', grp=[], i=0;
@@ -422,4 +426,4 @@ function renderList() {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['pagine.js'] = '2026-10-30.1';
+EB_V['pagine.js'] = '2026-10-31.1';
