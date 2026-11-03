@@ -37,9 +37,8 @@ function renderPlanSheet() {
     f('Candele di pullback',seg('pl-pb',[{v:'',l:'Tutte'},{v:'2',l:'Fino a 2'},{v:'3',l:'Fino a 3'},{v:'4',l:'Fino a 4'}],pbKey(P.pb)))+
     f('News',seg('pl-news',[{v:'',l:'Tutti i giorni'},{v:'nored',l:'No Red News'},{v:'none',l:'Solo senza'}],P.news)));
   h+=sec('Quando','',f('Fasce orarie',chips('pl-bande',bandNames(),P.bande,true),'Con Wall Street che apre alle 15:30: nelle settimane del cambio d\'ora l\'app le sposta da sola.')+f('Giorni',chips('pl-giorni',L.days,P.giorni,true)));
-  h+=sec('Gestione del trade','',f('Come esci',seg('pl-gk',[{v:'P',l:'A parziali'},{v:'T',l:'Target fisso'},{v:'BE',l:'Con BE'}],g.k))+
+  h+=sec('Gestione del trade','',f('Come esci',seg('pl-gk',[{v:'P',l:'A parziali'},{v:'T',l:'Target fisso'}],g.k))+
     (g.k==='T' ? f('Target',chips('pl-gt',PLAN_MG.T.map(x),g.t))
-    : g.k==='BE' ? f('Target',chips('pl-gt',PLAN_MG.BT.map(x),g.t))+f('Stop a BE quando il prezzo arriva a',chips('pl-gl',PLAN_MG.BL.map(x),g.l))
     : f('Prima metà a',chips('pl-gt1',PLAN_MG.P1.map(x),g.t1))+f('Poi lo stop del resto va a',seg('pl-gs',[{v:0,l:'BE'},{v:.5,l:'+0,5R'},{v:1,l:'+1R'}],g.s))+f('Resto a',chips('pl-gt2',PLAN_MG.P2.map(x),g.t2)))+
     '<p class="hint" style="margin:0">In breve: '+esc(mgTxt(g))+'.</p>');
   h+=sec('Regole del giorno','',f('Trade al giorno, al massimo',seg('pl-maxN',[{v:1,l:'1'},{v:2,l:'2'},{v:3,l:'3'},{v:0,l:'Nessuno'}],P.maxN))+
@@ -57,9 +56,8 @@ function planClick(b) {
   if (ch && ch.dataset.multi) { const a=P[name]; P[name]=a.includes(v)?a.filter(x=>x!==v):a.concat(v);
     if (!P[name].length) { toast('Nel piano ne serve almeno uno', true); return true; } }
   else if (name==='pb') P.pb=PLAN_PB[v]||[];
-  else if (name==='gk') P.g = v==='T' ? { k:'T', t:P.g.k==='P'?P.g.t1:P.g.t } : v==='BE' ? { k:'BE', t:Math.max(3, P.g.k==='P'?P.g.t2:P.g.t), l:2 } : { k:'P', t1:2, s:1, t2:4 };
-  else if (name==='gt') { P.g.t=n; if (P.g.k==='BE' && P.g.l>=n) P.g.l=PLAN_MG.BL.filter(x=>x<n).pop(); }
-  else if (name==='gl') { if (n>=P.g.t) { toast('Lo stop a BE deve scattare prima del target', true); return true; } P.g.l=n; }
+  else if (name==='gk') P.g = v==='T' ? { k:'T', t:P.g.k==='P'?P.g.t1:P.g.t } : { k:'P', t1:2, s:1, t2:4 };
+  else if (name==='gt') P.g.t=n;
   else if (name==='gt1') { P.g.t1=n; if (P.g.t2<=n) P.g.t2=PLAN_MG.P2.find(x=>x>n); }
   else if (name==='gs') P.g.s=n;
   else if (name==='gt2') { if (n<=P.g.t1) { toast('Il resto deve uscire oltre la prima metà', true); return true; } P.g.t2=n; }
@@ -73,58 +71,36 @@ document.addEventListener('change', e => { const k=e.target.dataset && e.target.
   planSaved(prev); toast('Piano salvato'); });
 
 // ───────────────────────── OTTIMIZZA ─────────────────────────
-// Il piano contro le alternative sui trade dell'EOW (backtest con Max Real RR e note), settimana per settimana: su tutto lo
+// Il piano contro le alternative sui trade dell'EOW (backtest dal Max Real RR), settimana per settimana: su tutto lo
 // storico, sugli ultimi 3 mesi, sull'ultimo mese e sulle ultime 2 settimane. Una modifica è consigliata solo se migliora i R
 // a settimana con buona probabilità (ricampionando le settimane, con più peso alle recenti), non peggiora l'ultimo mese e
-// cambia l'esito di abbastanza trade da non essere un caso. Le uscite con parziali o BE dopo 2R si ricostruiscono dalle note
-// («raggiunge 2.4rr, torna a 1.2rr, poi raggiunge 4rr»); quando la nota manca vale la frequenza osservata negli altri trade.
+// cambia l'esito di abbastanza trade da non essere un caso. Le note dei trade non si usano (ci sono solo per chi arriva a 2R e
+// non sono aggiornate): il target fisso è esatto, le parziali sono una stima per eccesso e non entrano nei consigli.
 const OPT_WIN = [{ k:'all', l:'Tutto' }, { k:13, l:'3 mesi' }, { k:4, l:'4 sett.' }, { k:2, l:'2 sett.' }];
 const OPT_HL = 6;            // peso delle settimane: si dimezza ogni 6 settimane andando indietro
 // soglie tarate rimescolando a caso gli esiti dei trade (nessun legame tra filtri ed esito): con queste, un «conviene» falso
-// esce circa una volta ogni 10 analisi, un «indizio» falso circa una volta ogni 3 (si provano una cinquantina di alternative)
+// esce circa una volta ogni 10 analisi, un «indizio» falso circa una volta ogni 3 (con le alternative tarate allora, una cinquantina)
 function optVerdict(c) {
   if (c.aff>=8 && c.p>=.99 && c.pa>=.95 && c.all>0 && c.m3>0 && c.m1>=0 && c.wm>=.2) return 'si';
   if (c.aff>=6 && c.p>=.9 && c.pa>=.75 && c.all>0 && c.m3>=0 && c.m1>=0 && c.wm>=.15) return 'indizio';
   if (c.aff>=8 && c.m1>.5 && c.m3>.25 && c.wm>.25 && c.p>=.8) return 'recente';
   if (c.aff>=8 && c.all>0 && c.pa>=.8 && c.m3<0 && c.m1<0) return 'calo';
   return ''; }
-// percorso del prezzo dalle note: [] = «va diretto senza pullback», null = nessuna informazione
-function notePath(s) { s=String(s||'').toLowerCase(); if (!s) return null;
-  if (/diretto|senza pullback/.test(s)) return [];
-  const ev=[], re=/(raggiunge|torna a|torna in|ritorna a)\s+(?:appena\s+)?(?:i\s+)?(be\b|\d+(?:[.,]\d+)?)/g; let m;
-  while ((m=re.exec(s))) ev.push([m[1]==='raggiunge'?'u':'d', m[2]==='be'?0:parseFloat(m[2].replace(',','.'))]);
-  return ev.length ? ev : null; }
-// dopo essere arrivato a t1, il prezzo torna a s prima di arrivare a t2? true / false / null (non si sa)
-function optStop(x, t1, s, t2) { if (x.mx<t2-1e-9) return true; if (!x.path) return null;
-  let up=false; for (const [k,v] of x.path) { if (k==='u') { if (v>=t1-1e-9) up=true; if (v>=t2-1e-9) return false; } else if (up && v<=s+1e-9) return true; }
-  return false; }
 function optBase() {
   const E=rowsOf('EOW'); if (!E) return null;
   if (S._optB && S._optB.src===E) return S._optB;
   const ts=[];
   E.forEach(t=>{ const mx=isFinite(t.max)?t.max:t.best; if (!t.d || !isFinite(mx) || t.d.getDay()%6===0) return;
-    const sl=num(t.raw['SL Points']), dd=num(t.raw['SL DD']);
-    ts.push({ t, mx, path:notePath(t.note), ddr: sl>0 && dd>=0 ? dd/sl : NaN, wk:weekOf(iso(t.d)), day:iso(t.d), band:bandOf(t), pb:String(t.raw['Candele PB']??'').trim() }); });
+    ts.push({ t, mx, wk:weekOf(iso(t.d)), day:iso(t.d), band:bandOf(t), pb:String(t.raw['Candele PB']??'').trim() }); });
   const weeks=[], wi={};
   if (ts.length) for (let d=pdIso(ts[0].wk); iso(d)<=ts[ts.length-1].wk; d=addDays(d,7)) { wi[iso(d)]=weeks.length; weeks.push(iso(d)); }
-  return (S._optB={ src:E, ts, weeks, wi, pU:{}, dir:ts.some(x=>x.t.dir), cc2:hasCol('2° CC')||ts.some(x=>x.t.cc2) }); }
-// probabilità di tornare a s prima di t2, dai trade con la nota (serve per quelli senza)
-function optPU(B, t1, s, t2) { const k=t1+'|'+s+'|'+t2; if (k in B.pU) return B.pU[k];
-  const v=B.ts.filter(x=>x.path && x.mx>=t2-1e-9).map(x=>optStop(x,t1,s,t2)?1:0);
-  return (B.pU[k] = v.length>=5 ? v.reduce((a,b)=>a+b,0)/v.length : .25); }
-// esito di un trade con la gestione g. mode: 'exp' valore atteso · 'lo' / 'hi' caso peggiore / migliore quando non si sa
-// (solo per lo stop a BE prima di 2R, dove le note non arrivano)
-function optR(B, x, g, mode) {
-  const mx=x.mx;
+  return (S._optB={ src:E, ts, weeks, wi, dir:ts.some(x=>x.t.dir), cc2:hasCol('2° CC')||ts.some(x=>x.t.cc2) }); }
+// esito di un trade con la gestione g, dal Max Real RR. Target fisso: esatto. Parziali: metà a t1; il resto a t2 se il Max
+// Real RR ci arriva, altrimenti allo stop spostato a s. Non si sa se prima di t2 il prezzo è tornato allo stop: stima per eccesso.
+function optR(B, x, g) { const mx=x.mx;
   if (g.k==='T') return mx>=g.t-1e-9 ? g.t : -1;
-  if (g.k==='P') { if (mx<g.t1-1e-9) return -1; let st=optStop(x,g.t1,g.s,g.t2); if (st===null) st=optPU(B,g.t1,g.s,g.t2); return .5*g.t1 + .5*(st*g.s + (1-st)*g.t2); }
-  if (mx<g.l-1e-9) return -1; if (mx<g.t-1e-9) return 0;
-  let st=optStop(x, Math.max(g.l,2), 0, g.t);
-  if (st===true) return 0;
-  if (g.l<2) { if (st===false && x.ddr===0) return g.t; if (x.ddr===0) return g.t;   // mai andato contro: lo stop a BE non scatta
-    return mode==='lo' ? 0 : mode==='hi' ? g.t : g.t/2; }                       // tra l e 2R le note non dicono niente
-  if (st===null) st=optPU(B,g.l,0,g.t);
-  return (1-st)*g.t; }
+  if (mx<g.t1-1e-9) return -1;
+  return .5*g.t1 + .5*(mx>=g.t2-1e-9 ? g.t2 : g.s); }
 function optPass(P, x) { const t=x.t;
   if (!P.asset.includes(/NQ/i.test(t.a||'')?'NQ':'ES') || !P.idee.includes(t.idea) || !P.giorni.includes(t.day) || !P.bande.includes(x.band)) return false;
   if ((P.dir && t.dir!==P.dir) || (P.smt==='fav' && t.smt!=='SMT a favore') || (P.smt==='nosf' && t.smt==='SMT a sfavore')) return false;
@@ -133,13 +109,13 @@ function optPass(P, x) { const t=x.t;
   if (P.pb.length && !P.pb.includes(x.pb)) return false;
   return true; }
 // simulazione del piano: i trade presi giorno per giorno con le regole del giorno, i R per settimana e l'esito di ogni trade
-function optSim(B, P, mode) {
+function optSim(B, P) {
   const W=B.weeks.length, wR=new Float64Array(W), wN=new Float64Array(W), rs=new Map(), seq=[];
   let day='', n=0, stop=false, ls=0, R=0;
   B.ts.forEach((x,i)=>{ if (!optPass(P,x)) return;
     if (x.day!==day) { day=x.day; n=0; stop=false; ls=0; R=0; }
     if (stop || (P.maxN && n>=P.maxN) || (P.sll && ls>=P.sll) || (P.lossR && R<=-P.lossR+1e-9)) return;
-    const r=optR(B,x,P.g,mode||'exp'); n++; R+=r; if (r<0) ls++; if (P.sw && r>0) stop=true;
+    const r=optR(B,x,P.g); n++; R+=r; if (r<0) ls++; if (P.sw && r>0) stop=true;
     const w=B.wi[x.wk]; wR[w]+=r; wN[w]++; rs.set(i,r); seq.push([w,r]); });
   return { wR, wN, rs, seq }; }
 // i numeri di una simulazione nelle ultime n settimane (fino alla settimana «to», esclusa)
@@ -160,10 +136,11 @@ function optCmp(B, base, v, to) {
   const c={ all:mean(to), m3:mean(13), m1:mean(4), w2:mean(2), wm, p:pos/N, pa:posA/N, aff };
   c.verdict=optVerdict(c); return c; }
 // le modifiche possibili a partire da un piano: [categoria, testo, nuovo piano]
-const OPT_GS = () => [...PLAN_MG.T.map(t=>({ k:'T', t })), ...[0,1].flatMap(s=>PLAN_MG.P2.map(t2=>({ k:'P', t1:2, s, t2 }))), ...[3,4,5].map(t=>({ k:'BE', t, l:2 }))];
+const OPT_GS = () => [...PLAN_MG.T.map(t=>({ k:'T', t })), ...PLAN_MG.P2.map(t2=>({ k:'P', t1:2, s:1, t2 }))];
 function optMoves(B, P) {
   const out=[], cp=()=>JSON.parse(JSON.stringify(P)), add=(cat,l,f)=>{ const q=cp(); f(q); out.push({ cat, l, P:q }); };
-  OPT_GS().forEach(g=>{ if (JSON.stringify(g)!==JSON.stringify(P.g)) add('g', 'gestione: '+mgTxt(g), q=>{ q.g=g; }); });
+  // le parziali sono stimate per eccesso: nei consigli si confrontano solo target fissi, e solo se il piano ha un target fisso
+  if (P.g.k==='T') PLAN_MG.T.forEach(t=>{ if (t!==P.g.t) add('g', 'gestione: target '+fmtX(t)+'R', q=>{ q.g={ k:'T', t }; }); });
   [['ES'],['NQ'],['ES','NQ']].forEach(a=>{ if (a.join()!==P.asset.join()) add('asset', a.length>1?'ES e NQ':'solo '+a[0], q=>{ q.asset=a; }); });
   const tog=(cat,key,all,v,lbl)=>{ const on=P[key].includes(v); if (on && P[key].length<2) return; add(cat, (on?'togli ':'aggiungi ')+lbl, q=>{ q[key]=on ? q[key].filter(x=>x!==v) : all.filter(x=>q[key].includes(x)||x===v); }); };
   L.idea.forEach(i=>tog('idee','idee',L.idea,i,i)); bandNames().forEach(b=>tog('bande','bande',bandNames(),b,b)); L.days.forEach(d=>tog('giorni','giorni',L.days,d,d.toLowerCase()));
@@ -192,9 +169,6 @@ function optAll() {
   // gestione: tutte le varianti (anche quella del piano) con i loro numeri
   const gs=OPT_GS(); if (!gs.some(g=>JSON.stringify(g)===JSON.stringify(P.g))) gs.unshift(P.g);
   const mg=gs.map(g=>{ const q=Object.assign({}, P, { g }), v=optSim(B,q); return { g, cur:JSON.stringify(g)===JSON.stringify(P.g), nums:nums(v), c:optCmp(B,base,v) }; });
-  // stop a BE prima di 2R: caso peggiore e migliore, perché tra 1R e 2R le note non dicono se il prezzo è tornato indietro
-  const be=[2,3,4].flatMap(t=>[1,1.5].map(l=>({ g:{ k:'BE', t, l } }))).map(o=>{ const q=Object.assign({}, P, { g:o.g });
-    return Object.assign(o, { lo:nums(optSim(B,q,'lo')), hi:nums(optSim(B,q,'hi')) }); });
   // regole del giorno: tutte le combinazioni principali
   const days=[];
   [1,2,3,0].forEach(maxN=>[1,0].forEach(sw=>[0,2].forEach(sll=>{ const q=Object.assign({}, P, { maxN, sw, sll }); days.push({ q, cur:maxN===P.maxN&&sw===P.sw&&sll===P.sll, nums:nums(optSim(B,q)) }); })));
@@ -208,7 +182,7 @@ function optAll() {
     watch=moves.filter(m=>m.c.verdict==='recente'||m.c.verdict==='calo').sort((a,b)=>ord[a.c.verdict]-ord[b.c.verdict]||b.c.m1-a.c.m1);
   // una sola proposta per categoria di gestione, asset e regole (sono alternative tra loro)
   const one=l=>{ const seen=new Set(); return l.filter(m=>{ const k=['g','asset','day'].includes(m.cat)?m.cat:m.l; if (seen.has(k)) return false; seen.add(k); return true; }); };
-  return (S._opt={ B, key, P, base, nums:nums(base), moves, sugg:one(sugg).slice(0,6), hint:one(hint).slice(0,3), watch:one(watch).slice(0,4), mg, be, days, groups, greedy, greedyOnlyHints:lvl.length>1, greedyNums:nums(greedy.sim), wf:wfRes, ms:performance.now()-t0 }); }
+  return (S._opt={ B, key, P, base, nums:nums(base), moves, sugg:one(sugg).slice(0,6), hint:one(hint).slice(0,3), watch:one(watch).slice(0,4), mg, days, groups, greedy, greedyOnlyHints:lvl.length>1, greedyNums:nums(greedy.sim), wf:wfRes, ms:performance.now()-t0 }); }
 function optGroups(B, P) {
   const W=B.weeks.length, all=Object.assign({}, P);
   const dims=[['asset','Mercati',x=>/NQ/i.test(x.t.a||'')?'NQ':'ES',L.asset,q=>{ q.asset=L.asset.slice(); }],
@@ -228,7 +202,7 @@ function optGroups(B, P) {
     dir:v=>!P.dir || v===P.dir, pb:v=>!P.pb.length || P.pb.includes(String(v).split(' ')[0]) };
   return dims.map(([id,name,fn,keys,relax])=>{ const q=JSON.parse(JSON.stringify(all)); relax(q);
     const xs=B.ts.filter(x=>optPass(q,x)), rows=keys.map(k=>{ const g=xs.filter(x=>fn(x)===k); if (!g.length) return null;
-      const r=x=>optR(B,x,P.g,'exp'), win=n=>{ const from=W-(n==='all'?W:n), h=g.filter(x=>B.wi[x.wk]>=from); return { n:h.length, rt:h.length?h.reduce((s,x)=>s+r(x),0)/h.length:NaN }; };
+      const r=x=>optR(B,x,P.g), win=n=>{ const from=W-(n==='all'?W:n), h=g.filter(x=>B.wi[x.wk]>=from); return { n:h.length, rt:h.length?h.reduce((s,x)=>s+r(x),0)/h.length:NaN }; };
       const months={}; g.forEach(x=>{ const m=x.day.slice(0,7); (months[m]=months[m]||[]).push(r(x)); }); const mv=Object.values(months).filter(a=>a.length>=3).map(a=>a.reduce((s,y)=>s+y,0));
       const w=[win('all'), win(13), win(4)], tr = w[1].n>=8 && w[0].n>=15 ? (w[1].rt-w[0].rt>.3 ? 1 : w[1].rt-w[0].rt<-.3 ? -1 : 0) : 0;
       return { k, on:inPlan[id](k), w, tr, mPos:mv.filter(x=>x>0).length, mTot:mv.length }; }).filter(Boolean);
@@ -237,7 +211,7 @@ function optGroups(B, P) {
 // ── pagina ──
 const OPT_V = { si:['check','Conviene','ok'], indizio:['spark','Da provare','try'], recente:['trendUp','Sta funzionando di recente','up'], calo:['trendDn','Funzionava, ora meno','down'] };
 const OPT_CAT = { g:'Gestione', asset:'Mercati', idee:'Setup', bande:'Orari', giorni:'Giorni', ctx:'Condizioni', day:'Regole del giorno' };
-const OPT_TABS = [{ v:'g', l:'Gestione' }, { v:'day', l:'Giorno' }, { v:'set', l:'Setup' }, { v:'ora', l:'Orari' }, { v:'ctx', l:'Contesto' }];
+const OPT_TABS = [{ v:'g', l:'Gestione' }, { v:'set', l:'Setup' }, { v:'ora', l:'Orari' }, { v:'ctx', l:'Contesto' }];
 const OPT_TG = { set:['asset','idee','dir'], ora:['bande','giorni'], ctx:['news','smt','lvn','clean','cc2','pb'] };
 const fRw = x => isFinite(x) ? fmtN(x,1,true) : '–';
 const fRt = x => isFinite(x) ? fmtN(x,2,true) : '–';
@@ -253,7 +227,7 @@ function renderOpt() {
     return; }
   const O=optAll();
   if (!O) { enter(el, head('EOW · piano e alternative')+emptyState('Servono più settimane', 'Per confrontare il piano con le alternative servono almeno 6 settimane di trade nell\'EOW.')); return; }
-  const h=head('EOW · '+O.B.ts.length+' trade · '+optDates(O.B).replace(/ \d{4}$/,''))+optPlanCard(O)+optSuggCard(O)+optPropCard(O)+optDetCard(O)+optAiCard()+optHowCard();
+  const h=head('EOW · '+O.B.ts.length+' trade · '+optDates(O.B).replace(/ \d{4}$/,''))+optPlanCard(O)+optSuggCard(O)+optPropCard(O)+optDetCard(O)+optAiCard()+optHowCard(O);
   enter(el, h, ()=>{ const c=$('c-opt'); if (c) lineChart(c, optCurve(O), { h:150, fmt:v=>fmtN(v,1,true)+' R', aria:'R cumulati del piano settimana per settimana' }); });
 }
 function optCurve(O) { const B=O.B, pts=[{ y:0, x:'', tip:' · inizio' }]; let eq=0;
@@ -275,6 +249,7 @@ function optPlanTags(P) { const w=planWhen(P);
 function optPlanCard(O) { const n=O.nums;
   return '<div class="card wide rise op-plan"><div class="card-h"><h2 class="h2">Il tuo piano</h2><span class="sub">R a settimana</span></div>'+optPlanTags(O.P)+
     '<div class="op-k">'+OPT_WIN.map((w,i)=>'<div><span>'+w.l+'</span><b class="num '+sgn(n[i].rw)+'">'+fRw(n[i].rw)+'</b><em>'+n[i].n+' trade</em></div>').join('')+'</div>'+
+    (O.P.g.k==='P'?'<p class="op-leg">Gestione a parziali: numeri stimati dal Max Real RR, un po\' più alti del vero.</p>':'')+
     '<div class="chart" id="c-opt"></div>'+
     (S._planPrev?'<button type="button" class="link" data-act="planundo">'+ic('refresh',15,2)+'Annulla l\'ultima modifica al piano</button>':'')+'</div>'; }
 // una modifica: titolo, quanto cambia (R a settimana) nei tre periodi, una riga di dettaglio
@@ -303,25 +278,18 @@ function optPropCard(O) {
   return '<div class="card wide rise op-prop"><div class="card-h"><h2 class="h2">'+(ho?'Piano da provare':'Piano proposto')+'</h2><span class="sub">'+(ho?'fatto di modifiche da provare':'le modifiche insieme')+'</span></div>'+b+'</div>'; }
 // il dettaglio, diviso in schede
 function optDetCard(O) { const t=S.optTab||'g';
-  return '<div class="card wide rise op-det"><div class="card-h"><h2 class="h2">Nel dettaglio</h2><span class="sub">'+(t==='g'||t==='day'?'R a settimana':'R a trade')+'</span></div>'+
+  return '<div class="card wide rise op-det"><div class="card-h"><h2 class="h2">Nel dettaglio</h2><span class="sub">'+(t==='g'?'R a settimana':'R a trade')+'</span></div>'+
     seg('opt-tab',OPT_TABS,t,'op-tabs')+'<div id="op-det">'+optDetBody(O,t)+'</div></div>'; }
 function optDetBody(O, t) {
-  if (t==='g') return '<div class="op-gg"><div>'+optMgSec(O)+'</div><div>'+optBeSec(O)+'</div></div>';
-  if (t==='day') return '<div class="op-gg"><div>'+optDaySec(O)+'</div></div>';
+  if (t==='g') return '<div class="op-gg"><div>'+optMgSec(O)+'</div><div>'+optDaySec(O)+'</div></div>';
   return '<p class="op-leg">Con il resto del piano; sotto ogni valore, il numero di trade. La freccia dice se negli ultimi 3 mesi rende di più o di meno.</p>'+
     '<div class="op-gg">'+O.groups.filter(g=>OPT_TG[t].includes(g.id)).map(g=>optGroupSec(O,g)).join('')+'</div>'; }
 function optMgSec(O) {
-  const fam=g=>g.k==='T' ? ['Target fisso', fmtX(g.t)+'R'] : g.k==='P' && g.t1===2 && (g.s===0||g.s===1) ? ['Metà a 2R, stop '+(g.s?'a +1R':'a BE'), 'resto a '+fmtX(g.t2)+'R']
-    : g.k==='BE' && g.l===2 ? ['Stop a BE a 2R', 'target '+fmtX(g.t)+'R'] : ['Il tuo piano', optCap(mgTxt(g,true))];
+  const fam=g=>g.k==='T' ? ['Target fisso', fmtX(g.t)+'R'] : g.k==='P' && g.t1===2 && g.s===1 ? ['Metà a 2R, stop a +1R · stima', 'resto a '+fmtX(g.t2)+'R'] : ['Il tuo piano · stima', optCap(mgTxt(g,true))];
   const rows=O.mg.map(m=>{ const f=fam(m.g); return { grp:f[0], l:f[1], cur:m.cur, nums:m.nums }; });
-  const ord=['Il tuo piano','Target fisso','Metà a 2R, stop a BE','Metà a 2R, stop a +1R','Stop a BE a 2R']; rows.sort((a,b)=>ord.indexOf(a.grp)-ord.indexOf(b.grp));
-  return optTable(rows,'rw',fRw,{ head:'Gestione' }); }
-function optBeSec(O) {
-  const rows=O.be.map(o=>{ const b=O.nums[0].rw, lo=o.lo[0].rw, hi=o.hi[0].rw, v = lo>b ? ['ok','sempre meglio del piano'] : hi<b ? ['ko','sempre peggio del piano'] : ['','incerto'];
-    return '<tr><td>'+esc(optCap(mgTxt(o.g,true)))+'<small class="'+v[0]+'">'+v[1]+'</small></td><td class="num">'+fRw(lo)+' … '+fRw(hi)+'</td><td class="num">'+fRw(o.lo[2].rw)+' … '+fRw(o.hi[2].rw)+'</td></tr>'; }).join('');
-  return '<div class="op-h3"><b>Stop a BE prima di 2R</b><span>dal caso peggiore al migliore</span></div>'+
-    '<div class="tbl-wrap"><table class="ex-t op-t op-be"><tr><th></th><th>Tutto</th><th>4 sett.</th></tr>'+rows+'</table></div>'+
-    '<p class="op-leg">Le note partono da 2R: se scrivi anche i ritorni prima di 2R, qui avrai un numero preciso.</p>'; }
+  const ord=['Il tuo piano · stima','Target fisso','Metà a 2R, stop a +1R · stima']; rows.sort((a,b)=>ord.indexOf(a.grp)-ord.indexOf(b.grp));
+  return optTable(rows,'rw',fRw,{ head:'Uscita' })+
+    '<p class="op-leg">Le parziali sono una stima per eccesso: la seconda metà conta come arrivata al target se il Max Real RR lo raggiunge, ma prima potrebbe essere tornata allo stop. Per questo nei consigli confronto solo i target fissi.</p>'; }
 function optDaySec(O) {
   const rows=O.days.filter(d=>d.cur || d.q.sll===0 || d.q.sll===O.P.sll).map(d=>({ l:dayRuleTxt(d.q,true).replace(/ · max −[\d,]+ R$/,''), cur:d.cur, nums:d.nums }));
   return optTable(rows,'rw',fRw,{ head:'Regole del giorno', cols:[0,1,2] }); }
@@ -336,19 +304,19 @@ function optGroupSec(O, g) {
 function optAiCard() {
   return '<div class="card wide rise op-ai"><span class="op-ic">'+ic('spark',18,2.2)+'</span><div class="op-ai-t"><b>Chiedi a Claude</b><span>Vede il tuo piano e tutti questi numeri.</span></div>'+
     '<div class="op-ai-b"><button type="button" class="btn sm" data-act="optai">Commenta</button><button type="button" class="btn sec sm" data-act="optask">Fai una domanda</button></div></div>'; }
-function optHowCard() {
+function optHowCard(O) {
   return '<details class="card wide rr-how rise op-how"><summary>'+ic('chev',15,2.2)+'Come funziona</summary><ul>'+
     '<li><b>Il confronto.</b> Ogni alternativa cambia una sola cosa del piano e si confronta con il piano settimana per settimana, in R a settimana: conta sia quanto rende un trade sia quanti trade fai.</li>'+
     '<li><b>Conviene</b> se migliora con probabilità almeno del 99% (settimane recenti pesate di più, il peso si dimezza ogni '+OPT_HL+' settimane) e del 95% (tutte uguali), anche negli ultimi 3 mesi e senza peggiorare l\'ultimo mese. <b>Da provare</b>: almeno 90% e 75%.</li>'+
-    '<li><b>Perché soglie così alte.</b> Su una cinquantina di alternative qualcuna sembra buona per caso: rimescolando a caso gli esiti dei trade, un falso «conviene» esce circa una volta ogni 10 analisi, un falso «da provare» una ogni 3.</li>'+
-    '<li><b>Parziali e BE.</b> Target fisso dal Max Real RR; parziali e BE dopo 2R dalle note («raggiunge 2.4rr, torna a 1.2rr, poi raggiunge 4rr»); prima di 2R solo come forchetta.</li>'+
+    '<li><b>Perché soglie così alte.</b> Su '+O.moves.length+' alternative qualcuna sembra buona per caso: rimescolando a caso gli esiti dei trade, un falso «conviene» esce circa una volta ogni 10 analisi, un falso «da provare» una ogni 3.</li>'+
+    '<li><b>Uscite.</b> Il target fisso si calcola esatto dal Max Real RR. Le parziali sono una stima per eccesso (la seconda metà conta come arrivata al target se il Max Real RR lo raggiunge), quindi non entrano nei consigli. Le note dei trade non si usano.</li>'+
     '<li><b>La verifica.</b> La stessa ricerca rifatta senza le ultime 4 settimane, poi controllata proprio su quelle.</li></ul></details>'; }
 // pulsanti della pagina e della scheda del piano
 function optClick(b) {
   if (S.sheet==='plan' && b.closest('#sh-body')) return planClick(b);
   const tg=b.closest('[data-seg="opt-tab"]');
   if (tg) { if (!b.dataset.v) return true; S.optTab=b.dataset.v; setSeg(tg,S.optTab); const d=$('op-det'), O=S._opt;
-    if (d && O) { d.innerHTML=optDetBody(O,S.optTab); const sb=tg.closest('.card').querySelector('.card-h .sub'); if (sb) sb.textContent=['g','day'].includes(S.optTab)?'R a settimana':'R a trade'; } return true; }
+    if (d && O) { d.innerHTML=optDetBody(O,S.optTab); const sb=tg.closest('.card').querySelector('.card-h .sub'); if (sb) sb.textContent=S.optTab==='g'?'R a settimana':'R a trade'; } return true; }
   const a=b.dataset.act;
   if (a==='planedit') { openPlan(); return true; }
   if (a==='planundo') { if (S._planPrev) { CFG.piano=S._planPrev; S._planPrev=null; planSaved(); toast('Piano com\'era prima'); renderCurrent(true); } return true; }
@@ -365,14 +333,13 @@ function optClick(b) {
 function optCtx() { const O=optAll(); if (!O) return 'servono almeno 6 settimane di trade nell\'EOW';
   const w=n=>OPT_WIN.reduce((o,x,i)=>(o[x.l]={ R_a_settimana:r2(n[i].rw), R_a_trade:r2(n[i].rt), trade:n[i].n, vinti:r2(n[i].wr), drawdown_R:r2(n[i].dd) }, o), {});
   const c=m=>({ modifica:m.l, verdetto:OPT_V[m.c.verdict]?OPT_V[m.c.verdict][1]:'nessuno', R_a_settimana_in_piu:{ tutto:r2(m.c.all), ultimi_3_mesi:r2(m.c.m3), ultimo_mese:r2(m.c.m1), ultime_2_settimane:r2(m.c.w2) }, probabilita_che_sia_vero:r2(m.c.p), trade_che_cambiano:m.c.aff });
-  return { nota:'Backtest sui trade dell\'EOW: ogni alternativa simulata con le regole del piano e confrontata settimana per settimana. «Conviene» con probabilità ≥ 99% (pesata sulle settimane recenti) e ≥ 95% (tutte uguali), «da provare» con ≥ 90% e ≥ 75%: con una cinquantina di alternative provate un «da provare» falso esce circa una volta su tre.',
+  return { nota:'Backtest sui trade dell\'EOW: ogni alternativa simulata con le regole del piano e confrontata settimana per settimana. «Conviene» con probabilità ≥ 99% (pesata sulle settimane recenti) e ≥ 95% (tutte uguali), «da provare» con ≥ 90% e ≥ 75%: con decine di alternative provate un «da provare» falso esce circa una volta su tre. Esiti dal Max Real RR: target fisso esatto; le gestioni a parziali sono stimate per eccesso (la seconda metà conta come arrivata al target se il Max Real RR lo raggiunge) e non entrano nei consigli. Le note dei trade non si usano.',
     periodo:optDates(O.B), settimane:O.B.weeks.length, piano:planDesc(O.P), risultati_del_piano:w(O.nums),
     consigliate:O.sugg.map(c), da_provare:O.hint.map(c), da_tenere_d_occhio:O.watch.map(c), piano_proposto:{ fatto_solo_di_modifiche_da_provare:O.greedyOnlyHints, modifiche:O.greedy.steps.map(s=>s.l), risultati:w(O.greedyNums) },
     verifica_sulle_ultime_4_settimane_non_viste:O.wf ? { proposta_senza_ultime_4:O.wf.steps.map(s=>s.l), R_proposta:r2(O.wf.prop.R), R_piano:r2(O.wf.plan.R) } : null,
     gestioni:O.mg.map(m=>({ gestione:mgTxt(m.g), del_piano:m.cur, R_a_settimana:OPT_WIN.reduce((o,x,i)=>(o[x.l]=r2(m.nums[i].rw), o), {}) })),
-    stop_a_BE_prima_di_2R:O.be.map(o=>({ gestione:mgTxt(o.g), R_a_settimana_tutto:[r2(o.lo[0].rw), r2(o.hi[0].rw)], nota:'intervallo dal caso peggiore al migliore' })),
     gruppi:O.groups.map(g=>({ dimensione:g.name, valori:g.rows.map(r=>({ valore:r.k, nel_piano:r.on, R_a_trade:{ tutto:r2(r.w[0].rt), ultimi_3_mesi:r2(r.w[1].rt), ultimo_mese:r2(r.w[2].rt) }, trade:{ tutto:r.w[0].n, ultimi_3_mesi:r.w[1].n, ultimo_mese:r.w[2].n }, mesi_positivi:r.mPos+'/'+r.mTot })) })) }; }
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['ottimizza.js'] = '2026-11-03.2';
+EB_V['ottimizza.js'] = '2026-11-03.3';

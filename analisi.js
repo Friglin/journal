@@ -123,7 +123,7 @@ function coachData(scope) {
   const d0=ts[0].d, d1=ts[ts.length-1].d;
   return { file:S.file, esito: E?'EOW: vinto '+T+'R se il trade arriva a '+T+'R prima dello stop, altrimenti −1R':'Journal: RR scritto nel trade (il PnL in dollari può differire per commissioni, slippage e size)',
     periodo: d0.getDate()+' '+MESI[d0.getMonth()]+' '+d0.getFullYear()+' → '+d1.getDate()+' '+MESI[d1.getMonth()]+' '+d1.getFullYear(),
-    filtri: allSc ? ['nessuno: tutti i trade del file'] : activeFilters().map(x=>x.l), trade:ts.length, winrate:a.wr, R_totali:a.R, expectancy:overall, profit_factor:isFinite(a.pf)?a.pf:null, max_drawdown_R:a.dd,
+    filtri: allSc ? ['nessuno: tutti i trade del file'] : activeFilters().map(x=>x.t||x.l), trade:ts.length, winrate:a.wr, R_totali:a.R, expectancy:overall, profit_factor:isFinite(a.pf)?a.pf:null, max_drawdown_R:a.dd,
     target_attuale: E?T:null, targets, target_consigliato: best && best.T, forma_recente: rec && { ultimi:recentN, expectancy:rec.mean, storico:overall },
     gruppi: groups, giorno_news: dayNews.sort((x,y)=>y.shr-x.shr), disciplina: disc,
     oggi: GIORNI[new Date().getDay()]+' '+new Date().getDate()+' '+MESI_F[new Date().getMonth()] };
@@ -248,7 +248,7 @@ function tableCtx(ts, m) {
 function ctxNow() {
   const m=curModel(), ts=filtered(m), a=agg(ts,m), E=S.type==='EOW', tab=S.tab;
   const c={ app:APP, file:S.file, significato_file: E ? 'EOW: review di fine settimana dei setup (backtest), esito calcolato a un target fisso di '+tgt()+'R' : 'Journal: trade reali eseguiti, esito = RR effettivo',
-    pagina:PAGE_LBL[tab], piano_di_trading:planDesc(), filtri:activeFilters().map(x=>x.l), oggi:new Date().toLocaleDateString('it-IT',{ weekday:'long', day:'numeric', month:'long', year:'numeric' }),
+    pagina:PAGE_LBL[tab], piano_di_trading:planDesc(), filtri:activeFilters().map(x=>x.t||x.l), oggi:new Date().toLocaleDateString('it-IT',{ weekday:'long', day:'numeric', month:'long', year:'numeric' }),
     trade_filtrati:ts.length, riepilogo_filtrati:{ winrate:r2(a.wr), R_totali:r2(a.R), expectancy:r2(a.exp), profit_factor:isFinite(a.pf)?r2(a.pf):null, max_drawdown_R:r2(a.dd) },
     statistiche_tutti_i_trade:coachData('all'), statistiche_con_filtri:coachData('filt'), tutti_i_trade:tableCtx(all(), m) };
   if (tab==='home') { const p=inRange(ts, periodRange(S.per,0)), pa=agg(p,m); c.periodo_home={ periodo:S.per, trade:p.length, R:r2(pa.R), winrate:r2(pa.wr) }; c.trade_del_periodo=p.slice(-20).map(t=>tradeCtx(t,m)); }
@@ -295,4 +295,4 @@ async function delTrade() {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['analisi.js'] = '2026-11-03.2';
+EB_V['analisi.js'] = '2026-11-03.3';

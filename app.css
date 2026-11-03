@@ -581,8 +581,8 @@ nav.bar { background:color-mix(in srgb,var(--surface) 76%,transparent); -webkit-
   .aifab { left:auto; right:max(20px,calc(env(safe-area-inset-right,0px) + 20px)); bottom:calc(env(safe-area-inset-bottom,0px) + 146px); width:48px; height:48px; border-radius:16px; }
 }
 /* pagine che non dipendono da EOW / Journal: niente selettore del file */
-:root[data-tab="news"] #fileSeg, :root[data-tab="set"] #fileSeg, :root[data-tab="disc"] #fileSeg, :root[data-tab="mc"] #fileSeg { visibility:hidden; }
-:root[data-tab="home"] .top .wrap.filebar, :root[data-tab="news"] .top .wrap.filebar, :root[data-tab="set"] .top .wrap.filebar, :root[data-tab="disc"] .top .wrap.filebar, :root[data-tab="mc"] .top .wrap.filebar { display:none; }
+:root[data-tab="news"] #fileSeg, :root[data-tab="set"] #fileSeg, :root[data-tab="disc"] #fileSeg, :root[data-tab="mc"] #fileSeg, :root[data-tab="opt"] #fileSeg { visibility:hidden; }
+:root[data-tab="home"] .top .wrap.filebar, :root[data-tab="news"] .top .wrap.filebar, :root[data-tab="set"] .top .wrap.filebar, :root[data-tab="disc"] .top .wrap.filebar, :root[data-tab="mc"] .top .wrap.filebar, :root[data-tab="opt"] .top .wrap.filebar { display:none; }
 /* ───── navigazione: barra laterale su PC, barra in basso con «Altro» sul telefono ───── */
 .side { display:none; }
 .ptitle { display:none; }
@@ -1219,4 +1219,4 @@ nav.bar button:active .pill { transform:scale(.88); }
 .op-how ul { margin:10px 0 0; padding-left:18px; display:flex; flex-direction:column; gap:8px; } .op-how li { font-size:13px; line-height:1.55; color:var(--fg2); }
 
 /* versione del foglio di stile (la scrive tools/build.py): index.html controlla che sia uguale a BUILD */
-:root { --eb-build: "2026-11-03.2"; }
+:root { --eb-build: "2026-11-03.3"; }

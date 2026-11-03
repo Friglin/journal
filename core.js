@@ -62,8 +62,8 @@ normProp();
 // Tutto quello che il piano prevede: mercati e setup, condizioni d'ingresso, orari, gestione del trade e regole del giorno.
 // Lo usano i filtri di partenza dell'EOW, la Disciplina, il riepilogo di oggi e la pagina Ottimizza; è sincronizzato tra i
 // dispositivi come rischio e conti. Gestione (g): { k:'T', t } target fisso · { k:'P', t1, s, t2 } metà a t1, stop del resto
-// spostato a s (0 = BE), resto a t2 · { k:'BE', t, l } target t, stop a BE quando il prezzo arriva a l.
-const PLAN_MG = { T:[1,1.5,2,2.5,3,4,5], P1:[2,2.5,3], PS:[0,.5,1], P2:[3,4,5], BT:[2,3,4,5], BL:[1,1.5,2] };
+// spostato a s (0 = BE), resto a t2. (Lo stop a BE «quando il prezzo arriva a l» non c'è più: diventa target fisso.)
+const PLAN_MG = { T:[1,1.5,2,2.5,3,4,5], P1:[2,2.5,3], PS:[0,.5,1], P2:[3,4,5] };
 const PLAN_PB = { '':[], '2':['1','2'], '3':['1','2','3'], '4':['1','2','3','4'] };
 function planDef() { const P=CFG.plan;   // le impostazioni di prima (asset, idee e «max 2 al giorno» dell'EOW, limite di perdita)
   return { asset: CFG.asset ? [CFG.asset] : L.asset.slice(), idee: L.idea.filter(i=>!(CFG.exIdea||[]).includes(i)), dir:'', smt:'', lvn:'', clean:'', cc2:'', news:'',
@@ -76,7 +76,7 @@ function normPiano() {
   ['dir','smt','lvn','clean','cc2','news'].forEach(k=>{ q[k]=String(q[k]||''); });
   const g=q.g||{}, has=(a,v)=>a.includes(+v);
   q.g = g.k==='T' && has(PLAN_MG.T,g.t) ? { k:'T', t:+g.t }
-      : g.k==='BE' && has(PLAN_MG.BT,g.t) && has(PLAN_MG.BL,g.l) && +g.l<+g.t ? { k:'BE', t:+g.t, l:+g.l }
+      : g.k==='BE' && has(PLAN_MG.T,g.t) ? { k:'T', t:+g.t }
       : g.k==='P' && has(PLAN_MG.P1,g.t1) && has(PLAN_MG.PS,g.s) && has(PLAN_MG.P2,g.t2) && +g.t2>+g.t1 ? { k:'P', t1:+g.t1, s:+g.s, t2:+g.t2 } : d.g;
   q.maxN=[0,1,2,3].includes(+q.maxN)?+q.maxN:2; q.sw=q.sw?1:0; q.sll=[0,1,2].includes(+q.sll)?+q.sll:0;
   q.lossR=isFinite(num(q.lossR)) && num(q.lossR)>0 ? Math.min(20, num(q.lossR)) : 0; q.altro=String(q.altro||'').slice(0,600);
@@ -88,7 +88,6 @@ const planLoss = () => PL().lossR || NaN;   // limite di perdita giornaliero in 
 const fmtX = x => fmtN(x, x%1?1:0);
 function mgTxt(g, short) { g=g||PL().g;
   if (g.k==='T') return (short?'':'target ')+fmtX(g.t)+'R';
-  if (g.k==='BE') return (short?'':'target ')+fmtX(g.t)+'R, stop a BE a '+fmtX(g.l)+'R';
   return 'metà a '+fmtX(g.t1)+'R, stop '+(g.s?'a +'+fmtX(g.s)+'R':'a BE')+', resto a '+fmtX(g.t2)+'R'; }
 function dayRuleTxt(P, short) { P=P||PL(); const a=[];
   a.push(P.maxN ? (short?'max '+P.maxN+' al giorno':'al massimo '+P.maxN+' trade al giorno') : (short?'nessun limite di trade':'nessun limite di trade al giorno'));
@@ -563,7 +562,7 @@ function perLabel() { const now=new Date(), cr=S.per==='c'?periodRange('c',0):nu
     c: cr && cr[0].getFullYear()>2000 ? fmtIt(iso(cr[0]))+' → '+fmtIt(iso(addDays(cr[1],-1))) : 'Date da scegliere' }[S.per]; }
 function setPer(v) { S.per=v; store.set('per',v); }
 function activeFilters() { const F=S.filt, a=[];
-  if (F.plan==='max2') a.push({k:'plan', l:'Piano: '+dayRuleTxt(null,true)});
+  if (F.plan==='max2') a.push({k:'plan', l:'Piano', t:'Regole del giorno del piano: '+dayRuleTxt(null,true)});   // t: il testo intero (tooltip e Claude)
   if (F.asset) a.push({k:'asset', l:F.asset});
   if (F.dir) a.push({k:'dir', l:F.dir});
   if (S.type==='EOW' && tgt()!==2) a.push({k:'tgt', l:'Target '+tgt()+'R'});
@@ -576,7 +575,7 @@ function activeFilters() { const F=S.filt, a=[];
 function fbar(d) {
   const af=activeFilters();
   return '<div class="fbar rise" style="--d:'+(d||0)+'ms"><button type="button" class="fbtn" data-act="filters">'+ic('filter',17,2)+'Filtri'+(af.length?'<em>'+af.length+'</em>':'')+'</button>'+
-    af.map(x=>'<button type="button" class="fchip" data-rm="'+esc(x.k)+'">'+esc(x.l)+ic('x',13,2.4)+'</button>').join('')+'</div>';
+    af.map(x=>'<button type="button" class="fchip" data-rm="'+esc(x.k)+'"'+(x.t?' title="'+esc(x.t)+'"':'')+' aria-label="Togli il filtro: '+esc(x.t||x.l)+'">'+esc(x.l)+ic('x',13,2.4)+'</button>').join('')+'</div>';
 }
 function removeFilter(k) { const F=S.filt;
   if (k.indexOf('idea:')===0) F.idea=(F.idea||[]).filter(x=>x!==k.slice(5));
@@ -616,4 +615,4 @@ function filtClick(b) {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['core.js'] = '2026-11-03.2';
+EB_V['core.js'] = '2026-11-03.3';
