@@ -1,6 +1,6 @@
 // Edgebook · home.js — Home, palette comandi, Panoramica, News, Trump, riepilogo di oggi.
 // I file JS sono script classici caricati in ordine da index.html e condividono le stesse variabili globali:
-// l'ordine conta (core.js → home.js → pagine.js → analisi.js → simula.js → scheda.js).
+// l'ordine conta (core.js → home.js → pagine.js → analisi.js → simula.js → ottimizza.js → scheda.js).
 // ───────────────────────── HOME ─────────────────────────
 function sessionInfo() {
   const it = romeDate(Date.now()), m=it.getHours()*60+it.getMinutes(), wd=it.getDay(), ss=sessOf(iso(it));   // formattatore già pronto (toLocaleString ne creava uno a ogni chiamata)
@@ -133,22 +133,25 @@ function dayNotes(t, wdN, cat) {
 // orario italiano dell'apertura di New York (9:30 ET) in una data: cambia di un'ora nelle settimane del cambio d'ora
 function nyOpenIt(dIso) { const d=pdIso(dIso); for (let h=12; h<=17; h++) for (const m of [0,30]) { const u=Date.UTC(d.getFullYear(),d.getMonth(),d.getDate(),h,m), n=nyHM(u);
   if (n.getHours()===9 && n.getMinutes()===30) { const r=romeDate(u); return p2(r.getHours())+':'+p2(r.getMinutes()); } } return ''; }
-// Disciplina: giornate del Journal giudicate con le regole del piano (max 2 trade, stop dopo il TP, perdita massima, solo trade validi)
+// Disciplina: giornate del Journal giudicate con le regole del giorno del piano (trade al giorno, stop dopo il TP, stop dopo le perdite,
+// perdita massima) e con i trade validi. Una regola che il piano non ha conta sempre come rispettata.
 const jModel = { rOf:t=> isFinite(t.rr)?t.rr:0, isWin:t=>t.out==='Win', isLoss:t=>t.out==='Loss' };
 function discDays(ts) {
-  const rr=t=>isFinite(t.rr)?t.rr:0, lim=num(CFG.lossR), days={};
+  const P=PL(), rr=t=>isFinite(t.rr)?t.rr:0, lim=planLoss(), days={};
   ts.forEach(t=>{ const k=iso(t.d); (days[k]=days[k]||[]).push(t); });
   return Object.entries(days).sort((a,b)=>a[0]<b[0]?-1:1).map(([k,g])=>{ const afterTP=g.some((t,i)=>i>0 && g.slice(0,i).some(x=>x.out==='Win'||rr(x)>0)), R=g.reduce((s,t)=>s+rr(t),0);
-    const d={ k, n:g.length, R, max2:g.length<=2, tp:!afterTP, loss:!(isFinite(lim)&&lim>0) || R>-lim-1e-9, valid:!g.some(t=>t.exe==='Errore'), hadWin:g.some(x=>x.out==='Win'||rr(x)>0) };
-    d.ok = d.max2 && d.tp && d.loss && d.valid; return d; });
+    const afterL=P.sll ? g.some((t,i)=>g.slice(0,i).filter(x=>rr(x)<0).length>=P.sll) : false;
+    const d={ k, n:g.length, R, max2:!P.maxN || g.length<=P.maxN, tp:!P.sw || !afterTP, sl:!afterL, loss:!(isFinite(lim)&&lim>0) || R>-lim-1e-9, valid:!g.some(t=>t.exe==='Errore'), hadWin:g.some(x=>x.out==='Win'||rr(x)>0), hadL:P.sll ? g.filter(x=>rr(x)<0).length>=P.sll : false };
+    d.ok = d.max2 && d.tp && d.sl && d.loss && d.valid; return d; });
 }
 function discMini() {
   const J=rowsOf('Journal')||[], now=new Date(), jm=J.filter(t=>t.d>=new Date(now.getFullYear(),now.getMonth(),1)), D=discDays(jm), okN=D.filter(d=>d.ok).length;
   let run=0; for (let i=D.length-1;i>=0 && D[i].ok;i--) run++;
   return '<button type="button" class="card disc dmini" data-nav="disc"><div class="card-h"><h2 class="h2">Disciplina</h2><span class="sub">Journal · '+MESI_F[now.getMonth()]+'</span></div>'+
     (D.length ? '<div class="ds-lead"><b class="num">'+okN+' su '+D.length+'</b><span>giornate in regola</span></div><div class="ds-bar"><i style="width:'+(100*okN/D.length)+'%"></i></div>'+
-      '<div class="dm-rules">'+[['Solo trade validi',D.filter(d=>d.valid).length,D.length],['Max 2 trade al giorno',D.filter(d=>d.max2).length,D.length],
-        ['Stop dopo il TP',D.filter(d=>d.hadWin&&d.tp).length,D.filter(d=>d.hadWin).length]].concat(isFinite(num(CFG.lossR))&&num(CFG.lossR)>0?[['Perdita max −'+fmtN(num(CFG.lossR),1)+' R',D.filter(d=>d.loss).length,D.length]]:[])
+      '<div class="dm-rules">'+[['Solo trade validi',D.filter(d=>d.valid).length,D.length]].concat(PL().maxN?[['Max '+PL().maxN+' trade al giorno',D.filter(d=>d.max2).length,D.length]]:[],
+        PL().sw?[['Stop dopo il TP',D.filter(d=>d.hadWin&&d.tp).length,D.filter(d=>d.hadWin).length]]:[], PL().sll?[['Stop dopo '+PL().sll+(PL().sll===1?' perdita':' perdite'),D.filter(d=>d.hadL&&d.sl).length,D.filter(d=>d.hadL).length]]:[],
+        isFinite(planLoss())?[['Perdita max −'+fmtN(planLoss(),1)+' R',D.filter(d=>d.loss).length,D.length]]:[])
         .map(([l,o,t])=>'<span class="'+(o===t?'ok':'ko')+'">'+ic(o===t?'check':'alert',14,2.2)+l+'<b class="num">'+(t?o+'/'+t:'–')+'</b></span>').join('')+'</div>'+
       '<p class="ds-note">'+(run>1?'Sei a <b>'+run+' giornate in regola di fila</b>.':'Errori ed esecuzione nella pagina Disciplina.')+'</p>'
     : '<div class="empty-row">Nessun trade reale questo mese.</div>')+'<span class="link">Apri Disciplina'+ic('chev',15,2)+'</span></button>';
@@ -428,14 +431,15 @@ function chkGet() { try { return JSON.parse(store.get(chkKey(),'[]'))||[]; } cat
 function briefing() {
   const now=Date.now(), rn=romeDate(now), t=iso(rn), wdN=rn.getDay(), weekend = wdN===0 || wdN===6, dayName=L.days[(wdN+6)%7];
   const J=rowsOf('Journal'), tj=J ? J.filter(t2=>iso(t2.d)===t) : [], won=tj.some(x=>x.out==='Win' || x.rr>0), n=tj.length, rT=tj.reduce((s,x)=>s+(isFinite(x.rr)?x.rr:0),0);
-  const lossLim=num(CFG.lossR);
+  const lossLim=planLoss(), P=PL(), lsT=tj.filter(x=>(isFinite(x.rr)?x.rr:0)<0).length;
   let st;
   if (weekend) st={ c:'off', t:'Mercati chiusi', s:'Oggi niente trading: è il momento della revisione della settimana (EOW).' };
   else if (rn.getHours()*60+rn.getMinutes() > sessOf(t)[1]) st={ c:'off', t:'Sessione finita', s: n ? (won?'Giornata chiusa in positivo.':rT<0?'Una giornata storta fa parte del piano.':'Giornata chiusa.') : 'Nessun trade: se non c\'era un setup valido, è la scelta giusta.' };
-  else if (won) st={ c:'done', t:'Giornata chiusa', s:'Hai preso il TP: il piano dice stop per oggi.' };
-  else if (n>=2) st={ c:'done', t:'Limite raggiunto', s:'Hai fatto i 2 trade massimi del piano.' };
+  else if (won && P.sw) st={ c:'done', t:'Giornata chiusa', s:'Hai preso il TP: il piano dice stop per oggi.' };
+  else if (P.maxN && n>=P.maxN) st={ c:'done', t:'Limite raggiunto', s:'Hai fatto '+(P.maxN===1?'il trade massimo':'i '+P.maxN+' trade massimi')+' del piano.' };
+  else if (P.sll && lsT>=P.sll) st={ c:'done', t:'Stop per oggi', s:'Il piano dice stop dopo '+(P.sll===1?'la prima perdita':P.sll+' perdite')+'.' };
   else if (isFinite(lossLim) && lossLim>0 && rT<=-lossLim) st={ c:'done', t:'Limite di perdita raggiunto', s:'Oggi sei a '+fmtR(rT,2)+': il tuo limite è −'+fmtN(lossLim,1)+' R.' };
-  else st={ c:'go', t: n ? 'Al massimo un altro trade' : 'Nessun trade ancora', s:'Entra solo se si presenta un setup valido · ingressi dalle '+hmMin(sessOf(t)[0])+' alle '+hmMin(sessOf(t)[1])+'.' };
+  else st={ c:'go', t: n ? (P.maxN ? (P.maxN-n===1?'Al massimo un altro trade':'Al massimo altri '+(P.maxN-n)+' trade') : 'Altri trade possibili') : 'Nessun trade ancora', s:'Entra solo se si presenta un setup valido · ingressi dalle '+hmMin(sessOf(t)[0])+' alle '+hmMin(sessOf(t)[1])+'.' };
   let h='<div class="brief"><div class="bcol">', h2='';
   const ev = S.news && !newsOld() ? newsEvents().filter(e=>e.day===t && (e.imp==='High' || e.trump)) : null, cat = S.news && !newsOld() && !weekend ? newsCat(t) : '';
   const nx = ev && ev.find(e=>!e.tbd && e.t>now-60000), notes = weekend ? [] : dayNotes(t, wdN, cat);
@@ -453,7 +457,7 @@ function briefing() {
         const o=trumpSched([]).find(x=>x.day===t && (x.tbd || x.t>Date.now()-30*60000)); if (!o) return '';
         return '<button type="button" class="td-tr" data-nav="news">'+ic('mic',16,2)+'<span><b>'+esc(o.lbl)+(o.tbd?'':' alle '+hmOf(o.t))+'</b><span class="trq">'+(o.tbd?'orario non indicato':'tra '+cdTxt(o.t-Date.now()).replace(/^tra /,''))+' · annunciato su FinancialJuice</span></span>'+ic('chev',15,2)+'</button>'; })()+
      (notes.length?'<p class="td-note">'+notes.join(' ')+'</p>':'')+
-     '<div class="td-foot"><span>Piano: 2 trade al giorno, stop dopo il TP'+(isFinite(lossLim)&&lossLim>0?', max −'+fmtN(lossLim,1)+' R':'')+'</span><button type="button" class="link" data-nav="news">Calendario'+ic('chev',15,2)+'</button></div></div>';
+     '<div class="td-foot"><span>Piano: '+esc(dayRuleTxt(P))+'</span><button type="button" class="link" data-nav="news">Calendario'+ic('chev',15,2)+'</button></div></div>';
   // aspettative dallo storico EOW
   const X = weekend ? null : expectations(dayName, cat);
   if (X) {
@@ -475,4 +479,4 @@ function briefing() {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['home.js'] = '2026-10-31.2';
+EB_V['home.js'] = '2026-11-03.1';

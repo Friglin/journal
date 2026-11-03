@@ -1,6 +1,6 @@
 // Edgebook · core.js — costanti, stato, impostazioni, collegamento allo script, utilità, dati normalizzati, grafici, navigazione, filtri.
 // I file JS sono script classici caricati in ordine da index.html e condividono le stesse variabili globali:
-// l'ordine conta (core.js → home.js → pagine.js → analisi.js → simula.js → scheda.js).
+// l'ordine conta (core.js → home.js → pagine.js → analisi.js → simula.js → ottimizza.js → scheda.js).
 // ───────────────────────── costanti, stato, utilità ─────────────────────────
 const L = {
   asset: ['ES','NQ'],
@@ -58,6 +58,44 @@ function normProp() { const P=Object.assign({ view:'tot' }, CFG.prop||{});
   if (!(+P.n>=1)) P.n = Array.isArray(P.accts) && P.accts.length ? P.accts.filter(a=>!a.to || a.to>=iso(new Date())).length || 1 : 1;
   CFG.prop={ view:P.view==='one'?'one':'tot', n:Math.min(50, Math.max(1, Math.round(+P.n))) }; }
 normProp();
+// ── il piano di trading (Impostazioni → Il mio piano) ──
+// Tutto quello che il piano prevede: mercati e setup, condizioni d'ingresso, orari, gestione del trade e regole del giorno.
+// Lo usano i filtri di partenza dell'EOW, la Disciplina, il riepilogo di oggi e la pagina Ottimizza; è sincronizzato tra i
+// dispositivi come rischio e conti. Gestione (g): { k:'T', t } target fisso · { k:'P', t1, s, t2 } metà a t1, stop del resto
+// spostato a s (0 = BE), resto a t2 · { k:'BE', t, l } target t, stop a BE quando il prezzo arriva a l.
+const PLAN_MG = { T:[1,1.5,2,2.5,3,4,5], P1:[2,2.5,3], PS:[0,.5,1], P2:[3,4,5], BT:[2,3,4,5], BL:[1,1.5,2] };
+const PLAN_PB = { '':[], '2':['1','2'], '3':['1','2','3'], '4':['1','2','3','4'] };
+function planDef() { const P=CFG.plan;   // le impostazioni di prima (asset, idee e «max 2 al giorno» dell'EOW, limite di perdita)
+  return { asset: CFG.asset ? [CFG.asset] : L.asset.slice(), idee: L.idea.filter(i=>!(CFG.exIdea||[]).includes(i)), dir:'', smt:'', lvn:'', clean:'', cc2:'', news:'',
+    bande: L.bands.map(b=>b[0]), giorni: L.days.slice(), pb: [], g:{ k:'P', t1:2, s:1, t2:4 }, maxN: P==='max2'?2:0, sw: P==='max2'?1:0, sll:0,
+    lossR: isFinite(num(CFG.lossR)) && num(CFG.lossR)>0 ? num(CFG.lossR) : 0, altro:'' }; }
+function normPiano() {
+  const d=planDef(), q=Object.assign({}, d, CFG.piano||{}), inL=(a,all,def)=>{ const v=Array.isArray(a)?all.filter(x=>a.includes(x)):[]; return v.length?v:def; };
+  q.asset=inL(q.asset, L.asset, d.asset); q.idee=inL(q.idee, L.idea, d.idee); q.bande=inL(q.bande, L.bands.map(b=>b[0]), d.bande); q.giorni=inL(q.giorni, L.days, d.giorni);
+  q.pb=Array.isArray(q.pb)?L.pb.filter(x=>q.pb.includes(x)):[];
+  ['dir','smt','lvn','clean','cc2','news'].forEach(k=>{ q[k]=String(q[k]||''); });
+  const g=q.g||{}, has=(a,v)=>a.includes(+v);
+  q.g = g.k==='T' && has(PLAN_MG.T,g.t) ? { k:'T', t:+g.t }
+      : g.k==='BE' && has(PLAN_MG.BT,g.t) && has(PLAN_MG.BL,g.l) && +g.l<+g.t ? { k:'BE', t:+g.t, l:+g.l }
+      : g.k==='P' && has(PLAN_MG.P1,g.t1) && has(PLAN_MG.PS,g.s) && has(PLAN_MG.P2,g.t2) && +g.t2>+g.t1 ? { k:'P', t1:+g.t1, s:+g.s, t2:+g.t2 } : d.g;
+  q.maxN=[0,1,2,3].includes(+q.maxN)?+q.maxN:2; q.sw=q.sw?1:0; q.sll=[0,1,2].includes(+q.sll)?+q.sll:0;
+  q.lossR=isFinite(num(q.lossR)) && num(q.lossR)>0 ? Math.min(20, num(q.lossR)) : 0; q.altro=String(q.altro||'').slice(0,600);
+  CFG.piano=q; }
+normPiano();
+const PL = () => CFG.piano;
+const planLoss = () => PL().lossR || NaN;   // limite di perdita giornaliero in R (NaN = nessuno)
+// gestione e regole del giorno in parole
+const fmtX = x => fmtN(x, x%1?1:0);
+function mgTxt(g, short) { g=g||PL().g;
+  if (g.k==='T') return (short?'':'target ')+fmtX(g.t)+'R';
+  if (g.k==='BE') return (short?'':'target ')+fmtX(g.t)+'R, stop a BE a '+fmtX(g.l)+'R';
+  return 'metà a '+fmtX(g.t1)+'R, stop '+(g.s?'a +'+fmtX(g.s)+'R':'a BE')+', resto a '+fmtX(g.t2)+'R'; }
+function dayRuleTxt(P, short) { P=P||PL(); const a=[];
+  a.push(P.maxN ? (short?'max '+P.maxN+' al giorno':'al massimo '+P.maxN+' trade al giorno') : (short?'nessun limite di trade':'nessun limite di trade al giorno'));
+  if (P.sw) a.push(short?'stop al TP':'stop dopo il primo trade in profitto');
+  if (P.sll) a.push(short?'stop dopo '+P.sll+' loss':P.sll===1?'stop dopo la prima perdita':'stop dopo 2 perdite');
+  if (P.lossR) a.push((short?'max ':'perdita massima ')+'−'+fmtN(P.lossR,1)+' R');
+  return a.join(short?' · ':', '); }
 const saveCfg = () => store.set('cfg', JSON.stringify(CFG));
 let USER = CFG.name.trim() || 'trader';
 let SESS = [mins(CFG.s0), mins(CFG.s1)];   // primo e ultimo ingresso, ora italiana, con Wall Street che apre alle 15:30
@@ -319,13 +357,13 @@ function monthItems(ts, m, last) {
 // Pagine: barra laterale su PC (gruppi), barra in basso sul telefono (le pagine meno usate stanno in «Altro»)
 const NAV = [ { g:'Giornata' }, { id:'home', l:'Panoramica', i:'home' }, { id:'news', l:'News', i:'news' },
   { g:'Registro' }, { id:'list', f:'Journal', l:'Journal', i:'book' }, { id:'list', f:'EOW', l:'EOW', i:'list' },
-  { g:'Performance' }, { id:'stats', l:'Analisi', i:'chart' }, { id:'cal', l:'Calendario', i:'cal' }, { id:'mc', l:'Simula', i:'dice' },
+  { g:'Performance' }, { id:'stats', l:'Analisi', i:'chart' }, { id:'cal', l:'Calendario', i:'cal' }, { id:'mc', l:'Simula', i:'dice' }, { id:'opt', l:'Ottimizza', i:'target' },
   { g:'Crescita' }, { id:'disc', l:'Disciplina', i:'shield' }, { id:'coach', l:'Coach', i:'spark' } ];
 const NAV_FOOT = [ { id:'set', l:'Impostazioni', i:'gear' } ];
 const BAR = [['home','Home','home'],['news','News','news'],['list','Trade','list'],['stats','Analisi','chart'],['more','Altro','grid']];
-const VIEWS = ['home','news','list','stats','cal','mc','disc','coach','set'];
-const PTITLE = { home:'Panoramica', news:'News', list:'Trade', stats:'Analisi', cal:'Calendario', mc:'Simula', disc:'Disciplina', coach:'Coach', set:'Impostazioni' };
-const NOFILE = ['news','set','disc','mc'];   // pagine che non dipendono da EOW / Journal (la Disciplina usa sempre il Journal, Simula sempre l'EOW)
+const VIEWS = ['home','news','list','stats','cal','mc','opt','disc','coach','set'];
+const PTITLE = { home:'Panoramica', news:'News', list:'Trade', stats:'Analisi', cal:'Calendario', mc:'Simula', opt:'Ottimizza', disc:'Disciplina', coach:'Coach', set:'Impostazioni' };
+const NOFILE = ['news','set','disc','mc','opt'];   // pagine che non dipendono da EOW / Journal (la Disciplina usa sempre il Journal, Simula e Ottimizza sempre l'EOW)
 const FILE_LBL = { EOW:['EOW','End of Week · backtest della settimana'], Journal:['JOURNAL','Trade reali eseguiti'] };
 const navKey = n => n.id+(n.f?':'+n.f:'');
 const curNavKey = () => S.tab==='list' ? 'list:'+S.file : S.tab;
@@ -351,7 +389,7 @@ function navState() {
   document.querySelectorAll('#side [data-nav]').forEach(b=>{ const on=b.dataset.nav===key; b.classList.toggle('on', on); if (on) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
   document.querySelectorAll('#nav [data-bar]').forEach(b=>b.classList.toggle('on', b.dataset.bar===S.tab || (b.dataset.bar==='more' && !BAR.some(x=>x[0]===S.tab))));
   const pt=$('ptitle'); if (pt) pt.innerHTML='<b>'+PTITLE[S.tab]+'</b>';
-  $('fab').classList.toggle('hide', ['mc','coach','news','set'].includes(S.tab) || !!S.sheet); $('aifab').classList.toggle('hide', S.tab==='coach' || !!S.sheet);
+  $('fab').classList.toggle('hide', ['mc','opt','coach','news','set'].includes(S.tab) || !!S.sheet); $('aifab').classList.toggle('hide', S.tab==='coach' || !!S.sheet);
   moveInd();
 }
 let indRaf=0;
@@ -388,7 +426,7 @@ function navTo(key, o) { const [id,f]=key.split(':'); if (S.sheet) closeSheet();
 function openMore() {
   S.sheet='more'; $('sh-sub').textContent=APP; $('sh-title').innerHTML=words('Altro');
   const it=[['list:Journal','Journal','book','Trade reali'],['list:EOW','EOW','list','Backtest della settimana'],['cal','Calendario','cal','R giorno per giorno'],
-            ['disc','Disciplina','shield','Regole, errori ed esecuzione'],['coach','Coach','spark','Consigli e chat con Claude'],['mc','Simula','dice','Prop firm: passare le valutazioni'],['set','Impostazioni','gear','Profilo, sessione, filtri']];
+            ['disc','Disciplina','shield','Regole, errori ed esecuzione'],['coach','Coach','spark','Consigli e chat con Claude'],['mc','Simula','dice','Prop firm: passare le valutazioni'],['opt','Ottimizza','target','Il piano alle condizioni di adesso'],['set','Impostazioni','gear','Profilo, sessione, filtri']];
   $('sh-body').innerHTML='<div class="more">'+it.map((x,k)=>'<button type="button" data-nav="'+x[0]+'" style="--k:'+k+'" class="'+(curNavKey()===x[0]?'on':'')+'">'+ic(x[2],24,1.8)+'<b>'+x[1]+'</b><span>'+x[3]+'</span></button>').join('')+'</div>';
   $('sh-foot').innerHTML=''; openSheet();
 }
@@ -399,7 +437,7 @@ let introRT=0;
 function renderCurrent(quiet) {
   // durante il benvenuto non si disegna (ogni disegno ferma l'animazione): un solo disegno, quando il saluto è finito
   const wait=(S.introAt||0)-260-performance.now(); if (wait>0) { if (!introRT) introRT=setTimeout(()=>{ introRT=0; renderCurrent(false); }, wait); return; }
-  S.quiet=!!quiet; ({ home:renderHome, news:renderNews, list:renderList, stats:renderStats, cal:renderCal, mc:renderMC, disc:renderDisc, coach:renderCoach, set:renderSet })[S.tab](); S.quiet=false; }
+  S.quiet=!!quiet; ({ home:renderHome, news:renderNews, list:renderList, stats:renderStats, cal:renderCal, mc:renderMC, opt:renderOpt, disc:renderDisc, coach:renderCoach, set:renderSet })[S.tab](); S.quiet=false; }
 // testi secondari (sotto i numeri e accanto ai titoli): dentro la frase i valori in evidenza e i segni +/− colorati,
 // i «·» diventano puntini; le parole restano grigie. Una passata dopo ogni disegno, solo sui nodi di testo.
 const META_SEL='.kpi .h, .hero-meta > span:not(.delta), .be-row em, .be-big span, .bd-l small, .card-h .sub, .td-r span, .ds-cost em, .usd-g em, .rk-leg span, .ds-note';
@@ -494,15 +532,20 @@ const emptyState = (t, p, btn) => '<div class="card empty rise">'+logo(40)+'<div
 // ───────────────────────── FILTRI (condivisi da Home, Trade, Analisi e Simula) ─────────────────────────
 // All'apertura dell'app i filtri partono sempre da qui; poi ogni file (EOW / Journal) tiene i suoi finché l'app resta aperta
 // filtri di partenza: l'EOW segue le impostazioni (asset, piano, idee); il Journal parte senza filtri (ES e NQ, tutti i trade, tutte le idee)
-const FILT_DEF = f => (f||S.file)==='Journal' ? { asset:'', plan:'', tgt:2, idea:[] } : { asset:CFG.asset, plan:CFG.plan, tgt:2, idea:L.idea.filter(i=>!CFG.exIdea.includes(i)) };
+// l'EOW parte con mercati, setup e regole del giorno del piano (Impostazioni → Il mio piano); il target è quello del piano se è fisso
+const FILT_DEF = f => { if ((f||S.file)==='Journal') return { asset:'', plan:'', tgt:2, idea:[] };
+  const P=PL(), day=P.maxN||P.sw||P.sll||P.lossR;
+  return { asset:P.asset.length===1?P.asset[0]:'', plan:day?'max2':'', tgt:P.g.k==='T' && Number.isInteger(P.g.t)?P.g.t:2, idea:P.idee.length<L.idea.length?P.idee.slice():[] }; };
 function loadFilt() { let v=null; try { v=JSON.parse(sessionStorage.getItem('tj.filtBy2')||'null'); } catch(e) {}
   return v && v.EOW && v.Journal ? v : { EOW:FILT_DEF('EOW'), Journal:FILT_DEF('Journal') }; }
 const saveFilt = () => { S.filtBy[S.file]=S.filt; try { sessionStorage.setItem('tj.filtBy2', JSON.stringify(S.filtBy)); } catch(e) {} };
 const tgt = () => S.type==='EOW' ? (+S.filt.tgt || 2) : 2;
 const curModel = () => model(tgt());
-function plan(ts, rOf) { // max 2 trade al giorno, stop dopo il primo trade positivo
-  const out=[]; let day='', n=0, stop=false;
-  ts.forEach(t=>{ const k=t.d.toDateString(); if (k!==day){ day=k; n=0; stop=false; } if (stop||n>=2) return; out.push(t); n++; if (rOf(t)>0) stop=true; });
+function plan(ts, rOf, P) { // regole del giorno del piano: trade al giorno, stop dopo il primo trade in profitto, dopo le perdite, perdita massima
+  P=P||PL(); const out=[]; let day='', n=0, stop=false, ls=0, R=0;
+  ts.forEach(t=>{ const k=t.d.toDateString(); if (k!==day){ day=k; n=0; stop=false; ls=0; R=0; }
+    if (stop || (P.maxN && n>=P.maxN) || (P.sll && ls>=P.sll) || (P.lossR && R<=-P.lossR+1e-9)) return;
+    out.push(t); n++; const r=rOf(t); R+=r; if (r<0) ls++; if (P.sw && r>0) stop=true; });
   return out;
 }
 function filtered(m, noPer) {
@@ -520,7 +563,7 @@ function perLabel() { const now=new Date(), cr=S.per==='c'?periodRange('c',0):nu
     c: cr && cr[0].getFullYear()>2000 ? fmtIt(iso(cr[0]))+' → '+fmtIt(iso(addDays(cr[1],-1))) : 'Date da scegliere' }[S.per]; }
 function setPer(v) { S.per=v; store.set('per',v); }
 function activeFilters() { const F=S.filt, a=[];
-  if (F.plan==='max2') a.push({k:'plan', l:'Max 2 trade al giorno'});
+  if (F.plan==='max2') a.push({k:'plan', l:'Piano: '+dayRuleTxt(null,true)});
   if (F.asset) a.push({k:'asset', l:F.asset});
   if (F.dir) a.push({k:'dir', l:F.dir});
   if (S.type==='EOW' && tgt()!==2) a.push({k:'tgt', l:'Target '+tgt()+'R'});
@@ -545,8 +588,8 @@ function openFilters() {
 }
 function renderFilters() {
   const F=S.filt, E=S.type==='EOW';
-  let h='<div class="fsec"><div class="field"><span class="flabel">Trading plan</span>'+seg('f-plan',[{v:'max2',l:'Max 2 trade al giorno'},{v:'',l:'Nessuno'}],F.plan||'')+
-        '<span class="hint">Max 2 trade al giorno: dopo il primo trade in profitto la giornata si chiude.</span></div>'+
+  let h='<div class="fsec"><div class="field"><span class="flabel">Regole del giorno</span>'+seg('f-plan',[{v:'max2',l:'Quelle del piano'},{v:'',l:'Nessuna'}],F.plan||'')+
+        '<span class="hint">Il tuo piano: '+esc(dayRuleTxt())+'. Le cambi in Impostazioni → Il mio piano.</span></div>'+
         (E?'<div class="field"><span class="flabel">Target (esito del trade)</span>'+seg('f-tgt',[1,2,3,4,5].map(k=>({v:k,l:k+'R'})),tgt())+'</div>':'')+'</div>';
   h+='<div class="fsec"><div class="flabel">Periodo · lo stesso della barra in Panoramica</div>'+chips('quick',[{v:'all',l:'Tutto'},{v:'w',l:wkLbl()},{v:'m',l:'Questo mese'},{v:'3m',l:'Ultimi 3 mesi'},{v:'y',l:'Quest\'anno'},{v:'c',l:'Date'}],S.per).replace('class="chips"','class="chips scrollx"')+
         '<div class="g2"><div class="field"><label for="ff-from">Dal</label><input class="inp" id="ff-from" type="date" data-fk="from" value="'+esc(S.per==='c'?S.cust.from||'':'')+'"></div><div class="field"><label for="ff-to">Al</label><input class="inp" id="ff-to" type="date" data-fk="to" value="'+esc(S.per==='c'?S.cust.to||'':'')+'"></div></div></div>';
@@ -573,4 +616,4 @@ function filtClick(b) {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['core.js'] = '2026-10-31.2';
+EB_V['core.js'] = '2026-11-03.1';

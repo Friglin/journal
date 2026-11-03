@@ -1,6 +1,6 @@
 // Edgebook · analisi.js — Analisi, Coach (consigli e chat con Claude), eliminazione di un trade.
 // I file JS sono script classici caricati in ordine da index.html e condividono le stesse variabili globali:
-// l'ordine conta (core.js → home.js → pagine.js → analisi.js → simula.js → scheda.js).
+// l'ordine conta (core.js → home.js → pagine.js → analisi.js → simula.js → ottimizza.js → scheda.js).
 // ───────────────────────── ANALISI ─────────────────────────
 // righe per categoria (idea, SMT, fascia…): ogni riga si tocca e apre l'elenco dei suoi trade
 const BDG=new Map(); let bdId=0;
@@ -180,7 +180,7 @@ function md(s) { // Markdown minimo: titoli ##, elenchi -, grassetto **
 
 
 // ───────────────────────── COACH: pagina dedicata e chat con Claude da ogni pagina ─────────────────────────
-const PAGE_LBL = { home:'Panoramica', news:'News', list:'Trade', stats:'Analisi', cal:'Calendario', disc:'Disciplina', coach:'Coach', mc:'Simula', set:'Impostazioni' };
+const PAGE_LBL = { home:'Panoramica', news:'News', list:'Trade', stats:'Analisi', cal:'Calendario', disc:'Disciplina', coach:'Coach', mc:'Simula', opt:'Ottimizza', set:'Impostazioni' };
 function renderCoach() {
   const el=$('v-coach'); if (!S.loaded) { el.innerHTML=skeleton(); return; }
   S._coach=coachData();
@@ -204,6 +204,7 @@ const SUGG = {
   stats: ['Quale target mi conviene?', 'Quali idee dovrei evitare?'],
   coach: ['Cosa ha funzionato e cosa no?', 'Preparami un piano per la prossima settimana'],
   mc: ['Spiegami questo piano', 'Con che rischio per trade sono tranquillo?'],
+  opt: ['Cosa cambieresti nel mio piano?', 'Quale gestione mi conviene adesso?'],
 };
 function renderChat(scroll) {
   const el=$('chat-main'); if (!el) return;
@@ -247,7 +248,7 @@ function tableCtx(ts, m) {
 function ctxNow() {
   const m=curModel(), ts=filtered(m), a=agg(ts,m), E=S.type==='EOW', tab=S.tab;
   const c={ app:APP, file:S.file, significato_file: E ? 'EOW: review di fine settimana dei setup (backtest), esito calcolato a un target fisso di '+tgt()+'R' : 'Journal: trade reali eseguiti, esito = RR effettivo',
-    pagina:PAGE_LBL[tab], filtri:activeFilters().map(x=>x.l), oggi:new Date().toLocaleDateString('it-IT',{ weekday:'long', day:'numeric', month:'long', year:'numeric' }),
+    pagina:PAGE_LBL[tab], piano_di_trading:planDesc(), filtri:activeFilters().map(x=>x.l), oggi:new Date().toLocaleDateString('it-IT',{ weekday:'long', day:'numeric', month:'long', year:'numeric' }),
     trade_filtrati:ts.length, riepilogo_filtrati:{ winrate:r2(a.wr), R_totali:r2(a.R), expectancy:r2(a.exp), profit_factor:isFinite(a.pf)?r2(a.pf):null, max_drawdown_R:r2(a.dd) },
     statistiche_tutti_i_trade:coachData('all'), statistiche_con_filtri:coachData('filt'), tutti_i_trade:tableCtx(all(), m) };
   if (tab==='home') { const p=inRange(ts, periodRange(S.per,0)), pa=agg(p,m); c.periodo_home={ periodo:S.per, trade:p.length, R:r2(pa.R), winrate:r2(pa.wr) }; c.trade_del_periodo=p.slice(-20).map(t=>tradeCtx(t,m)); }
@@ -260,6 +261,7 @@ function ctxNow() {
         per_modo:a.byMode.map(v=>({ modo:PF_MODE[v.mode], prob:r2(v.P), rischio:v.rE })), con_senza_dll:a.byDll.map(v=>({ dll:v.d, prob:r2(v.P), rischio:v.rE })), per_rischio:a.byRisk.map(v=>({ rischio:v.rE, prob:r2(v.P) })),
         strategie:a.byStrat.map(v=>({ trade:pfDesc(a.strats[v.i].st), prob:r2(v.P), rischio:v.rE })), regole_topstep:PF_PRE[a.size] } : 'non ancora calcolato' }; }
   else if (tab==='list') c.trade_visibili_in_pagina=ts.slice(-30).map(t=>tradeCtx(t,m));
+  else if (tab==='opt') c.ottimizzazione_del_piano=optCtx();
   return c;
 }
 async function sendChat(q) {
@@ -293,4 +295,4 @@ async function delTrade() {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['analisi.js'] = '2026-10-31.2';
+EB_V['analisi.js'] = '2026-11-03.1';

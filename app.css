@@ -1152,5 +1152,48 @@ nav.bar button:active .pill { transform:scale(.88); }
 .rv-ok { display:flex; align-items:center; gap:6px; color:var(--win); font-weight:600; font-size:12.5px !important; }
 .rv-back { display:flex; align-items:center; gap:12px; text-align:left; color:var(--fg); font:inherit; cursor:pointer; padding:14px 16px; }
 .rv-back > span { flex:1; display:flex; flex-direction:column; } .rv-back em { font-style:normal; font-size:12.5px; color:var(--fg2); } .rv-back > .ic:first-child { color:var(--accent); }
+/* il mio piano (Impostazioni) e pagina Ottimizza */
+.pl-sum { display:flex; flex-direction:column; }
+.pl-r { display:grid; grid-template-columns:18px minmax(96px,150px) minmax(0,1fr); gap:10px; align-items:baseline; padding:9px 0; border-top:1px solid var(--line); font-size:13.5px; }
+.pl-r:first-child { border-top:0; padding-top:2px; } .pl-r .ic { color:var(--fg3); align-self:center; } .pl-r span { color:var(--fg2); } .pl-r b { font-weight:600; color:var(--fg); }
+@media (max-width:520px) { .pl-r { grid-template-columns:18px minmax(0,1fr); } .pl-r b { grid-column:2; } }
+.pl-acts { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+.btn.sec.arm { background:var(--accent); color:var(--accent-ink); }
+.op-k { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin:14px 0 4px; }
+.op-k > div { background:var(--sunk); border-radius:14px; padding:10px 12px; display:flex; flex-direction:column; gap:2px; min-width:0; }
+.op-k span { font-size:12px; color:var(--fg3); font-weight:600; } .op-k b { font-family:var(--display); font-size:19px; font-weight:600; letter-spacing:-.02em; }
+.op-k em { font-style:normal; font-size:11.5px; color:var(--fg3); line-height:1.35; }
+@media (max-width:640px) { .op-k { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+.op-plan .chart { margin-top:10px; } .op-plan .link { margin-top:8px; }
+.op-s { display:grid; grid-template-columns:28px minmax(0,1fr) auto; gap:10px; align-items:center; padding:12px 0; border-top:1px solid var(--line); }
+.op-s:first-of-type { border-top:0; padding-top:4px; }
+.op-s b { display:block; font-size:14.5px; font-weight:600; } .op-s span { display:block; font-size:12.5px; color:var(--fg2); line-height:1.45; margin-top:2px; }
+.op-ic { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--sunk); color:var(--fg2); }
+.op-s.ok .op-ic { background:var(--win-soft); color:var(--win); } .op-s.hint .op-ic { background:var(--accent-soft); color:var(--accent); } .op-s.up .op-ic { background:var(--accent-soft); color:var(--accent); } .op-s.down .op-ic { background:var(--warn-soft); color:var(--warn); }
+@media (max-width:520px) { .op-s { grid-template-columns:28px minmax(0,1fr); } .op-s .btn { grid-column:2; justify-self:start; } }
+.op-sub { margin:14px 0 2px; font-size:12px; font-weight:650; color:var(--fg3); letter-spacing:.04em; text-transform:uppercase; }
+.op-subp { margin:2px 0 4px; font-size:12.5px; color:var(--fg3); line-height:1.45; }
+.op-t td small b.hint { color:var(--accent); }
+.op-none { display:flex; gap:10px; align-items:flex-start; font-size:13.5px; color:var(--fg2); line-height:1.5; } .op-none .ic { color:var(--win); flex:none; margin-top:2px; } .op-none b { color:var(--fg); }
+.op-steps { margin:0 0 10px; padding-left:20px; font-size:14px; line-height:1.7; } .op-steps li::marker { color:var(--fg3); font-weight:600; }
+.op-wf { display:flex; gap:10px; align-items:flex-start; margin:12px 0; padding:12px 14px; border-radius:14px; background:var(--sunk); font-size:13px; color:var(--fg2); line-height:1.5; }
+.op-wf .ic { flex:none; margin-top:2px; color:var(--accent); } .op-wf b { color:var(--fg); }
+.op-t { width:100%; border-collapse:collapse; font-size:13.5px; }
+.op-t th { font-size:11.5px; font-weight:600; color:var(--fg3); padding:6px 6px 8px; white-space:nowrap; }
+.op-t td { padding:8px 6px; border-top:1px solid var(--line); vertical-align:top; }
+.op-t td:first-child { min-width:120px; } .op-t td.num { white-space:nowrap; font-weight:600; }
+.op-t td small { display:block; font-size:11px; font-weight:500; color:var(--fg3); margin-top:1px; white-space:normal; line-height:1.35; }
+.op-t td small b { font-weight:600; } .op-t td small b.ok { color:var(--win); } .op-t td small b.up { color:var(--accent); } .op-t td small b.down { color:var(--warn); }
+.op-t td small.ok { color:var(--win); } .op-t td small.ko { color:var(--loss); }
+.op-t tr.cur td { background:color-mix(in srgb,var(--accent) 7%,transparent); } .op-t tr.cur td:first-child { border-radius:10px 0 0 10px; } .op-t tr.cur td:last-child { border-radius:0 10px 10px 0; }
+.op-t td.best { box-shadow:inset 0 -2px 0 currentColor; }
+.op-t tr.off td:first-child { color:var(--fg2); }
+.op-t .tag { vertical-align:1px; margin-left:4px; }
+.op-tr { display:inline-flex; vertical-align:-2px; margin-left:5px; } .op-tr.up { color:var(--win); } .op-tr.down { color:var(--loss); }
+.op-be td:first-child { min-width:150px; }
+.op-pl { white-space:nowrap; flex:none; }
+.op-ai-b { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+.op-how { padding:14px 18px; } .op-how summary { font-size:14px; }
+
 /* versione del foglio di stile (la scrive tools/build.py): index.html controlla che sia uguale a BUILD */
-:root { --eb-build: "2026-10-31.2"; }
+:root { --eb-build: "2026-11-03.1"; }

@@ -1,6 +1,6 @@
 // Edgebook · simula.js — Simula: passare le valutazioni Topstep (dollari e conti prop, simulazione).
 // I file JS sono script classici caricati in ordine da index.html e condividono le stesse variabili globali:
-// l'ordine conta (core.js → home.js → pagine.js → analisi.js → simula.js → scheda.js).
+// l'ordine conta (core.js → home.js → pagine.js → analisi.js → simula.js → ottimizza.js → scheda.js).
 // ───────────────────────── SIMULA: passare le valutazioni Topstep ─────────────────────────
 // Quanti conti passare, di che taglia e in quanto tempo lo sceglie l'utente; il simulatore cerca il resto: quali trade prendere
 // (combinazioni di filtri sui trade dell'EOW: i filtri della pagina qui non valgono), il target in R, le regole del giorno,
@@ -445,4 +445,4 @@ function drawPass(R, quiet) {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['simula.js'] = '2026-10-31.2';
+EB_V['simula.js'] = '2026-11-03.1';

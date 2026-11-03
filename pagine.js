@@ -1,6 +1,6 @@
 // Edgebook · pagine.js — Calendario, Disciplina, Impostazioni, revisione settimanale EOW, elenco dei trade.
 // I file JS sono script classici caricati in ordine da index.html e condividono le stesse variabili globali:
-// l'ordine conta (core.js → home.js → pagine.js → analisi.js → simula.js → scheda.js).
+// l'ordine conta (core.js → home.js → pagine.js → analisi.js → simula.js → ottimizza.js → scheda.js).
 // ───────────────────────── CALENDARIO ─────────────────────────
 function renderCal() {
   const el=$('v-cal'); if (!S.loaded) { el.innerHTML=skeleton(); return; }
@@ -81,7 +81,7 @@ function renderDisc() {
   enter(el, h, ex.after);
 }
 function discRules(ts, lbl) {
-  const D=discDays(ts), okN=D.filter(d=>d.ok).length, lim=num(CFG.lossR); let run=0, best=0, cur=0;
+  const D=discDays(ts), okN=D.filter(d=>d.ok).length, lim=planLoss(), P=PL(); let run=0, best=0, cur=0;
   for (let i=D.length-1;i>=0 && D[i].ok;i--) run++; D.forEach(d=>{ cur=d.ok?cur+1:0; best=Math.max(best,cur); });
   const rule=(lbl2,ok,tot,bad,hint)=>{ const all=ok===tot; return '<div class="rule '+(all?'ok':'ko')+'">'+ic(all?'check':'alert',16,2.2)+'<div><b>'+lbl2+'</b><span>'+(tot?ok+' su '+tot+' '+hint:'nessun caso nel periodo')+(bad.length?' · non rispettata: '+bad.slice(-6).map(dayShort).join(', ')+(bad.length>6?' e altre '+(bad.length-6):''):'')+'</span></div></div>'; };
   const okR=D.filter(d=>d.ok).reduce((s,d)=>s+d.R,0)/Math.max(1,okN), koN=D.length-okN, koR=D.filter(d=>!d.ok).reduce((s,d)=>s+d.R,0)/Math.max(1,koN);
@@ -90,8 +90,9 @@ function discRules(ts, lbl) {
     '<p class="ds-note">'+(okN===D.length?'Ogni giornata ha rispettato tutte le regole.':'Una giornata è in regola quando rispetta tutte le regole qui sotto.')+(run>1?' Sei a <b>'+run+' di fila</b>.':'')+(best>1?' Record: <b>'+best+'</b>.':'')+'</p>'+
     '<div class="rules">'+
     rule('Solo trade validi', D.filter(d=>d.valid).length, D.length, D.filter(d=>!d.valid).map(d=>d.k), 'giornate senza errori')+
-    rule('Massimo 2 trade al giorno', D.filter(d=>d.max2).length, D.length, D.filter(d=>!d.max2).map(d=>d.k), 'giornate')+
-    rule('Stop dopo il TP', D.filter(d=>d.hadWin && d.tp).length, D.filter(d=>d.hadWin).length, D.filter(d=>d.hadWin && !d.tp).map(d=>d.k), 'giornate con un TP')+
+    (P.maxN ? rule('Massimo '+P.maxN+(P.maxN===1?' trade':' trade')+' al giorno', D.filter(d=>d.max2).length, D.length, D.filter(d=>!d.max2).map(d=>d.k), 'giornate') : '')+
+    (P.sw ? rule('Stop dopo il TP', D.filter(d=>d.hadWin && d.tp).length, D.filter(d=>d.hadWin).length, D.filter(d=>d.hadWin && !d.tp).map(d=>d.k), 'giornate con un TP') : '')+
+    (P.sll ? rule('Stop dopo '+(P.sll===1?'la prima perdita':P.sll+' perdite'), D.filter(d=>d.hadL && d.sl).length, D.filter(d=>d.hadL).length, D.filter(d=>d.hadL && !d.sl).map(d=>d.k), 'giornate con '+(P.sll===1?'una perdita':P.sll+' perdite')) : '')+
     (isFinite(lim)&&lim>0 ? rule('Perdita massima −'+fmtN(lim,1)+' R al giorno', D.filter(d=>d.loss).length, D.length, D.filter(d=>!d.loss).map(d=>d.k), 'giornate') : '')+'</div>'+
     (okN && koN ? '<div class="ds-cost"><div><span>Giornata in regola</span><b class="'+sgn(okR)+' num">'+fmtN(okR,2,true)+' R</b><em>in media · '+okN+' giornate</em></div><div><span>Giornata fuori regola</span><b class="'+sgn(koR)+' num">'+fmtN(koR,2,true)+' R</b><em>in media · '+koN+' giornate</em></div></div>' : ''));
 }
@@ -188,14 +189,13 @@ function renderSet() {
      '<div class="field"><span class="flabel">Tema</span>'+seg('cfg-theme',[{v:'auto',l:'Automatico'},{v:'light',l:'Chiaro'},{v:'dark',l:'Scuro'}],C.theme)+'</div>'+
      '<div class="field"><span class="flabel">Animazioni</span>'+seg('cfg-motion',[{v:'full',l:'Complete'},{v:'auto',l:'Come il sistema'},{v:'reduce',l:'Ridotte'}],C.motion||'full')+
      '<span class="hint">«Come il sistema» le riduce se nel PC o nel telefono è attivo «riduci movimento» (su Windows: effetti di animazione disattivati).</span></div>',40);
-  h+=sec('Sessione e piano','ora italiana','<div class="g2">'+fld2('Primo ingresso','<input class="inp" type="time" data-cfg="s0" value="'+esc(C.s0)+'">')+fld2('Ultimo ingresso','<input class="inp" type="time" data-cfg="s1" value="'+esc(C.s1)+'">')+'</div>'+
-     '<p class="hint" style="margin:-4px 0 12px">Orari con Wall Street che apre alle 15:30. Nelle settimane del cambio d\'ora, quando apre alle 14:30, l\'app sposta da sola la sessione e le fasce orarie. Nel foglio scrivi sempre l\'ora reale.</p>'+
-     fld2('Limite di perdita giornaliero (R)','<input class="inp" inputmode="decimal" data-cfg="lossR" value="'+esc(C.lossR)+'" placeholder="es. 2">','Oltre questo, la Panoramica ti dice di fermarti.'),70);
+  h+=sec('Sessione','ora italiana','<div class="g2">'+fld2('Primo ingresso','<input class="inp" type="time" data-cfg="s0" value="'+esc(C.s0)+'">')+fld2('Ultimo ingresso','<input class="inp" type="time" data-cfg="s1" value="'+esc(C.s1)+'">')+'</div>'+
+     '<p class="hint" style="margin:-4px 0 12px">Orari con Wall Street che apre alle 15:30. Nelle settimane del cambio d\'ora, quando apre alle 14:30, l\'app sposta da sola la sessione e le fasce orarie. Nel foglio scrivi sempre l\'ora reale.</p>',70);
   h+=sec('Prop firm e dollari','copy trading',propSet(fld2),85);
-  h+=sec('Filtri all\'apertura dell\'EOW','il Journal parte sempre senza filtri','<div class="g2"><div class="field"><span class="flabel">Asset</span>'+seg('cfg-asset',[{v:'',l:'Tutti'},'ES','NQ'],C.asset)+'</div>'+
-     '<div class="field"><span class="flabel">Piano</span>'+seg('cfg-plan',[{v:'max2',l:'Max 2 al giorno'},{v:'',l:'Nessuno'}],C.plan)+'</div></div>'+
-     '<div class="field"><span class="flabel">Idee da includere</span>'+chips('cfg-idea',L.idea,L.idea.filter(i=>!C.exIdea.includes(i)),true)+'</div>'+
-     '<button type="button" class="btn sec sm" data-act="cfgapply">Applica subito ai filtri</button>',100);
+  h+=sec('Il mio piano','uguale su telefono e PC',planSumHtml()+
+     '<div class="pl-acts"><button type="button" class="btn sm" data-act="planedit">'+ic('gear',16,2)+'Modifica il piano</button><button type="button" class="btn sec sm" data-nav="opt">'+ic('target',16,2)+'Ottimizza</button></div>'+
+     '<p class="hint" style="margin:12px 0 8px">L\'EOW si apre con mercati, setup e regole del giorno del piano. Disciplina e riepilogo di oggi usano le sue regole del giorno.</p>'+
+     '<button type="button" class="btn sec sm" data-act="cfgapply">Applica subito ai filtri dell\'EOW</button>',100);
   h+=sec('Checklist pre-sessione','una voce per riga',fld2('','<textarea class="inp" rows="6" data-cfg="check">'+esc(C.check.join('\n'))+'</textarea>','Compare nella Panoramica finché la sessione è aperta e si azzera ogni giorno.'),160);
   h+=sec('Collegamento','',(viaScript()?'<p class="mut">L\'app gira dentro Apps Script: nessun indirizzo da impostare.</p>':
      '<p class="mut" style="margin:0 0 12px">Collegata a <b>…'+esc(store.get('api','').slice(-24))+'</b></p><button type="button" class="btn sec sm" data-act="setup">Cambia indirizzo e chiave</button>')+
@@ -218,14 +218,14 @@ function propChanged(rerender) { syncTouch('prop'); if (rerender && S.tab==='set
 // rischio e conti uguali su tutti i dispositivi, salvati nello script (appSettings). Ogni impostazione ha la sua data
 // di modifica e per ciascuna vince la più recente: cambiare il rischio sul PC non riporta indietro i conti cambiati sul telefono.
 // Prima di salvare si rilegge il server e si uniscono le due versioni.
-const SYNC_KEYS=['risk','prop','rev']; let pushT=0;
+const SYNC_KEYS=['risk','prop','rev','piano']; let pushT=0;
 const syncTs = () => (CFG.syncTs = CFG.syncTs || {});
 function syncTouch(k) { syncTs()[k]=Date.now(); saveCfg(); pushSettings(); }
 function syncMerge(o) {
   const T=syncTs(), oT=(o && o.ts) || {}; let changed=false, newer=!o;
   SYNC_KEYS.forEach(k=>{ const st=o ? (oT[k] || 0) : 0, lt=T[k] || 0;
     if (o && (k in o) && st>lt) { CFG[k]=o[k]; T[k]=st; changed=true; } else if (lt>st) newer=true; });
-  if (changed) { normProp(); saveCfg(); if (S.loaded && !S.sheet) renderCurrent(true); }
+  if (changed) { normProp(); normPiano(); saveCfg(); if (S.loaded && !S.sheet) renderCurrent(true); }
   return newer;
 }
 function pushSettings() { if (S.noSync) return; clearTimeout(pushT); pushT=setTimeout(async ()=>{
@@ -426,4 +426,4 @@ function renderList() {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['pagine.js'] = '2026-10-31.2';
+EB_V['pagine.js'] = '2026-11-03.1';

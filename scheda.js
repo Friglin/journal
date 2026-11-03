@@ -1,6 +1,6 @@
 // Edgebook · scheda.js — scheda del trade (nuovo / modifica), apertura e chiusura delle schede, eventi, avvio dell'app (boot).
 // I file JS sono script classici caricati in ordine da index.html e condividono le stesse variabili globali:
-// l'ordine conta (core.js → home.js → pagine.js → analisi.js → simula.js → scheda.js).
+// l'ordine conta (core.js → home.js → pagine.js → analisi.js → simula.js → ottimizza.js → scheda.js).
 // ───────────────────────── SCHEDA: nuovo / modifica trade ─────────────────────────
 function openForm(row, pre) {
   S.sheet='form'; S.edit=null;
@@ -300,7 +300,7 @@ async function save() {
 function openSheet(panel) { $('sheet').classList.toggle('panel', !!panel);   // «panel»: su PC la scheda è un pannello a destra (non «side», che è la barra laterale)
   $('sheet').classList.add('open'); $('scrim').classList.add('open'); $('fab').classList.add('hide'); $('aifab').classList.add('hide'); document.body.style.overflow='hidden'; $('sh-body').scrollTop=0; }
 function closeSheet() { if (S.sheet==='chat') setTimeout(()=>{ if (!S.sheet) { $('sh-body').innerHTML=''; $('sh-foot').innerHTML=''; } }, 520);
-  $('sheet').classList.remove('open'); $('scrim').classList.remove('open'); $('fab').classList.toggle('hide', ['mc','coach','news','set'].includes(S.tab)); $('aifab').classList.toggle('hide', S.tab==='coach'); document.body.style.overflow=''; S.sheet=null; }
+  $('sheet').classList.remove('open'); $('scrim').classList.remove('open'); $('fab').classList.toggle('hide', ['mc','opt','coach','news','set'].includes(S.tab)); $('aifab').classList.toggle('hide', S.tab==='coach'); document.body.style.overflow=''; S.sheet=null; }
 
 // ───────────────────────── eventi ─────────────────────────
 document.addEventListener('click', e => {
@@ -312,6 +312,7 @@ document.addEventListener('click', e => {
   if (b.closest('#pal')) { const i=+b.dataset.pi; if (isFinite(i)) palRun(i); return; }
   if (b.dataset.nav) { navTo(b.dataset.nav); return; }
   if (revClick(b)) return;
+  if (optClick(b)) return;
   if (b.dataset.bar) { if (b.dataset.bar==='more') openMore(); else navTo(b.dataset.bar); return; }
   if (b.closest('#fileSeg')) { switchFile(b.dataset.v); return; }
   if (b.dataset.act==='sbcol') { const c=document.documentElement.classList.toggle('sbc'); store.set('sbc', c?'1':''); setTimeout(moveInd, 60); setTimeout(moveInd, 560); return; }
@@ -328,9 +329,7 @@ document.addEventListener('click', e => {
   if (b.dataset.act==='cfgapply') { S.filtBy={ EOW:FILT_DEF('EOW'), Journal:FILT_DEF('Journal') }; S.filt=S.filtBy[S.file]; saveFilt(); toast('Filtri aggiornati'); return; }
   if (b.dataset.act==='cacheclear') { Object.keys(localStorage).filter(k=>/^tj\.(data\.|news)/.test(k)).forEach(k=>localStorage.removeItem(k)); toast('Dati salvati cancellati: ricarico'); setTimeout(()=>location.reload(), 900); return; }
   { const sgc=b.closest('[data-seg]');
-    if (sgc && sgc.dataset.seg.indexOf('cfg-')===0) { const k=sgc.dataset.seg.slice(4); CFG[k]=b.dataset.v; setSeg(sgc,b.dataset.v); cfgChanged(k); return; }
-    const chc=b.closest('[data-chips="cfg-idea"]');
-    if (chc) { b.classList.toggle('on'); CFG.exIdea=L.idea.filter(i=>!chc.querySelector('[data-v="'+i+'"]').classList.contains('on')); saveCfg(); return; } }
+    if (sgc && sgc.dataset.seg.indexOf('cfg-')===0) { const k=sgc.dataset.seg.slice(4); CFG[k]=b.dataset.v; setSeg(sgc,b.dataset.v); cfgChanged(k); return; } }
   if (b.id==='fab' || b.dataset.act==='new') { if (NOFILE.includes(S.tab)) openNewPick(); else openForm(); return; }
   if (b.dataset.newf) { switchFile(b.dataset.newf); openForm(); return; }
   if (b.dataset.open) { const [f,row]=b.dataset.open.split(':'); if (!(+row>1)) { toast('Il trade si sta ancora salvando: riprova tra un attimo'); return; } switchFile(f); openForm(+row); return; }
@@ -435,4 +434,4 @@ if (!viaScript() && !(store.get('api','') && store.get('key',''))) showSetup(); 
 }
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['scheda.js'] = '2026-10-31.2';
+EB_V['scheda.js'] = '2026-11-03.1';
