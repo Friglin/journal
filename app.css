@@ -1193,7 +1193,7 @@ nav.bar button:active .pill { transform:scale(.88); }
 .op-wf .ic { flex:none; margin-top:1px; color:var(--fg3); } .op-wf b { color:var(--fg); }
 .op-wf.ok { background:var(--win-soft); } .op-wf.ok .ic { color:var(--win); }
 .op-wf.warn { background:var(--warn-soft); } .op-wf.warn .ic { color:var(--warn); }
-.op-sugg .op-wf { margin:18px 0 0; }
+.op-sugg .op-steps { margin:14px 0 4px; } .op-sugg .btn.op-best { margin-top:12px; }
 .op-tabs { margin-bottom:6px; } .op-tabs button { font-size:13px; padding:8px 1px; }
 .op-h3 { display:flex; align-items:baseline; flex-wrap:wrap; gap:4px 8px; margin:22px 0 4px; } .op-gg > div > .op-h3:first-child { margin-top:14px; } .op-h3 b { font-size:15px; font-weight:650; } .op-h3 span { font-size:12.5px; color:var(--fg3); }
 .op-leg { font-size:12px; color:var(--fg3); line-height:1.45; margin:10px 0 2px; }
@@ -1223,4 +1223,4 @@ nav.bar button:active .pill { transform:scale(.88); }
 .op-how ul { margin:10px 0 0; padding-left:18px; display:flex; flex-direction:column; gap:8px; } .op-how li { font-size:13px; line-height:1.55; color:var(--fg2); }
 
 /* versione del foglio di stile (la scrive tools/build.py): index.html controlla che sia uguale a BUILD */
-:root { --eb-build: "2026-11-03.5"; }
+:root { --eb-build: "2026-11-03.6"; }
