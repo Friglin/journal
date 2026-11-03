@@ -1171,6 +1171,8 @@ nav.bar button:active .pill { transform:scale(.88); }
 .op-verd { display:flex; gap:12px; align-items:center; padding:12px 14px; border-radius:16px; background:var(--win-soft); }
 .op-verd .op-ic { background:var(--surface); color:var(--win); }
 .op-verd.go { background:var(--accent-soft); } .op-verd.go .op-ic { color:var(--accent); }
+.op-verd.mid { background:var(--warn-soft); } .op-verd.mid .op-ic { color:var(--warn); }
+.op-mkt .op-verd { margin-bottom:6px; }
 .op-verd b { display:block; font-size:15.5px; font-weight:650; } .op-verd span:not(.op-ic) { display:block; font-size:12.5px; color:var(--fg2); line-height:1.4; margin-top:1px; }
 .op-sub { display:flex; align-items:baseline; flex-wrap:wrap; gap:4px 8px; margin:20px 0 2px; }
 .op-sub b { font-size:12px; font-weight:700; color:var(--fg2); letter-spacing:.05em; text-transform:uppercase; } .op-sub span { font-size:12.5px; color:var(--fg3); }
@@ -1194,7 +1196,7 @@ nav.bar button:active .pill { transform:scale(.88); }
 .op-h3 { display:flex; align-items:baseline; flex-wrap:wrap; gap:4px 8px; margin:22px 0 4px; } .op-gg > div > .op-h3:first-child { margin-top:14px; } .op-h3 b { font-size:15px; font-weight:650; } .op-h3 span { font-size:12.5px; color:var(--fg3); }
 .op-leg { font-size:12px; color:var(--fg3); line-height:1.45; margin:10px 0 2px; }
 .op-gg { display:grid; gap:6px 28px; align-items:start; } .op-gg > div { min-width:0; } @media (min-width:900px) { .op-gg { grid-template-columns:repeat(2,minmax(0,1fr)); } }
-.op-prop .tbl-wrap, .op-prop .op-wf { max-width:640px; }
+.op-prop .tbl-wrap, .op-prop .op-wf, .op-mkt .tbl-wrap { max-width:640px; }
 .op-t { width:100%; border-collapse:collapse; font-size:13.5px; margin-top:6px; }
 .op-t th { font-size:11.5px; font-weight:600; color:var(--fg3); padding:8px 6px; white-space:nowrap; text-align:right; } .op-t th:first-child { text-align:left; }
 .op-g th:first-child { font-size:13px; font-weight:650; color:var(--fg); }
@@ -1219,4 +1221,4 @@ nav.bar button:active .pill { transform:scale(.88); }
 .op-how ul { margin:10px 0 0; padding-left:18px; display:flex; flex-direction:column; gap:8px; } .op-how li { font-size:13px; line-height:1.55; color:var(--fg2); }
 
 /* versione del foglio di stile (la scrive tools/build.py): index.html controlla che sia uguale a BUILD */
-:root { --eb-build: "2026-11-03.3"; }
+:root { --eb-build: "2026-11-03.4"; }
