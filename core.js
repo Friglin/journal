@@ -355,7 +355,7 @@ function monthItems(ts, m, last) {
 // ───────────────────────── navigazione ─────────────────────────
 // Pagine: barra laterale su PC (gruppi), barra in basso sul telefono (le pagine meno usate stanno in «Altro»)
 const NAV = [ { g:'Giornata' }, { id:'home', l:'Panoramica', i:'home' }, { id:'news', l:'News', i:'news' },
-  { g:'Registro' }, { id:'list', f:'Journal', l:'Journal', i:'book' }, { id:'list', f:'EOW', l:'EOW', i:'list' },
+  { g:'Registro' }, { id:'list', l:'Trade', i:'list', cur:1 },   // una sola pagina: EOW o Journal si sceglie con lo switcher in alto
   { g:'Performance' }, { id:'stats', l:'Analisi', i:'chart' }, { id:'cal', l:'Calendario', i:'cal' }, { id:'mc', l:'Simula', i:'dice' }, { id:'opt', l:'Ottimizza', i:'target' },
   { g:'Crescita' }, { id:'disc', l:'Disciplina', i:'shield' }, { id:'coach', l:'Coach', i:'spark' } ];
 const NAV_FOOT = [ { id:'set', l:'Impostazioni', i:'gear' } ];
@@ -365,14 +365,14 @@ const PTITLE = { home:'Panoramica', news:'News', list:'Trade', stats:'Analisi', 
 const NOFILE = ['news','set','disc','mc','opt'];   // pagine che non dipendono da EOW / Journal (la Disciplina usa sempre il Journal, Simula e Ottimizza sempre l'EOW)
 const FILE_LBL = { EOW:['EOW','End of Week · backtest della settimana'], Journal:['JOURNAL','Trade reali eseguiti'] };
 const navKey = n => n.id+(n.f?':'+n.f:'');
-const curNavKey = () => S.tab==='list' ? 'list:'+S.file : S.tab;
+const curNavKey = () => S.tab;
 function fileLook() { document.documentElement.dataset.file=S.file; const l=FILE_LBL[S.file]; $('filebar').innerHTML='<i></i><b>'+l[0]+'</b><span>'+l[1]+'</span>';
   navState(); }
 function renderChrome() {
   $('brand').innerHTML = logo(26)+'<span translate="no">'+APP+'</span>';
   if (!$('topSearch')) $('fileSeg').insertAdjacentHTML('afterend', '<button type="button" class="icon-btn top-search" id="topSearch" data-act="pal" aria-label="Cerca pagine, azioni e trade">'+ic('search',18,2)+'</button>');
   let k=0; const item = n => '<button type="button" class="sb-i" data-nav="'+navKey(n)+'" data-tip="'+n.l+' · '+(k+1)+'" title="'+n.l+' (tasto '+(k+1)+')" style="--k:'+(k++)+'">'+ic(n.i,20)+'<span>'+n.l+'</span>'+
-    (n.f?'<i class="fdot '+n.f+'"></i>':'')+'<em class="sb-b" id="nb-'+navKey(n).replace(':','-')+'"></em></button>';
+    (n.f?'<i class="fdot '+n.f+'"></i>':n.cur?'<i class="fdot cur"></i>':'')+'<em class="sb-b" id="nb-'+navKey(n).replace(':','-')+'"></em></button>';
   $('side').innerHTML = '<span class="sb-ind" id="sbInd"></span><div class="sb-brand" translate="no">'+logo(30)+'<span>'+APP+'</span></div>'+
     '<button type="button" class="sb-search" data-act="pal" aria-label="Cerca pagine, azioni e trade">'+ic('search',16,2)+'<span>Cerca</span><kbd class="kbd">'+(/Mac|iPhone|iPad/.test(navigator.platform)?'⌘':'Ctrl ')+'K</kbd></button><div class="sb-nav">'+
     NAV.map(n=>n.g?'<div class="sb-g">'+n.g+'</div>':item(n)).join('')+'</div><div class="sb-foot">'+NAV_FOOT.map(item).join('')+
@@ -424,7 +424,7 @@ function switchFile(f) { if (f===S.file) return; setSeg($('fileSeg'),f); S.file=
 function navTo(key, o) { const [id,f]=key.split(':'); if (S.sheet) closeSheet(); if (f) switchFile(f); o=o||{}; go(id, o); if (f && id==='list') syncHash(o); }
 function openMore() {
   S.sheet='more'; $('sh-sub').textContent=APP; $('sh-title').innerHTML=words('Altro');
-  const it=[['list:Journal','Journal','book','Trade reali'],['list:EOW','EOW','list','Backtest della settimana'],['cal','Calendario','cal','R giorno per giorno'],
+  const it=[['cal','Calendario','cal','R giorno per giorno'],
             ['disc','Disciplina','shield','Regole, errori ed esecuzione'],['coach','Coach','spark','Consigli e chat con Claude'],['mc','Simula','dice','Prop firm: passare le valutazioni'],['opt','Ottimizza','target','Il piano alle condizioni di adesso'],['set','Impostazioni','gear','Profilo, sessione, filtri']];
   $('sh-body').innerHTML='<div class="more">'+it.map((x,k)=>'<button type="button" data-nav="'+x[0]+'" style="--k:'+k+'" class="'+(curNavKey()===x[0]?'on':'')+'">'+ic(x[2],24,1.8)+'<b>'+x[1]+'</b><span>'+x[3]+'</span></button>').join('')+'</div>';
   $('sh-foot').innerHTML=''; openSheet();
@@ -615,4 +615,4 @@ function filtClick(b) {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['core.js'] = '2026-11-03.6';
+EB_V['core.js'] = '2026-11-04.1';

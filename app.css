@@ -588,7 +588,7 @@ nav.bar { background:color-mix(in srgb,var(--surface) 76%,transparent); -webkit-
 .ptitle { display:none; }
 .btn.sm { height:38px; padding:0 14px; font-size:13.5px; border-radius:12px; }
 .fdot { width:7px; height:7px; border-radius:50%; margin-left:auto; flex:none; }
-.fdot.EOW { background:#2E9BFF; } .fdot.Journal { background:#FF9F0A; }
+.fdot.EOW { background:#2E9BFF; } .fdot.Journal { background:#FF9F0A; } .fdot.cur { background:var(--accent); }
 @media (min-width:1000px) {
   :root { --sbw:248px; } :root.sbc { --sbw:78px; }
   body { padding-left:var(--sbw); transition:padding-left .5s cubic-bezier(.3,1,.3,1); }
@@ -1223,4 +1223,4 @@ nav.bar button:active .pill { transform:scale(.88); }
 .op-how ul { margin:10px 0 0; padding-left:18px; display:flex; flex-direction:column; gap:8px; } .op-how li { font-size:13px; line-height:1.55; color:var(--fg2); }
 
 /* versione del foglio di stile (la scrive tools/build.py): index.html controlla che sia uguale a BUILD */
-:root { --eb-build: "2026-11-03.6"; }
+:root { --eb-build: "2026-11-04.1"; }

@@ -20,6 +20,8 @@ function palAll(q) {
   q=q.trim().toLowerCase(); const out=[];
   const kb=matchMedia('(hover:hover) and (pointer:fine)').matches, add=(g,l,i,run,em,kw)=>{ if (em && em.length<3 && !kb) em=''; if (!q || (l+' '+(kw||'')+' '+(em||'')).toLowerCase().includes(q)) out.push({ g,l,i,run,em }); };
   [...NAV.filter(n=>!n.g),...NAV_FOOT].forEach((n,j)=>add('Pagine', n.l, n.i, ()=>navTo(navKey(n),{ instant:true }), String(j+1), 'vai pagina '+(n.f||'')));
+  add('Pagine','Trade del Journal','book',()=>navTo('list:Journal',{ instant:true }),'','vai pagina journal reali');
+  add('Pagine','Trade dell\'EOW','list',()=>navTo('list:EOW',{ instant:true }),'','vai pagina eow backtest');
   add('Azioni','Nuovo trade nel Journal','plus',()=>{ switchFile('Journal'); openForm(); },'N','aggiungi registra reale');
   add('Azioni','Nuovo backtest nell\'EOW','plus',()=>{ switchFile('EOW'); openForm(); },'','aggiungi registra eow');
   if (!NOFILE.includes(S.tab)) add('Azioni','Apri i filtri','filter',openFilters,'F','filtra');
@@ -479,4 +481,4 @@ function briefing() {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['home.js'] = '2026-11-03.6';
+EB_V['home.js'] = '2026-11-04.1';
