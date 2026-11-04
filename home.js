@@ -339,18 +339,21 @@ function nrow(e, now, nextT) {
     '<i class="ndot" title="Impatto '+esc(e.impL.toLowerCase())+'"></i>'+
     '<div class="nx">'+(nx?'<em class="nnext">Prossima</em>':'')+'<b>'+esc(newsIt(e.title))+'</b><span>'+esc(e.title)+' · '+(e.imp==='Holiday'?'festività':'impatto '+e.impL.toLowerCase())+'</span>'+(meta?'<div class="nm">'+meta+'</div>':'')+'</div></'+tag.split(' ')[0]+'>';
 }
-// Oggi: in cima alla pagina, con il conto alla rovescia della prossima news importante (anche se non è oggi)
+// Oggi: in cima alla pagina, solo le news di oggi. In evidenza la prossima di oggi (alta o media) con il conto alla rovescia;
+// le news dei giorni dopo stanno più sotto (scelta dell'utente: «devo sapere che news ci sono oggi»).
 function newsToday(g, all, now, nextT) {
-  const t=todayIso(), rn=romeDate(now), wdN=rn.getDay(), cat=wdN===0||wdN===6 ? '' : newsCat(t);
-  const nx=all.find(e=>!e.tbd && e.t>now-60000 && (e.imp==='High' || e.trump)), im=nx && implOf(nx.title);
+  const t=todayIso(), rn=romeDate(now), wdN=rn.getDay(), weekend=wdN===0||wdN===6, cat=weekend ? '' : newsCat(t);
+  const nx=g.find(e=>!e.tbd && e.t>now-60000 && e.imp!=='Holiday'), im=nx && nx.imp==='High' && implOf(nx.title);
+  const hi=g.filter(e=>e.imp==='High').length, md=g.filter(e=>e.imp==='Medium').length, left=g.filter(e=>!e.tbd && e.t>now-60000).length;
+  const cnt=[hi?hi+' ad alto impatto':'', md?md+' a impatto medio':''].filter(Boolean).join(' e ');
   let h='<div class="card wide hero ntoday" id="nd-'+t+'"><div class="hero-glow"></div><div class="nt-h"><div class="eyebrow">Oggi · '+GIORNI[rn.getDay()]+' '+rn.getDate()+' '+MESI_F[rn.getMonth()]+'</div>'+
     (cat?'<span class="ncat '+(cat==='Red News'?'hi':cat==='Orange News'?'md':'')+'">'+cat+'</span>':'')+'</div>';
-  if (nx) h+='<div class="nt-next"><div><span>Prossima ad alto impatto'+(nx.day===t?'':' · '+dayLbl(nx.day).toLowerCase()+' alle '+nx.hm)+'</span><b>'+esc(newsIt(nx.title))+'</b>'+
-    (nx.day===t?'<em>'+nx.hm+' · '+when(nx)+'</em>':'')+'</div><div class="nt-cd" data-cd="'+nx.t+'">'+cdTxt(nx.t-now)+'</div></div>'+(im && nx.day===t?'<p class="nh-i">'+esc(im[3])+'</p>':'');
-  if (wdN===0 || wdN===6) h+='<p class="nt-none">Mercati chiusi: nessuna news da seguire oggi.</p>';
-  else if (!g.length) h+='<p class="nt-none">'+ic('check',16,2.2)+'Nessuna news USD di impatto medio o alto oggi.</p>';
-  else h+='<div class="nlist nt-list">'+g.map(e=>nrow(e,now,nextT)).join('')+'</div>';
-  return h+'</div>';
+  if (weekend) return h+'<p class="nt-none">Mercati chiusi: nessuna news da seguire oggi.</p></div>';
+  if (!g.length) return h+'<p class="nt-none">'+ic('check',16,2.2)+'Nessuna news USD di impatto medio o alto oggi.</p></div>';
+  if (nx) h+='<div class="nt-next"><div><span>'+(left>1?'Prossima di oggi · '+left+' ancora da uscire':'Prossima di oggi')+'</span><b>'+esc(newsIt(nx.title))+'</b>'+
+    '<em>'+nx.hm+' · impatto '+nx.impL.toLowerCase()+' · '+when(nx)+'</em></div><div class="nt-cd'+(nx.imp==='High'?'':' md')+'" data-cd="'+nx.t+'">'+cdTxt(nx.t-now)+'</div></div>'+(im?'<p class="nh-i">'+esc(im[3])+'</p>':'');
+  else h+='<div class="nt-next done"><div><span>News di oggi: '+cnt+'</span><b>Sono già uscite tutte</b><em>Da qui alla fine della giornata non ci sono altre news</em></div></div>';
+  return h+'<div class="nlist nt-list">'+g.map(e=>nrow(e,now,nextT)).join('')+'</div></div>';
 }
 // sunto del periodo: le news importanti raggruppate per tipo, quando escono rispetto alla sessione e cosa possono comportare
 function newsSummary(ev, per) {
@@ -481,4 +484,4 @@ function briefing() {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['home.js'] = '2026-11-04.2';
+EB_V['home.js'] = '2026-11-04.3';
