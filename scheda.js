@@ -51,7 +51,7 @@ function renderForm() {
     '<div class="g2">'+fld('Data',flbl('Data','Data'),fin('Data','date'))+fld('Ora',flbl('Ora','Ora di ingresso'),fin('Ora','time'))+'</div></div>';
   h+='<div class="fsec"><div class="fsec-h"><div class="h2">Esecuzione</div></div><div class="g2">'+fnum('sl','SL (punti)','es. 6,25')+fnum('dd','SL DD (punti)','0 se mai contro')+'</div>'+
     '<div class="g2">'+fnum('maxrr','Max Real RR','es. 2,4')+(E?'<div></div>':fnum('rr','RR del trade','es. 1,8 o −1'))+'</div>'+
-    (E?'':fld('Uscita',flbl('Uscita','Ora di uscita'),'<div class="lv x">'+fin('Uscita','time')+'<button type="button" class="mini" data-now="Uscita">'+ic('clock',15,2)+'Adesso</button><div class="hold" id="hold-x"></div></div>'))+'</div>';
+    (E?'':fld('Uscita',flbl('Uscita','Ora di uscita'),'<div class="lv x">'+fin('Uscita','time')+'<div class="hold" id="hold-x"></div></div>'))+'</div>';
   h+='<div class="fsec"><div class="fsec-h"><div class="h2">Anteprima</div><span id="fx-out"></span></div><div class="ruler" id="fx-ruler"></div><div class="calc" id="fx-calc"></div><div class="warns" id="fx-warn"></div></div>';
   h+='<div class="fsec"><div class="fsec-h"><div class="h2">Contesto</div></div>'+
     fld('Idea',fspan('Idea 5m'),chips('Idea',L.idea,f.Idea))+
@@ -118,7 +118,7 @@ function validate(c) {
     if (!has('rr') && isFinite(c.rr) && isFinite(c.max) && c.rr>c.max+1e-9) add('rr','L\'RR non può superare il Max Real RR ('+fmtN(c.max,2)+').', true);
     if (!empty(f.pnl) && !isNumStr(String(f.pnl).replace('$','').trim())) add('pnl','Scrivi solo il numero in dollari, es. 410 o 205,50.', true);
     else if (Math.abs(pnlVal(f.pnl, numS(f.rr)))>100000) add('pnl','PnL troppo alto: controlla.', true);
-    if (empty(f.Uscita)) add('Uscita','Inserisci l\'ora di uscita (oppure tocca Adesso).');
+    if (empty(f.Uscita)) add('Uscita','Inserisci l\'ora di uscita.');
     else if (isFinite(mins(f.Ora)) && mins(f.Uscita)<=mins(f.Ora)) add('Uscita','L\'uscita deve essere dopo l\'ingresso ('+f.Ora+').', true);
   }
   if (!f.Idea) add('Idea','Scegli l\'idea 5m.');
@@ -129,7 +129,7 @@ function validate(c) {
   if (E) {
     let prev=mins(f.Ora);
     for (let k=1; k<=(isFinite(c.best)?c.best:0); k++) { const v=f['t'+k];
-      if (empty(v)) { add('t'+k,'Inserisci l\'ora in cui hai toccato '+k+'R (oppure tocca Adesso).'); continue; }
+      if (empty(v)) { add('t'+k,'Inserisci l\'ora in cui hai toccato '+k+'R.'); continue; }
       const t=mins(v); if (isFinite(prev) && t<prev) add('t'+k, k===1 ? 'È prima dell\'ora di ingresso ('+f.Ora+').' : 'È prima dell\'ora di '+(k-1)+'R.', true); prev=t; }
     if (!f.PB) add('PB','Scegli quante candele di pullback.');
   } else {
@@ -185,7 +185,7 @@ function refresh() {
 function renderLevels(c) {
   const n=isFinite(c.best)?c.best:0;
   if (!n) { $('fx-lv').innerHTML='<div class="mut" style="font-size:13.5px">Compaiono qui quando il trade raggiunge almeno 1R.</div>'; return; }
-  let h=''; for (let k=1;k<=n;k++) h+=fld('t'+k,'','<div class="lv"><b>'+k+'R</b>'+fin('t'+k,'time')+'<button type="button" class="mini" data-now="t'+k+'">'+ic('clock',15,2)+'Adesso</button><div class="hold" id="hold-'+k+'">'+(c.h[k]?'dopo '+c.h[k]:'')+'</div></div>');
+  let h=''; for (let k=1;k<=n;k++) h+=fld('t'+k,'','<div class="lv"><b>'+k+'R</b>'+fin('t'+k,'time')+'<div class="hold" id="hold-'+k+'">'+(c.h[k]?'dopo '+c.h[k]:'')+'</div></div>');
   $('fx-lv').innerHTML=h;
 }
 function updateHolds(c) { const x=$('hold-x'); if (x) x.textContent = c.hold ? 'holding '+c.hold : '';
@@ -244,7 +244,6 @@ function formClick(b) {
   if (sg) { const k=sg.dataset.seg, v=b.dataset.v; S.f[k]=v; S.touched[k]=true; setSeg(sg,v); if (k==='News' && S.f._newsAuto) { S.f._newsAuto=false; const l=sg.closest('[data-f]').querySelector('.flabel'); if (l) l.textContent='News'; } if (k==='cleanS') S.f.clean = v==='Sì'; if (k==='Esecuzione') $('fx-errs').hidden = v!=='Errore'; refresh(); return; }
   if (ch && ch.dataset.multi) { const k=ch.dataset.chips, v=b.dataset.v, a=S.f[k]||[]; S.f[k]=a.includes(v)?a.filter(x=>x!==v):[...a,v]; S.touched[k]=true; b.classList.toggle('on'); refresh(); return; }
   if (ch) { const k=ch.dataset.chips, v=b.dataset.v; S.f[k] = S.f[k]===v ? '' : v; S.touched[k]=true; ch.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on', c.dataset.v===S.f[k])); refresh(); return; }
-  if (b.dataset.now) { const k=b.dataset.now; S.f[k]=nowHM(); S.touched[k]=true; $('fi-'+k).value=S.f[k]; refresh(); }
 }
 async function save() {
   const f=S.f, c=compute(), E=S.type==='EOW';
@@ -439,4 +438,4 @@ if (!viaScript() && !(store.get('api','') && store.get('key',''))) showSetup(); 
 }
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['scheda.js'] = '2026-11-05.9';
+EB_V['scheda.js'] = '2026-11-05.10';
