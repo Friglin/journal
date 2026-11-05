@@ -301,31 +301,45 @@ function trumpSched(ev) {
     out.push({ t:x.t, tbd:!x.t, day:iso(romeDate(x.t||x.a)), lbl:{ conferenza:'Conferenza stampa di Trump', firma:'Trump firma un provvedimento', discorso:'Discorso di Trump' }[x.k]||'Intervento di Trump', src:'FinancialJuice', ann:x.a }); });
   return out.filter(o=>o.tbd || o.t>now-3*3600000).sort((a,b)=>(a.tbd-b.tbd) || ((a.t||a.ann||0)-(b.t||b.ann||0)));   // prima quelli con l'orario
 }
+// Trump: in alto, grande come la carta «Oggi» delle news, lo stato in una riga (parla adesso / quando parla / non parla);
+// sotto gli altri interventi in programma, quando ha già parlato e, in piccolo e chiuse, le fonti.
 function trumpCard(ev) {
-  const T=S.trump, now=Date.now(), live=T && T.live, sch=trumpSched(ev), past=(T && T.past) || [];
-  let h='<div class="card wide trump rise'+(live?' on':'')+'" id="trump" style="--d:90ms"><div class="card-h"><div class="h2">'+ic('mic',19,2)+' Trump'+(live?'<span class="tr-live"><i></i>In diretta</span>':'')+'</div>'+
-    '<span class="sub">'+(T&&T.at?'controllato alle '+hmOf(T.at):'')+'</span></div>';
-  if (live) h+='<div class="tr-now"><div><b>Sta parlando ora</b><span>'+(live.title?esc(live.title)+' · ':'')+'dalle '+hmOf(live.since)+(live.yt?'':' · ultima dichiarazione '+agoTxt(now-live.last))+'</span></div>'+
-    '<div class="tr-l">'+(live.url?'<a class="btn tr-go" href="'+esc(live.url)+'" target="_blank" rel="noopener">'+ic('play',16,2)+'Guarda la diretta</a>':'<a class="btn tr-go" href="'+TRUMP_LINKS[0][1]+'" target="_blank" rel="noopener">'+ic('play',16,2)+TRUMP_LINKS[0][0]+'</a>')+
-    '<a class="lnk" href="'+TRUMP_LINKS[1][1]+'" target="_blank" rel="noopener">'+ic('ext',14,2)+TRUMP_LINKS[1][0]+'</a></div></div>';
-  if (sch.length) h+=(live?'<div class="tr-sect">In programma</div>':'')+sch.map(o=>{ const st = o.tbd ? (o.ann?'annunciato alle '+hmOf(o.ann)+', orario non indicato':'orario da definire') : now<o.t ? 'alle '+hmOf(o.t)+' · <b data-cd="'+o.t+'">'+cdTxt(o.t-now)+'</b>' : 'iniziato alle '+hmOf(o.t)+' · la fine non viene annunciata';
-      return '<div class="tr-row"><div><b>'+esc(o.lbl)+'</b><span>'+dayLbl(o.day)+' · '+st+'</span></div>'+(o.url?'<div class="tr-l"><a class="lnk" href="'+esc(o.url)+'" target="_blank" rel="noopener">'+ic('play',14,2)+'Apri su YouTube</a></div>':'')+'</div>'; }).join('')+
-      (live?'':'<div class="tr-where"><span>Dove vederlo</span>'+trLinks()+'</div>');
-  else if (!live && T) h+='<div class="tr-none">'+ic('check',16,2.2)+'<span>Nessun intervento di Trump in programma. Quando inizia a parlare lo vedi qui, con il link alla diretta.</span></div>';
-  // controllo non riuscito (e nessun dato salvato): il motivo e «Riprova», anche se ci sono interventi dal calendario
+  const T=S.trump, now=Date.now(), live=T && T.live, sch=trumpSched(ev), past=(T && T.past) || [], t=todayIso();
+  const nx=sch[0], pastToday=past.filter(p=>iso(romeDate(p.from))===t);
+  const chip=(c,txt)=>'<span class="ncat '+c+'">'+txt+'</span>';
+  let st, rest=sch;
+  if (live) st={ cls:'live', chip:chip('hi','<i class="tr-dot"></i>In diretta'), lab:'Adesso', big:'Trump sta parlando',
+      sub:(live.title?esc(live.title)+' · ':'')+'dalle '+hmOf(live.since)+(live.yt?'':' · ultima dichiarazione '+agoTxt(now-live.last)), side:'<div class="tr-big-live"><i></i>LIVE</div>' };
+  else if (nx) { rest=sch.slice(1);
+    const when = nx.tbd ? (nx.ann?'annunciato alle '+hmOf(nx.ann)+', orario non indicato':'orario da definire') : now<nx.t ? (nx.day===t?'Oggi':dayLbl(nx.day))+' alle '+hmOf(nx.t) : 'Iniziato alle '+hmOf(nx.t);
+    st={ cls:'sched', chip:chip('md', nx.day===t?'Parla oggi':'In programma'), lab:nx.tbd?dayLbl(nx.day):when, big:nx.lbl, sub:(nx.tbd?when+' · ':now<nx.t?'':'la fine non viene annunciata · ')+'fonte: '+nx.src,
+      side: !nx.tbd && now<nx.t ? '<div class="nt-cd hi" data-cd="'+nx.t+'">'+cdTxt(nx.t-now)+'</div>' : '' }; }
+  else if (T) st={ cls:'off', chip:chip('ok','Non parla'), lab:'In questo momento', big:'Trump non sta parlando',
+      sub:pastToday.length ? 'Oggi ha già parlato: '+pastToday.map(p=>hmOf(p.from)+'–'+hmOf(p.to)).join(' · ') : 'Nessun intervento in programma. Quando inizia a parlare lo vedi qui, con il link alla diretta.', side:'' };
+  let h='<div class="card wide trump rise trs-'+(st?st.cls:'wait')+'" id="trump" style="--d:90ms"><div class="nt-h"><div class="eyebrow tr-eb">'+ic('mic',15,2.2)+'Trump</div>'+(st?st.chip:'')+'</div>';
+  if (st) h+='<div class="nt-next tr-hero"><div><span>'+st.lab+'</span><b>'+esc(st.big)+'</b><em>'+st.sub+'</em></div>'+st.side+'</div>';
+  if (live) h+='<div class="tr-l tr-act">'+(live.url?'<a class="btn tr-go" href="'+esc(live.url)+'" target="_blank" rel="noopener">'+ic('play',16,2)+'Guarda la diretta</a>':'<a class="btn tr-go" href="'+TRUMP_LINKS[0][1]+'" target="_blank" rel="noopener">'+ic('play',16,2)+TRUMP_LINKS[0][0]+'</a>')+
+    '<a class="lnk" href="'+TRUMP_LINKS[1][1]+'" target="_blank" rel="noopener">'+ic('ext',14,2)+TRUMP_LINKS[1][0]+'</a></div>';
+  else if (nx) h+='<div class="tr-where"><span>Dove vederlo</span>'+(nx.url?'<div class="tr-l"><a class="btn tr-go sm" href="'+esc(nx.url)+'" target="_blank" rel="noopener">'+ic('play',15,2)+'Apri su YouTube</a></div>':trLinks())+'</div>';
+  if (rest.length) h+='<div class="tr-sect">Anche in programma</div>'+rest.map(o=>{ const w = o.tbd ? (o.ann?'annunciato alle '+hmOf(o.ann)+', orario non indicato':'orario da definire') : now<o.t ? 'alle '+hmOf(o.t)+' · <b data-cd="'+o.t+'">'+cdTxt(o.t-now)+'</b>' : 'iniziato alle '+hmOf(o.t);
+      return '<div class="tr-row"><div><b>'+esc(o.lbl)+'</b><span>'+dayLbl(o.day)+' · '+w+'</span></div>'+(o.url?'<div class="tr-l"><a class="lnk" href="'+esc(o.url)+'" target="_blank" rel="noopener">'+ic('play',14,2)+'Apri su YouTube</a></div>':'')+'</div>'; }).join('');
+  // controllo non riuscito (e nessun dato salvato): il motivo e «Riprova»
   if (!T) h+= trErr==='OLD' ? '<div class="tr-none ko">'+ic('alert',16,2.2)+'<span>Aggiorna Code.gs per sapere quando Trump parla.</span></div>'
     : trErr && !trP ? '<div class="tr-none ko">'+ic('alert',16,2.2)+'<span>Non riesco a controllare se Trump parla: '+esc(trErr==='NETWORK'?'lo script non ha risposto in tempo':trErr)+'.</span><button type="button" class="btn sec sm" data-act="trretry">'+ic('refresh',15,2)+'Riprova</button></div>'
     : '<div class="tr-none">'+ic('clock',16,2.2)+'<span>Controllo se Trump sta parlando…</span></div>';
-  if (past.length) h+='<div class="tr-past">'+ic('clock',14,2)+'<span>Ha già parlato: '+past.map(p=>(iso(romeDate(p.from))===todayIso()?'':dayShort(iso(romeDate(p.from)))+' ')+hmOf(p.from)+'–'+hmOf(p.to)).join(' · ')+'</span></div>';
-  // fonte che funziona: spunta; FinancialJuice in pausa (429) mentre YouTube va: grigio e discreto; altri problemi: giallo
+  const pastOld=past.filter(p=>!(st && st.cls==='off' && pastToday.includes(p)));
+  if (pastOld.length) h+='<div class="tr-past">'+ic('clock',14,2)+'<span>Ha già parlato: '+pastOld.map(p=>(iso(romeDate(p.from))===t?'oggi ':dayShort(iso(romeDate(p.from)))+' ')+hmOf(p.from)+'–'+hmOf(p.to)).join(' · ')+'</span></div>';
+  // fonti, in piccolo: spunta se funziona; FinancialJuice in pausa (429) mentre YouTube va: grigio; altri problemi: giallo
   const sv = (n,v,quiet) => v==='ok' ? '<span class="ok">'+ic('check',13,2.4)+n+'</span>'
     : quiet ? '<span class="off">'+ic('clock',13,2.2)+n+' in pausa</span>'
     : '<span class="ko">'+ic('alert',13,2.4)+n+' · '+esc(String(v||'non controllato'))+'</span>';
-  // FinancialJuice: se l'ultimo controllo riuscito è recente va bene così (un 429 è solo una pausa che lo script si prende da solo)
   const fjRecent = T && T.src && T.src.fjAt && now-T.src.fjAt < 30*60000, fjV = T && T.src ? (T.src.fj==='ok' || fjRecent ? 'ok' : T.src.fj) : '';
+  const noneOk = T && T.src && T.src.yt!=='ok' && fjV!=='ok';
   if (T && T.src && T.src.err) h+='<p class="tr-src"><b>Ultimo controllo non riuscito</b> ('+esc(T.src.err)+'): sto mostrando quello delle '+hmOf(T.at)+'.</p>';
-  if (T && T.src) h+='<div class="tr-srcs">'+sv('YouTube Casa Bianca',T.src.yt)+sv('FinancialJuice'+(fjRecent?' · '+hmOf(T.src.fjAt):''),fjV, fjV!=='ok' && T.src.yt==='ok' && /429|troppe richieste/i.test(String(T.src.fj)))+'</div>';
-  h+='<p class="tr-src">'+(T && T.src && T.src.yt!=='ok' && fjV!=='ok' ? '<b>Nessuna fonte raggiungibile in questo momento: riprovo da solo.</b> ' : '')+'Diretta e dirette in programma dal canale YouTube della Casa Bianca, dichiarazioni dai titoli di FinancialJuice (qualche minuto di ritardo), interventi dal calendario di ForexFactory.</p>';
+  if (noneOk) h+='<p class="tr-src"><b>Nessuna fonte raggiungibile in questo momento: riprovo da solo.</b></p>';
+  if (T) h+='<details class="tr-more"><summary>'+ic('chev',13,2.2)+'Fonti'+(T.at?' · controllato alle '+hmOf(T.at):'')+'</summary>'+
+    (T.src?'<div class="tr-srcs">'+sv('YouTube Casa Bianca',T.src.yt)+sv('FinancialJuice'+(fjRecent?' · '+hmOf(T.src.fjAt):''),fjV, fjV!=='ok' && T.src.yt==='ok' && /429|troppe richieste/i.test(String(T.src.fj)))+'</div>':'')+
+    '<p class="tr-src">Diretta e dirette in programma dal canale YouTube della Casa Bianca, dichiarazioni dai titoli di FinancialJuice (qualche minuto di ritardo), interventi dal calendario di ForexFactory.</p></details>';
   return h+'</div>';
 }
 const agoTxt = ms => ms<60000 ? 'adesso' : ms<3600000 ? Math.floor(ms/60000)+' min fa' : Math.floor(ms/3600000)+' h fa';
@@ -484,4 +498,4 @@ function briefing() {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['home.js'] = '2026-11-04.4';
+EB_V['home.js'] = '2026-11-05.1';
