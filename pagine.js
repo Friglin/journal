@@ -218,7 +218,7 @@ function propChanged(rerender) { syncTouch('prop'); if (rerender && S.tab==='set
 // rischio e conti uguali su tutti i dispositivi, salvati nello script (appSettings). Ogni impostazione ha la sua data
 // di modifica e per ciascuna vince la più recente: cambiare il rischio sul PC non riporta indietro i conti cambiati sul telefono.
 // Prima di salvare si rilegge il server e si uniscono le due versioni.
-const SYNC_KEYS=['risk','prop','rev','revX','piano']; let pushT=0;
+const SYNC_KEYS=['risk','prop','rev','revX','piano','nwMan']; let pushT=0;
 const syncTs = () => (CFG.syncTs = CFG.syncTs || {});
 function syncTouch(k) { syncTs()[k]=Date.now(); saveCfg(); pushSettings(); }
 function syncMerge(o) {
@@ -318,10 +318,17 @@ function sheetCat(dIso, skipRow) {
   ['EOW','Journal'].forEach(f=>{ const D=S.data[f]||cacheGet(f); if (!D || !D.h) return; const di=D.h.indexOf('Data')+1, ni=D.h.indexOf('News')+1; if (!di || !ni) return;
     D.rows.forEach(a=>{ if (f==='EOW' && a[0]===skipRow) return; const v=String(a[ni]||'').trim(); if (NEWS_W[v] && String(a[di]).trim()===want) n[v]=(n[v]||0)+1; }); });
   const k=Object.keys(n).sort((x,y)=>n[y]-n[x] || NEWS_W[y]-NEWS_W[x]); return k[0]||''; }
-// news di un giorno: dal calendario (archivio della settimana o calendario scaricato), se no dagli altri trade di quel giorno
+// news di un giorno: dal calendario (archivio della settimana o calendario scaricato), se no quella scelta per quel giorno nella
+// revisione (CFG.nwMan, sincronizzata), se no dagli altri trade di quel giorno
 function newsCatSrc(dIso, skipRow) { const ev=revNews(weekOf(dIso));
   if (ev) return { c:catOf(ev.filter(e=>e.day===dIso)), src:'cal' };
+  const m=(CFG.nwMan||{})[dIso]; if (NEWS_W[m]) return { c:m, src:'man' };
   const c=sheetCat(dIso, skipRow); return { c, src:c?'trade':'' }; }
+// news scelta a mano per un giorno senza calendario: vale per tutti i mercati; si tengono gli ultimi 60 giorni
+function setNwMan(dIso, c) { const o=Object.assign({}, CFG.nwMan||{}, { [dIso]:c }); CFG.nwMan={};
+  Object.keys(o).sort().slice(-60).forEach(k=>{ CFG.nwMan[k]=o[k]; }); syncTouch('nwMan'); }
+// il giorno su ForexFactory, da aprire nel browser (lo script non può leggerlo: Cloudflare blocca i programmi)
+const ffDayUrl = dIso => { const x=pdIso(dIso); return 'https://www.forexfactory.com/calendar?day='+['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'][x.getMonth()]+x.getDate()+'.'+x.getFullYear(); };
 const newsCatOf = dIso => newsCatSrc(dIso).c;
 const catOf = ev => ev.some(e=>e.cur==='USD' && e.imp==='High') ? 'Red News' : ev.some(e=>e.cur==='USD' && e.imp==='Medium') ? 'Orange News' : 'No News Day';
 const catCls = c => c==='Red News'?'hi':c==='Orange News'?'md':'';
@@ -346,6 +353,12 @@ function revHomeCard() {
 function renderReview() {
   const el=$('v-list'), v=revState(), days=revDays(v.wk), m=curModel(); revNewsLoad(v.wk);
   const nev=revNews(v.wk), dev = d => nev ? nev.filter(e=>e.day===d) : null, cat = d => newsCatSrc(d).c;
+  // giorno senza calendario: scelta della news con un tocco, guardando il giorno su ForexFactory
+  const manPick = (d, ns) => '<p class="mut">'+(ns.src==='man' ? 'Calendario di questa settimana non disponibile: news scelta da te per questo giorno, vale per tutti i mercati.' :
+      ns.src==='trade' ? 'Calendario di questa settimana non disponibile: uso la news già scritta negli altri trade di questo giorno.' :
+      'Calendario di questa settimana non disponibile. Guarda il giorno su ForexFactory e scegli la news: vale per tutti i mercati.')+'</p>'+
+    '<div class="rv-man"><div class="rv-mc">'+['Red News','Orange News','No News Day'].map(x=>'<button type="button" class="chip '+catCls(x)+(ns.c===x?' on':'')+'" data-act="rvnman" data-c="'+x+'">'+catLbl(x)+'</button>').join('')+'</div>'+
+    '<a class="lnk" href="'+ffDayUrl(d)+'" target="_blank" rel="noopener">'+ic('ext',14,2.2)+'ForexFactory · '+dayName(d).toLowerCase()+'</a></div>';
   const d0=pdIso(days[0]), d4=pdIso(days[4]), wkL=d0.getDate()+(d0.getMonth()!==d4.getMonth()?' '+MESI[d0.getMonth()]:'')+'–'+d4.getDate()+' '+MESI_F[d4.getMonth()];
   const chip = d => { const c=cat(d); return c ? '<span class="ncat '+catCls(c)+'">'+catLbl(c)+'</span>' : '<span class="ncat">…</span>'; };
   const sum = a => { const ts=all().filter(t=>revAsset(t)===a && weekOf(iso(t.d))===v.wk), R=ts.reduce((s,t)=>s+m.rOf(t),0);
@@ -387,9 +400,9 @@ function renderReview() {
   h+='<div class="stat-h rise"><h1>'+words(GIORNI[pdIso(d).getDay()].replace(/^./,ch=>ch.toUpperCase())+' '+pdIso(d).getDate()+' '+MESI_F[pdIso(d).getMonth()])+'</h1></div>';
   const key = ev ? ev.filter(e=>e.imp==='High'||e.imp==='Medium'||e.imp==='Holiday'||e.trump) : [];
   h+='<div class="card rv-news rise"><div class="card-h"><span class="eyebrow">News del giorno</span>'+(c?'<span class="ncat '+catCls(c)+'">'+c+'</span>':'')+'</div>'+
-    (!ev ? (c ? '<p class="mut">Calendario di questa settimana non disponibile: uso la news già scritta negli altri trade di questo giorno.</p>' : noNews) : key.length ? '<div class="rv-nl">'+key.map(e=>'<div><span class="num">'+esc(e.hm)+'</span><i class="'+e.imp2+'"></i><span>'+esc(newsIt(e.title))+'</span></div>').join('')+'</div>' : '<p class="mut">Nessuna news USD ad alto o medio impatto.</p>')+
+    (!ev ? (S.nwErr && S.nwErrWk===v.wk || newsCatSrc(d).src ? manPick(d, newsCatSrc(d)) : noNews) : key.length ? '<div class="rv-nl">'+key.map(e=>'<div><span class="num">'+esc(e.hm)+'</span><i class="'+e.imp2+'"></i><span>'+esc(newsIt(e.title))+'</span></div>').join('')+'</div>' : '<p class="mut">Nessuna news USD ad alto o medio impatto.</p>')+
     (c?'<p class="rv-ok">'+ic('check',15,2.4)+'Scritta in automatico in ogni trade di questo giorno</p>':'')+
-    (ev && c && ts.some(t=>t.raw.News!==c) ? (()=>{ const w=ts.filter(t=>t.raw.News!==c);
+    ((ev || newsCatSrc(d).src==='man') && c && ts.some(t=>t.raw.News!==c) ? (()=>{ const w=ts.filter(t=>t.raw.News!==c);
       return '<div class="rv-fix"><span>'+(w.length===1?'1 trade già salvato ha':w.length+' trade già salvati hanno')+' «'+esc(catLbl(w[0].raw.News||'')||'vuota')+'»'+(w.some(t=>t.raw.News!==w[0].raw.News)?' o altro':'')+'</span>'+
         '<button type="button" class="mini" data-act="rvfixnews" data-c="'+esc(c)+'">Correggi in '+esc(catLbl(c))+'</button></div>'; })() : '')+'</div>';
   h+='<div class="dayh rise"><span>Trade '+a+' di questo giorno</span><span>'+(ts.length?ts.length+(ts.length===1?' inserito':' inseriti'):'nessuno')+'</span></div>';
@@ -427,6 +440,7 @@ function revClick(b) {
   const inRev = S.tab==='list' && S.file==='EOW' && revDue() && !S.revAll && !v.pause && revStarted(v);
   if (b.dataset.act==='rvadd' || (b.id==='fab' && inRev)) { const p=revPos(v), c=newsCatOf(p.d);
     openForm(null, { Asset:p.a, Data:p.d, News: c || undefined }); return true; }
+  if (b.dataset.act==='rvnman') { setNwMan(revPos(v).d, b.dataset.c); renderCurrent(true); return true; }
   if (b.dataset.act==='rvfixnews') {   // trade del giorno salvati con una news diversa dal calendario: si scrive quella giusta
     const p=revPos(v), c=b.dataset.c, ts=revTrades(p.a,p.d).filter(t=>t.raw.News!==c); b.disabled=true;
     Promise.all(ts.map(t=>{ const r=t.raw; return callW('updateTrade', 'EOW', r._row, { News:c }, { Asset:r.Asset, Data:r.Data, Ora:String(r.Ora).slice(0,5) }).then(()=>{ r.News=c; }); }))
@@ -501,4 +515,4 @@ function renderList() {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['pagine.js'] = '2026-11-05.7';
+EB_V['pagine.js'] = '2026-11-05.8';
