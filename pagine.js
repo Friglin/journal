@@ -309,10 +309,20 @@ function revNews(wk) {
   const a=nwEv(wk); if (a) return a;
   return nwCal(wk);
 }
-// categoria di news di un giorno dal calendario: dall'archivio della settimana o dal calendario scaricato; '' se non si sa
-function newsCatOf(dIso) { const wk=weekOf(dIso);
-  const ev = nwEv(wk) || nwCal(wk);
-  return ev ? catOf(ev.filter(e=>e.day===dIso)) : ''; }
+// news già scritta nei trade di quel giorno (EOW e Journal, qualsiasi mercato): quella più frequente, a pari merito la più forte.
+// Serve quando il calendario di una settimana passata non c'è (ForexFactory blocca lo script sulle settimane vecchie). skipRow:
+// riga EOW da non contare (il trade che si sta modificando)
+const NEWS_W = { 'Red News':3, 'Orange News':2, 'No News Day':1 };
+function sheetCat(dIso, skipRow) {
+  const want=dIso.split('-').reverse().join('/'), n={};
+  ['EOW','Journal'].forEach(f=>{ const D=S.data[f]||cacheGet(f); if (!D || !D.h) return; const di=D.h.indexOf('Data')+1, ni=D.h.indexOf('News')+1; if (!di || !ni) return;
+    D.rows.forEach(a=>{ if (f==='EOW' && a[0]===skipRow) return; const v=String(a[ni]||'').trim(); if (NEWS_W[v] && String(a[di]).trim()===want) n[v]=(n[v]||0)+1; }); });
+  const k=Object.keys(n).sort((x,y)=>n[y]-n[x] || NEWS_W[y]-NEWS_W[x]); return k[0]||''; }
+// news di un giorno: dal calendario (archivio della settimana o calendario scaricato), se no dagli altri trade di quel giorno
+function newsCatSrc(dIso, skipRow) { const ev=revNews(weekOf(dIso));
+  if (ev) return { c:catOf(ev.filter(e=>e.day===dIso)), src:'cal' };
+  const c=sheetCat(dIso, skipRow); return { c, src:c?'trade':'' }; }
+const newsCatOf = dIso => newsCatSrc(dIso).c;
 const catOf = ev => ev.some(e=>e.cur==='USD' && e.imp==='High') ? 'Red News' : ev.some(e=>e.cur==='USD' && e.imp==='Medium') ? 'Orange News' : 'No News Day';
 const catCls = c => c==='Red News'?'hi':c==='Orange News'?'md':'';
 const catLbl = c => ({ 'Red News':'Red', 'Orange News':'Orange', 'No News Day':'Nessuna news' })[c] || c;
@@ -335,7 +345,7 @@ function revHomeCard() {
 // pagina Trade dell'EOW durante la revisione
 function renderReview() {
   const el=$('v-list'), v=revState(), days=revDays(v.wk), m=curModel(); revNewsLoad(v.wk);
-  const nev=revNews(v.wk), dev = d => nev ? nev.filter(e=>e.day===d) : null, cat = d => nev ? catOf(dev(d)) : '';
+  const nev=revNews(v.wk), dev = d => nev ? nev.filter(e=>e.day===d) : null, cat = d => newsCatSrc(d).c;
   const d0=pdIso(days[0]), d4=pdIso(days[4]), wkL=d0.getDate()+(d0.getMonth()!==d4.getMonth()?' '+MESI[d0.getMonth()]:'')+'–'+d4.getDate()+' '+MESI_F[d4.getMonth()];
   const chip = d => { const c=cat(d); return c ? '<span class="ncat '+catCls(c)+'">'+catLbl(c)+'</span>' : '<span class="ncat">…</span>'; };
   const sum = a => { const ts=all().filter(t=>revAsset(t)===a && weekOf(iso(t.d))===v.wk), R=ts.reduce((s,t)=>s+m.rOf(t),0);
@@ -377,9 +387,9 @@ function renderReview() {
   h+='<div class="stat-h rise"><h1>'+words(GIORNI[pdIso(d).getDay()].replace(/^./,ch=>ch.toUpperCase())+' '+pdIso(d).getDate()+' '+MESI_F[pdIso(d).getMonth()])+'</h1></div>';
   const key = ev ? ev.filter(e=>e.imp==='High'||e.imp==='Medium'||e.imp==='Holiday'||e.trump) : [];
   h+='<div class="card rv-news rise"><div class="card-h"><span class="eyebrow">News del giorno</span>'+(c?'<span class="ncat '+catCls(c)+'">'+c+'</span>':'')+'</div>'+
-    (!ev ? noNews : key.length ? '<div class="rv-nl">'+key.map(e=>'<div><span class="num">'+esc(e.hm)+'</span><i class="'+e.imp2+'"></i><span>'+esc(newsIt(e.title))+'</span></div>').join('')+'</div>' : '<p class="mut">Nessuna news USD ad alto o medio impatto.</p>')+
+    (!ev ? (c ? '<p class="mut">Calendario di questa settimana non disponibile: uso la news già scritta negli altri trade di questo giorno.</p>' : noNews) : key.length ? '<div class="rv-nl">'+key.map(e=>'<div><span class="num">'+esc(e.hm)+'</span><i class="'+e.imp2+'"></i><span>'+esc(newsIt(e.title))+'</span></div>').join('')+'</div>' : '<p class="mut">Nessuna news USD ad alto o medio impatto.</p>')+
     (c?'<p class="rv-ok">'+ic('check',15,2.4)+'Scritta in automatico in ogni trade di questo giorno</p>':'')+
-    (c && ts.some(t=>t.raw.News!==c) ? (()=>{ const w=ts.filter(t=>t.raw.News!==c);
+    (ev && c && ts.some(t=>t.raw.News!==c) ? (()=>{ const w=ts.filter(t=>t.raw.News!==c);
       return '<div class="rv-fix"><span>'+(w.length===1?'1 trade già salvato ha':w.length+' trade già salvati hanno')+' «'+esc(catLbl(w[0].raw.News||'')||'vuota')+'»'+(w.some(t=>t.raw.News!==w[0].raw.News)?' o altro':'')+'</span>'+
         '<button type="button" class="mini" data-act="rvfixnews" data-c="'+esc(c)+'">Correggi in '+esc(catLbl(c))+'</button></div>'; })() : '')+'</div>';
   h+='<div class="dayh rise"><span>Trade '+a+' di questo giorno</span><span>'+(ts.length?ts.length+(ts.length===1?' inserito':' inseriti'):'nessuno')+'</span></div>';
@@ -415,8 +425,8 @@ function revClick(b) {
   if (b.dataset.rva) { const a=b.dataset.rva, days=revDays(v.wk); seen(a); v.pos={ a, d:days.find(x=>!v[a].includes(x)) || days[0] }; revSave(v); renderCurrent(true); return true; }
   if (b.dataset.rvd) { const p=revPos(v); v.pos={ a:p.a, d:b.dataset.rvd }; revSave(v); renderCurrent(true); return true; }
   const inRev = S.tab==='list' && S.file==='EOW' && revDue() && !S.revAll && !v.pause && revStarted(v);
-  if (b.dataset.act==='rvadd' || (b.id==='fab' && inRev)) { const p=revPos(v), ev=revNews(v.wk);
-    openForm(null, { Asset:p.a, Data:p.d, News: ev ? catOf(ev.filter(e=>e.day===p.d)) : undefined }); return true; }
+  if (b.dataset.act==='rvadd' || (b.id==='fab' && inRev)) { const p=revPos(v), c=newsCatOf(p.d);
+    openForm(null, { Asset:p.a, Data:p.d, News: c || undefined }); return true; }
   if (b.dataset.act==='rvfixnews') {   // trade del giorno salvati con una news diversa dal calendario: si scrive quella giusta
     const p=revPos(v), c=b.dataset.c, ts=revTrades(p.a,p.d).filter(t=>t.raw.News!==c); b.disabled=true;
     Promise.all(ts.map(t=>{ const r=t.raw; return callW('updateTrade', 'EOW', r._row, { News:c }, { Asset:r.Asset, Data:r.Data, Ora:String(r.Ora).slice(0,5) }).then(()=>{ r.News=c; }); }))
@@ -491,4 +501,4 @@ function renderList() {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['pagine.js'] = '2026-11-05.6';
+EB_V['pagine.js'] = '2026-11-05.7';

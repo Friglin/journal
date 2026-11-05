@@ -37,11 +37,11 @@ const linksNote = (f, ph) => fld('L5',flbl('L5','Screenshot 5m · link TradingVi
 // si aggiorna se cambi la data e si ferma appena scegli tu la news; le settimane passate arrivano dall'archivio dello script
 function formNewsAuto() {
   const f=S.f; if (S.sheet!=='form' || S.edit || !f._newsAuto || !f.Data) return;
-  const c=newsCatOf(f.Data), wait=!c && weekOf(f.Data)<weekOf(todayIso());
+  const ns=newsCatSrc(f.Data), c=ns.c, wait=ns.src!=='cal' && weekOf(f.Data)<weekOf(todayIso()) && !(S.nwErr && S.nwErrWk===weekOf(f.Data));
   if (wait) revNewsLoad(weekOf(f.Data));   // settimana passata non ancora in memoria: la chiede allo script
   f.News=c;   // finché non si sa resta vuota: meglio sceglierla che salvare quella di un altro giorno
   const sg=document.querySelector('#sh-body [data-seg="News"]'); if (sg) setSeg(sg, c);
-  const l=document.querySelector('#sh-body [data-f="News"] .flabel'); if (l) l.textContent=c ? 'News · dal calendario' : wait && S.nwErr && S.nwErrWk===weekOf(f.Data) ? 'News · calendario non disponibile, sceglila tu' : wait ? 'News · carico il calendario…' : 'News';
+  const l=document.querySelector('#sh-body [data-f="News"] .flabel'); if (l) l.textContent=ns.src==='cal' ? 'News · dal calendario' : c ? 'News · dagli altri trade del giorno' : wait ? 'News · carico il calendario…' : S.nwErr && S.nwErrWk===weekOf(f.Data) ? 'News · calendario non disponibile, sceglila tu' : 'News';
   if (typeof refresh==='function' && sg) refresh();
 }
 function renderForm() {
@@ -439,4 +439,4 @@ if (!viaScript() && !(store.get('api','') && store.get('key',''))) showSetup(); 
 }
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['scheda.js'] = '2026-11-05.6';
+EB_V['scheda.js'] = '2026-11-05.7';
