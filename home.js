@@ -439,7 +439,7 @@ function rowsOf(f) { if (f===S.file && S.loaded) return all(); const d=S.data[f]
 function expectations(dayName, cat) {
   const E=rowsOf('EOW'); if (!E || E.length<10) return null;
   const F=FILT_DEF('EOW'), m=eModel(2);
-  const ts=plan(E.filter(t=>(!F.asset||t.a===F.asset) && (!F.idea.length || F.idea.includes(t.idea))), m.rOf);
+  const ts=plan(E.filter(t=>(!fAs(F).length||fAs(F).includes(t.a)) && (!F.idea.length || F.idea.includes(t.idea))), m.rOf);
   const byDay = g => { const o={}; g.forEach(t=>{ const k=iso(t.d); (o[k]=o[k]||[]).push(m.rOf(t)); }); return Object.values(o).map(a=>a.reduce((x,y)=>x+y,0)); };
   const dstat = g => { const d=byDay(g); return { n:d.length, avg:d.length?d.reduce((x,y)=>x+y,0)/d.length:NaN, pos:d.length?d.filter(x=>x>0).length/d.length:NaN }; };
   const wd=ts.filter(t=>t.day===dayName), nw=cat?ts.filter(t=>t.news===cat):[];
@@ -485,7 +485,7 @@ function briefing() {
     if (cat && X.nw.n>=5) rows.push(['news','Con '+cat, 'WR '+pct(X.nw.wr), X.nw.n+' trade · expectancy '+fmtN(X.nw.exp,2,true)+' R', X.nw.exp]);
     if (X.band && X.band.a.R>0) rows.push(['clock','Fascia migliore', X.band.k, X.band.a.n+' trade · '+fmtR(X.band.a.R), X.band.a.R]);
     if (X.idea && X.idea.a.R>0) rows.push(['target','Idea migliore', X.idea.k, X.idea.a.n+' trade · WR '+pct(X.idea.a.wr), X.idea.a.R]);
-    h2+='<div class="card bexp"><div class="card-h"><div class="eyebrow">'+ic('spark',15,2)+' Cosa aspettarsi</div><span class="sub">storico EOW · '+X.F.asset+' · 2R · max 2 trade</span></div>'+
+    h2+='<div class="card bexp"><div class="card-h"><div class="eyebrow">'+ic('spark',15,2)+' Cosa aspettarsi</div><span class="sub">storico EOW · '+(mkList(fAs(X.F))||'tutti i mercati')+' · 2R · max 2 trade</span></div>'+
       '<div class="be-big"><b class="'+sgn(X.all.avg)+'">'+fmtR(X.all.avg,2)+'</b><span>resa media di una giornata con setup<br>'+pct(X.all.pos)+' delle '+X.all.n+' giornate chiuse in positivo</span></div>'+
       rows.map(r=>'<div class="be-row"><span class="be-ic">'+ic(r[0],16,2)+'</span><div><span>'+r[1]+'</span><b>'+esc(r[2])+'</b></div><em class="'+sgn(r[4])+'">'+esc(r[3])+'</em></div>').join('')+'</div>';
   }
@@ -498,4 +498,4 @@ function briefing() {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['home.js'] = '2026-11-05.11';
+EB_V['home.js'] = '2026-11-05.12';

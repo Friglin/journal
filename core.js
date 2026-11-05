@@ -535,9 +535,11 @@ const emptyState = (t, p, btn) => '<div class="card empty rise">'+logo(40)+'<div
 // All'apertura dell'app i filtri partono sempre da qui; poi ogni file (EOW / Journal) tiene i suoi finché l'app resta aperta
 // filtri di partenza: l'EOW segue le impostazioni (asset, piano, idee); il Journal parte senza filtri (ES e NQ, tutti i trade, tutte le idee)
 // l'EOW parte con mercati, setup e regole del giorno del piano (Impostazioni → Il mio piano); il target è quello del piano se è fisso
-const FILT_DEF = f => { if ((f||S.file)==='Journal') return { asset:'', plan:'', tgt:2, idea:[] };
+// filtro mercati: elenco (vuoto = tutti); i filtri salvati prima erano un solo mercato in testo
+const fAs = F => Array.isArray(F.asset) ? F.asset : (F.asset ? [F.asset] : []);
+const FILT_DEF = f => { if ((f||S.file)==='Journal') return { asset:[], plan:'', tgt:2, idea:[] };
   const P=PL(), day=P.maxN||P.sw||P.sll||P.lossR;
-  return { asset:P.asset.length===1?P.asset[0]:'', plan:day?'max2':'', tgt:P.g.k==='T' && Number.isInteger(P.g.t)?P.g.t:2, idea:P.idee.length<L.idea.length?P.idee.slice():[] }; };
+  return { asset:P.asset.length<L.asset.length?P.asset.slice():[], plan:day?'max2':'', tgt:P.g.k==='T' && Number.isInteger(P.g.t)?P.g.t:2, idea:P.idee.length<L.idea.length?P.idee.slice():[] }; };
 function loadFilt() { let v=null; try { v=JSON.parse(sessionStorage.getItem('tj.filtBy2')||'null'); } catch(e) {}
   return v && v.EOW && v.Journal ? v : { EOW:FILT_DEF('EOW'), Journal:FILT_DEF('Journal') }; }
 const saveFilt = () => { S.filtBy[S.file]=S.filt; try { sessionStorage.setItem('tj.filtBy2', JSON.stringify(S.filtBy)); } catch(e) {} };
@@ -553,7 +555,7 @@ function plan(ts, rOf, P) { // regole del giorno del piano: trade al giorno, sto
 function filtered(m, noPer) {
   const F=S.filt; m=m||curModel();
   let ts=all().filter(t=>
-    (!F.asset||t.a===F.asset) && (!(F.idea&&F.idea.length)||F.idea.includes(t.idea)) && (!(F.smt&&F.smt.length)||F.smt.includes(t.smt)) &&
+    (!fAs(F).length||fAs(F).includes(t.a)) && (!(F.idea&&F.idea.length)||F.idea.includes(t.idea)) && (!(F.smt&&F.smt.length)||F.smt.includes(t.smt)) &&
     (!F.lvn||t.lvn===F.lvn) && (!F.clean||(F.clean==='Sì')===t.clean) && (!F.band||bandOf(t)===F.band) && (!F.dir||t.dir===F.dir));
   if (!noPer && S.per!=='all') ts=inRange(ts, periodRange(S.per,0));
   if (F.plan==='max2') ts=plan(ts, m.rOf);
@@ -566,7 +568,7 @@ function perLabel() { const now=new Date(), cr=S.per==='c'?periodRange('c',0):nu
 function setPer(v) { S.per=v; store.set('per',v); }
 function activeFilters() { const F=S.filt, a=[];
   if (F.plan==='max2') a.push({k:'plan', l:'Piano', t:'Regole del giorno del piano: '+dayRuleTxt(null,true)});   // t: il testo intero (tooltip e Claude)
-  if (F.asset) a.push({k:'asset', l:F.asset});
+  if (fAs(F).length) a.push({k:'asset', l:mkList(fAs(F))});
   if (F.dir) a.push({k:'dir', l:F.dir});
   if (S.type==='EOW' && tgt()!==2) a.push({k:'tgt', l:'Target '+tgt()+'R'});
   if (S.per!=='all' && S.tab!=='home' && S.tab!=='cal') a.push({k:'per', l:perLabel()});   // in Panoramica c'è già la barra del periodo
@@ -582,7 +584,7 @@ function fbar(d) {
 }
 function removeFilter(k) { const F=S.filt;
   if (k.indexOf('idea:')===0) F.idea=(F.idea||[]).filter(x=>x!==k.slice(5));
-  else if (k==='idea'||k==='smt') F[k]=[]; else if (k==='per') setPer('all'); else if (k==='tgt') F.tgt=2; else F[k]='';
+  else if (k==='idea'||k==='smt'||k==='asset') F[k]=[]; else if (k==='per') setPer('all'); else if (k==='tgt') F.tgt=2; else F[k]='';
   saveFilt(); renderCurrent(true);
 }
 function openFilters() {
@@ -595,7 +597,7 @@ function renderFilters() {
         (E?'<div class="field"><span class="flabel">Target (esito del trade)</span>'+seg('f-tgt',[1,2,3,4,5].map(k=>({v:k,l:k+'R'})),tgt())+'</div>':'')+'</div>';
   h+='<div class="fsec"><div class="flabel">Periodo · lo stesso della barra in Panoramica</div>'+chips('quick',[{v:'all',l:'Tutto'},{v:'w',l:wkLbl()},{v:'m',l:'Questo mese'},{v:'3m',l:'Ultimi 3 mesi'},{v:'y',l:'Quest\'anno'},{v:'c',l:'Date'}],S.per).replace('class="chips"','class="chips scrollx"')+
         '<div class="g2"><div class="field"><label for="ff-from">Dal</label><input class="inp" id="ff-from" type="date" data-fk="from" value="'+esc(S.per==='c'?S.cust.from||'':'')+'"></div><div class="field"><label for="ff-to">Al</label><input class="inp" id="ff-to" type="date" data-fk="to" value="'+esc(S.per==='c'?S.cust.to||'':'')+'"></div></div></div>';
-  h+='<div class="fsec"><div class="field"><span class="flabel">Asset</span>'+seg('f-asset',[{v:'',l:'Tutti'},...L.asset],F.asset||'')+'</div>'+
+  h+='<div class="fsec"><div class="field"><span class="flabel">Asset · anche più di uno (nessuno = tutti)</span>'+chips('f-asset',L.asset,fAs(F),true)+'</div>'+
      (hasCol('Direzione')?'<div class="field"><span class="flabel">Direzione</span>'+seg('f-dir',[{v:'',l:'Tutte'},...L.dir],F.dir||'')+'</div>':'')+
      '<div class="field"><span class="flabel">Idea 5m · anche più di una</span>'+chips('f-idea',L.idea,F.idea||[],true)+'</div>'+
      (hasCol('SMT')?'<div class="field"><span class="flabel">SMT · anche più di una</span>'+chips('f-smt',L.smt,F.smt||[],true)+'</div>':'')+
@@ -611,11 +613,11 @@ function filtClick(b) {
   if (sg) { const k=sg.dataset.seg.slice(2); F[k]= k==='tgt' ? +b.dataset.v : b.dataset.v; setSeg(sg,b.dataset.v); }
   else if (ch) { const k=ch.dataset.chips, v=b.dataset.v;
     if (k==='quick') { setPer(v); renderFilters(); renderCurrent(true); return; }
-    if (ch.dataset.multi) { const f=k.slice(2), a=F[f]||[]; F[f]=a.includes(v)?a.filter(x=>x!==v):[...a,v]; b.classList.toggle('on'); }
+    if (ch.dataset.multi) { const f=k.slice(2), a=f==='asset'?fAs(F):(F[f]||[]); F[f]=a.includes(v)?a.filter(x=>x!==v):[...a,v]; b.classList.toggle('on'); }
     else { F[k.slice(2)]=v; ch.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on', c===b)); } }
   saveFilt(); filtFoot(); renderCurrent(true);
 }
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['core.js'] = '2026-11-05.11';
+EB_V['core.js'] = '2026-11-05.12';
