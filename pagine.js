@@ -289,22 +289,29 @@ S.revLater = (()=>{ try { return sessionStorage.getItem('tj.revLater')===revWeek
 // news della settimana: dall'archivio dello script (newsWeek), intanto dal calendario già scaricato
 S.nw = (()=>{ try { return JSON.parse(localStorage.getItem('tj.nw')||'{}')||{}; } catch(e) { return {}; } })();
 const nwP={};
+// news di una settimana in memoria, se complete: almeno un evento da lunedì a venerdì (il vecchio Code.gs poteva lasciare
+// nell'archivio solo gli eventi della domenica dopo, per esempio il cambio dell'ora USA, e la settimana sembrava senza news)
+const nwFull = ev => ev.some(e=>{ const g=pdIso(e.day).getDay(); return g>=1 && g<=5; });
+const nwEv = wk => { const c=S.nw[wk]; if (!c || !c.ev || !c.ev.length) return null; const ev=c.ev.map(mapEv); return nwFull(ev) ? ev : null; };
+// dal calendario già scaricato (settimana in corso e prossima): solo se ha la settimana vera, non solo la sua domenica
+const nwCal = wk => { const ev=newsEvents().filter(e=>weekOf(e.day)===wk); return ev.length && nwFull(ev) ? ev : null; };
 function revNewsLoad(wk) {
   const c=S.nw[wk], end=pdIso(wk).getTime()+5*dayMs;
-  if ((c && c.got>end+6*3600000) || nwP[wk]) return;   // già preso a settimana finita
-  nwP[wk]=call('newsWeek', wk).then(d=>{ if (!d || !Array.isArray(d.ev)) throw new Error('lo script ha risposto senza news'); S.nwErr=''; const o=Object.assign({}, S.nw, { [wk]:{ ev:d.ev, got:Date.now() } }); S.nw={};
+  if ((c && c.got>end+6*3600000 && nwEv(wk)) || nwP[wk]) return;   // già preso a settimana finita
+  nwP[wk]=call('newsWeek', wk).then(d=>{ if (!d || !Array.isArray(d.ev)) throw new Error('lo script ha risposto senza news');
+    if (!nwFull(d.ev.map(mapEv))) throw new Error('lo script ha dato le news incomplete: aggiorna Code.gs'); S.nwErr=''; const o=Object.assign({}, S.nw, { [wk]:{ ev:d.ev, got:Date.now() } }); S.nw={};
     // tiene le 20 settimane scaricate più di recente (non le 20 più recenti: una settimana vecchia appena chiesta resta)
     Object.keys(o).sort((a,b)=>(o[b].got||0)-(o[a].got||0)).slice(0,20).forEach(k=>{ S.nw[k]=o[k]; }); try { localStorage.setItem('tj.nw', JSON.stringify(S.nw)); } catch(e) {} if (S.sheet==='form') formNewsAuto(); })
     .catch(e=>{ S.nwErr = /sconosciuta/i.test(e.message||'') ? 'OLD' : (e.message||String(e)); S.nwErrWk=wk; if (S.sheet==='form') formNewsAuto(); })
     .finally(()=>{ setTimeout(()=>{ delete nwP[wk]; }, 60000); if (S.tab==='list' && !S.sheet) renderCurrent(true); });
 }
 function revNews(wk) {
-  const c=S.nw[wk]; if (c && c.ev && c.ev.length) return c.ev.map(mapEv);
-  const ev=newsEvents().filter(e=>weekOf(e.day)===wk); return ev.length ? ev : null;
+  const a=nwEv(wk); if (a) return a;
+  return nwCal(wk);
 }
 // categoria di news di un giorno dal calendario: dall'archivio della settimana o dal calendario scaricato; '' se non si sa
-function newsCatOf(dIso) { const wk=weekOf(dIso), c=S.nw[wk];
-  const ev = c && c.ev && c.ev.length ? c.ev.map(mapEv) : (newsEvents().some(e=>weekOf(e.day)===wk) ? newsEvents().filter(e=>weekOf(e.day)===wk) : null);
+function newsCatOf(dIso) { const wk=weekOf(dIso);
+  const ev = nwEv(wk) || nwCal(wk);
   return ev ? catOf(ev.filter(e=>e.day===dIso)) : ''; }
 const catOf = ev => ev.some(e=>e.cur==='USD' && e.imp==='High') ? 'Red News' : ev.some(e=>e.cur==='USD' && e.imp==='Medium') ? 'Orange News' : 'No News Day';
 const catCls = c => c==='Red News'?'hi':c==='Orange News'?'md':'';
@@ -371,7 +378,10 @@ function renderReview() {
   const key = ev ? ev.filter(e=>e.imp==='High'||e.imp==='Medium'||e.imp==='Holiday'||e.trump) : [];
   h+='<div class="card rv-news rise"><div class="card-h"><span class="eyebrow">News del giorno</span>'+(c?'<span class="ncat '+catCls(c)+'">'+c+'</span>':'')+'</div>'+
     (!ev ? noNews : key.length ? '<div class="rv-nl">'+key.map(e=>'<div><span class="num">'+esc(e.hm)+'</span><i class="'+e.imp2+'"></i><span>'+esc(newsIt(e.title))+'</span></div>').join('')+'</div>' : '<p class="mut">Nessuna news USD ad alto o medio impatto.</p>')+
-    (c?'<p class="rv-ok">'+ic('check',15,2.4)+'Scritta in automatico in ogni trade di questo giorno</p>':'')+'</div>';
+    (c?'<p class="rv-ok">'+ic('check',15,2.4)+'Scritta in automatico in ogni trade di questo giorno</p>':'')+
+    (c && ts.some(t=>t.raw.News!==c) ? (()=>{ const w=ts.filter(t=>t.raw.News!==c);
+      return '<div class="rv-fix"><span>'+(w.length===1?'1 trade già salvato ha':w.length+' trade già salvati hanno')+' «'+esc(catLbl(w[0].raw.News||'')||'vuota')+'»'+(w.some(t=>t.raw.News!==w[0].raw.News)?' o altro':'')+'</span>'+
+        '<button type="button" class="mini" data-act="rvfixnews" data-c="'+esc(c)+'">Correggi in '+esc(catLbl(c))+'</button></div>'; })() : '')+'</div>';
   h+='<div class="dayh rise"><span>Trade '+a+' di questo giorno</span><span>'+(ts.length?ts.length+(ts.length===1?' inserito':' inseriti'):'nessuno')+'</span></div>';
   if (ts.length) h+='<div class="dayc rise">'+ts.map(t=>trow(t,m,true)).join('')+'</div>';
   const last = k===revTot(), nextD = days[days.indexOf(d)+1];
@@ -407,6 +417,13 @@ function revClick(b) {
   const inRev = S.tab==='list' && S.file==='EOW' && revDue() && !S.revAll && !v.pause && revStarted(v);
   if (b.dataset.act==='rvadd' || (b.id==='fab' && inRev)) { const p=revPos(v), ev=revNews(v.wk);
     openForm(null, { Asset:p.a, Data:p.d, News: ev ? catOf(ev.filter(e=>e.day===p.d)) : undefined }); return true; }
+  if (b.dataset.act==='rvfixnews') {   // trade del giorno salvati con una news diversa dal calendario: si scrive quella giusta
+    const p=revPos(v), c=b.dataset.c, ts=revTrades(p.a,p.d).filter(t=>t.raw.News!==c); b.disabled=true;
+    Promise.all(ts.map(t=>{ const r=t.raw; return callW('updateTrade', 'EOW', r._row, { News:c }, { Asset:r.Asset, Data:r.Data, Ora:String(r.Ora).slice(0,5) }).then(()=>{ r.News=c; }); }))
+      .then(()=>toast(ts.length===1?'News corretta':'News corretta in '+ts.length+' trade'))
+      .catch(e=>toast('Non salvato: '+errTxt(e), true))
+      .finally(()=>{ touchRows(); renderCurrent(true); fetchedAt.EOW=0; fetchFile('EOW').then(d=>{ if (S.file==='EOW') { applyData(d); if (!S.sheet) renderCurrent(true); } }).catch(()=>{}); });
+    return true; }
   if (b.dataset.act==='rvnext') { const p=revPos(v), days=revDays(v.wk);
     if (!v[p.a].includes(p.d)) v[p.a]=[...v[p.a], p.d];
     const fin = revMk().every(a=>days.every(d=>v[a].includes(d)));
@@ -474,4 +491,4 @@ function renderList() {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['pagine.js'] = '2026-11-05.5';
+EB_V['pagine.js'] = '2026-11-05.6';

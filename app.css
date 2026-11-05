@@ -1168,6 +1168,8 @@ nav.bar button:active .pill { transform:scale(.88); }
 .rv-nl > div { display:flex; align-items:center; gap:10px; } .rv-nl .num { width:46px; flex:none; color:var(--fg2); }
 .rv-nl i { width:8px; height:8px; border-radius:50%; flex:none; background:var(--fg3); } .rv-nl i.hi { background:var(--loss); } .rv-nl i.md { background:var(--warn); } .rv-nl i.ho { background:var(--accent); }
 .rv-ok { display:flex; align-items:center; gap:6px; color:var(--win); font-weight:600; font-size:12.5px !important; }
+.rv-fix { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-top:10px; padding:10px 12px; border-radius:12px; background:var(--warn-soft); font-size:13px; font-weight:600; }
+.rv-fix .mini { flex:none; }
 .rv-back { display:flex; align-items:center; gap:12px; text-align:left; color:var(--fg); font:inherit; cursor:pointer; padding:14px 16px; }
 .rv-back > span { flex:1; display:flex; flex-direction:column; } .rv-back em { font-style:normal; font-size:12.5px; color:var(--fg2); } .rv-back > .ic:first-child { color:var(--accent); }
 /* il mio piano (Impostazioni) e pagina Ottimizza */
@@ -1253,4 +1255,4 @@ nav.bar button:active .pill { transform:scale(.88); }
 @media (max-width:520px) { .rvp-w { grid-template-columns:24px minmax(0,1fr); } .rvp-n { grid-column:2; justify-content:flex-start; } }
 
 /* versione del foglio di stile (la scrive tools/build.py): index.html controlla che sia uguale a BUILD */
-:root { --eb-build: "2026-11-05.5"; }
+:root { --eb-build: "2026-11-05.6"; }
