@@ -30,8 +30,8 @@ const fld = (k, lbl, inner) => '<div class="field" data-f="'+k+'">'+lbl+inner+fe
 const flbl = (k, t) => '<label for="fi-'+k+'">'+t+'</label>', fspan = t => '<span class="flabel">'+t+'</span>';
 const fnum = (k, lbl, ph) => fld(k, flbl(k,lbl), fin(k,'text',ph||'',"inputmode='decimal' autocomplete='off' enterkeyhint='next'"));
 const stagger = () => $('sh-body').querySelectorAll('.fsec').forEach((el,i)=>el.style.setProperty('--k', i));
-const linksNote = (f, ph) => fld('L5',flbl('L5','Screenshot 5m · link TradingView (facoltativo)'),fin('L5','url','https://www.tradingview.com/x/…'))+
-  fld('L1',flbl('L1','Screenshot 1m · link TradingView (facoltativo)'),fin('L1','url','https://www.tradingview.com/x/…'))+'<div class="thumbs" id="fx-th"></div>'+
+const linksNote = (f, ph) => fld('L5',flbl('L5','Screenshot 5m · link TradingView'),fin('L5','url','https://www.tradingview.com/x/…'))+
+  fld('L1',flbl('L1','Screenshot 1m · link TradingView'),fin('L1','url','https://www.tradingview.com/x/…'))+'<div class="thumbs" id="fx-th"></div>'+
   '<div class="field"><label for="fi-Note">Note (facoltative)</label><textarea class="inp" id="fi-Note" data-k="Note" placeholder="'+esc(ph)+'">'+esc(f.Note||'')+'</textarea></div>';
 // news del trade nuovo dal calendario della sua data (Red se c'è un evento USD ad alto impatto, Orange se medio):
 // si aggiorna se cambi la data e si ferma appena scegli tu la news; le settimane passate arrivano dall'archivio dello script
@@ -137,6 +137,8 @@ function validate(c) {
     if (hasCol('Esecuzione')) { if (!f.Esecuzione) add('Esecuzione','Indica se il trade è valido o se hai commesso un errore.');
       else if (f.Esecuzione==='Errore' && !(f.Errori||[]).length) add('Errori','Scegli almeno un errore.'); }
   }
+  // link degli screenshot obbligatori nei trade nuovi (nei vecchi senza link la modifica resta possibile)
+  [['L5','5m'],['L1','1m']].forEach(([k,t])=>{ if (!S.edit && empty(f[k])) add(k,'Incolla il link TradingView dello screenshot '+t+'.'); });
   ['L5','L1'].forEach(k=>{ if (!empty(f[k]) && !/tradingview\.com\/x\/[A-Za-z0-9]+/.test(f[k])) add(k,'Non è un link di TradingView: deve essere tipo https://www.tradingview.com/x/AbC123/.', true); });
   return e;
 }
@@ -438,4 +440,4 @@ if (!viaScript() && !(store.get('api','') && store.get('key',''))) showSetup(); 
 }
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['scheda.js'] = '2026-11-05.10';
+EB_V['scheda.js'] = '2026-11-05.11';
