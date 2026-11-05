@@ -51,6 +51,8 @@ header.top.scrolled { border-bottom-color:var(--line); }
 .seg::before { content:""; position:absolute; top:3px; bottom:3px; left:3px; width:calc((100% - 6px) / var(--n)); border-radius:9px; background:var(--seg-on);
   box-shadow:0 1px 2px rgba(0,0,0,.08), 0 3px 8px -2px rgba(0,0,0,.18); transform:translateX(calc(var(--i) * 100%)); transition:transform .38s cubic-bezier(.23,1,.32,1), opacity .2s; }
 .seg.none::before { opacity:0; }
+.segm::before { display:none; } .segm button { transition:color .25s, background .25s, box-shadow .25s; }
+.segm button.on { background:var(--seg-on); box-shadow:0 1px 2px rgba(0,0,0,.08), 0 3px 8px -2px rgba(0,0,0,.18); }
 .seg button { position:relative; z-index:1; border:0; background:none; padding:9px 4px; border-radius:9px; font-size:14px; font-weight:500; color:var(--fg2); transition:color .25s; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .seg button.on { color:var(--fg); font-weight:600; }
 .seg.sm button { padding:6px 4px; font-size:13px; }
@@ -1258,4 +1260,4 @@ nav.bar button:active .pill { transform:scale(.88); }
 @media (max-width:520px) { .rvp-w { grid-template-columns:24px minmax(0,1fr); } .rvp-n { grid-column:2; justify-content:flex-start; } }
 
 /* versione del foglio di stile (la scrive tools/build.py): index.html controlla che sia uguale a BUILD */
-:root { --eb-build: "2026-11-05.12"; }
+:root { --eb-build: "2026-11-05.13"; }

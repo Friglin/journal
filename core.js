@@ -197,6 +197,12 @@ function setSeg(el, v) {
   const bs=[...el.querySelectorAll('button')], i=bs.findIndex(b=>b.dataset.v===String(v));
   el.style.setProperty('--i', Math.max(i,0)); el.classList.toggle('none', i<0); bs.forEach((b,j)=>b.classList.toggle('on', j===i));
 }
+// come seg ma a scelta multipla: «Tutti» (valore '') acceso quando non è scelto niente
+function segm(key, opts, vals) {
+  return '<div class="seg segm" data-seg="'+key+'" data-multi="1" style="--n:'+(opts.length+1)+'">'+
+    [{v:'',l:'Tutti'},...opts].map(o=>{ const v=o.v ?? o, on = v==='' ? !vals.length : vals.includes(v);
+      return '<button type="button" data-v="'+esc(v)+'" class="'+(on?'on':'')+'" aria-pressed="'+on+'">'+esc(o.l ?? v)+'</button>'; }).join('')+'</div>';
+}
 function chips(key, opts, val, multi) {
   return '<div class="chips" data-chips="'+key+'"'+(multi?' data-multi="1"':'')+'>'+opts.map(o=>{ const v=o.v ?? o;
     const on = multi ? (val||[]).includes(v) : String(val??'')===String(v);
@@ -597,7 +603,7 @@ function renderFilters() {
         (E?'<div class="field"><span class="flabel">Target (esito del trade)</span>'+seg('f-tgt',[1,2,3,4,5].map(k=>({v:k,l:k+'R'})),tgt())+'</div>':'')+'</div>';
   h+='<div class="fsec"><div class="flabel">Periodo · lo stesso della barra in Panoramica</div>'+chips('quick',[{v:'all',l:'Tutto'},{v:'w',l:wkLbl()},{v:'m',l:'Questo mese'},{v:'3m',l:'Ultimi 3 mesi'},{v:'y',l:'Quest\'anno'},{v:'c',l:'Date'}],S.per).replace('class="chips"','class="chips scrollx"')+
         '<div class="g2"><div class="field"><label for="ff-from">Dal</label><input class="inp" id="ff-from" type="date" data-fk="from" value="'+esc(S.per==='c'?S.cust.from||'':'')+'"></div><div class="field"><label for="ff-to">Al</label><input class="inp" id="ff-to" type="date" data-fk="to" value="'+esc(S.per==='c'?S.cust.to||'':'')+'"></div></div></div>';
-  h+='<div class="fsec"><div class="field"><span class="flabel">Asset · anche più di uno (nessuno = tutti)</span>'+chips('f-asset',L.asset,fAs(F),true)+'</div>'+
+  h+='<div class="fsec"><div class="field"><span class="flabel">Asset · anche più di uno</span>'+segm('f-asset',L.asset,fAs(F))+'</div>'+
      (hasCol('Direzione')?'<div class="field"><span class="flabel">Direzione</span>'+seg('f-dir',[{v:'',l:'Tutte'},...L.dir],F.dir||'')+'</div>':'')+
      '<div class="field"><span class="flabel">Idea 5m · anche più di una</span>'+chips('f-idea',L.idea,F.idea||[],true)+'</div>'+
      (hasCol('SMT')?'<div class="field"><span class="flabel">SMT · anche più di una</span>'+chips('f-smt',L.smt,F.smt||[],true)+'</div>':'')+
@@ -610,7 +616,11 @@ function filtFoot() { const n=filtered().length;
   $('sh-foot').innerHTML='<button type="button" class="btn sec" data-act="freset">Predefiniti</button><button type="button" class="btn" style="flex:1" data-act="close">Mostra '+n+' trade</button>'; }
 function filtClick(b) {
   const sg=b.closest('[data-seg]'), ch=b.closest('[data-chips]'), F=S.filt;
-  if (sg) { const k=sg.dataset.seg.slice(2); F[k]= k==='tgt' ? +b.dataset.v : b.dataset.v; setSeg(sg,b.dataset.v); }
+  if (sg && sg.dataset.multi) { const k=sg.dataset.seg.slice(2), v=b.dataset.v, a=fAs(F);
+    F[k] = v==='' ? [] : a.includes(v) ? a.filter(x=>x!==v) : L.asset.filter(x=>x===v || a.includes(x));
+    if (F[k].length===L.asset.length) F[k]=[];   // tutti accesi = Tutti
+    sg.querySelectorAll('button').forEach(x=>{ const on = x.dataset.v==='' ? !F[k].length : F[k].includes(x.dataset.v); x.classList.toggle('on', on); x.setAttribute('aria-pressed', on); }); }
+  else if (sg) { const k=sg.dataset.seg.slice(2); F[k]= k==='tgt' ? +b.dataset.v : b.dataset.v; setSeg(sg,b.dataset.v); }
   else if (ch) { const k=ch.dataset.chips, v=b.dataset.v;
     if (k==='quick') { setPer(v); renderFilters(); renderCurrent(true); return; }
     if (ch.dataset.multi) { const f=k.slice(2), a=f==='asset'?fAs(F):(F[f]||[]); F[f]=a.includes(v)?a.filter(x=>x!==v):[...a,v]; b.classList.toggle('on'); }
@@ -620,4 +630,4 @@ function filtClick(b) {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['core.js'] = '2026-11-05.12';
+EB_V['core.js'] = '2026-11-05.13';
