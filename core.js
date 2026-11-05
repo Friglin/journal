@@ -3,7 +3,7 @@
 // l'ordine conta (core.js → home.js → pagine.js → analisi.js → simula.js → ottimizza.js → scheda.js).
 // ───────────────────────── costanti, stato, utilità ─────────────────────────
 const L = {
-  asset: ['ES','NQ'],
+  asset: ['ES','NQ','GC'],
   idea: ['5m BT','5m Momentum Play','5m FTB da BT','5m FTB non da BT','Open Play','Reversal Play'],
   news: ['No News Day','Orange News','Red News'], lvn: ['Si','No'], smt: ['SMT a favore','SMT a sfavore','No SMT'],
   tp: ['Real 1rr','Real 2rr','Real 3rr','Real 4rr','Real 5rr'], pb: ['1','2','3','4','5','6','Altro'],
@@ -12,6 +12,9 @@ const L = {
   errs: ['FOMO','TP spostato','SL spostato','Ingresso anticipato','Uscita anticipata','Size sbagliata','Fuori piano','Altro'],
 };
 const APP = 'Edgebook';
+// mercato di un trade dal nome scritto nel foglio (anche i micro: MES, MNQ, MGC)
+const mktOf = a => /NQ/i.test(a||'') ? 'NQ' : /GC|GOLD/i.test(a||'') ? 'GC' : 'ES';
+const GC_OPEN = 870;   // GC apre alle 14:30 (ora italiana, con Wall Street alle 15:30): con GC nel piano la sessione parte da lì
 let updChk=0;
 function checkUpdate() {
   if (viaScript() || location.protocol==='file:' || Date.now()-updChk<60000) return; updChk=Date.now();
@@ -102,7 +105,7 @@ let SESS = [mins(CFG.s0), mins(CFG.s1)];   // primo e ultimo ingresso, ora itali
 // Wall Street apre alle 14:30 italiane: sessione, fasce orarie e avvisi si spostano con lei. Nel foglio resta l'ora reale.
 const NYSH={};
 const nyShift = dIso => { if (!dIso) return 0; if (!(dIso in NYSH)) { const o=mins(nyOpenIt(dIso)); NYSH[dIso]=isFinite(o)?o-930:0; } return NYSH[dIso]; };
-const sessOf = dIso => { const sh=nyShift(dIso); return [SESS[0]+sh, SESS[1]+sh]; };
+const sessOf = dIso => { const sh=nyShift(dIso), s0=PL().asset.includes('GC') ? Math.min(SESS[0], GC_OPEN) : SESS[0]; return [s0+sh, SESS[1]+sh]; };
 const hmMin = m => p2(Math.floor(m/60))+':'+p2(m%60);
 const sessTxt = dIso => { const x=sessOf(dIso); return hmMin(x[0])+'–'+hmMin(x[1]); };
 function applyTheme() { if (CFG.theme==='light' || CFG.theme==='dark') document.documentElement.dataset.theme=CFG.theme; else delete document.documentElement.dataset.theme;
@@ -356,11 +359,11 @@ function monthItems(ts, m, last) {
 // Pagine: barra laterale su PC (gruppi), barra in basso sul telefono (le pagine meno usate stanno in «Altro»)
 const NAV = [ { g:'Giornata' }, { id:'home', l:'Panoramica', i:'home' }, { id:'news', l:'News', i:'news' },
   { g:'Registro' }, { id:'list', l:'Trade', i:'list', cur:1 },   // una sola pagina: EOW o Journal si sceglie con lo switcher in alto
-  { g:'Performance' }, { id:'stats', l:'Analisi', i:'chart' }, { id:'cal', l:'Calendario', i:'cal' }, { id:'mc', l:'Simula', i:'dice' }, { id:'opt', l:'Ottimizza', i:'target' },
+  { g:'Performance' }, { id:'stats', l:'Analisi', i:'chart' }, { id:'cal', l:'Calendario', i:'cal' }, { id:'opt', l:'Ottimizza', i:'target' },
   { g:'Crescita' }, { id:'disc', l:'Disciplina', i:'shield' }, { id:'coach', l:'Coach', i:'spark' } ];
 const NAV_FOOT = [ { id:'set', l:'Impostazioni', i:'gear' } ];
 const BAR = [['home','Home','home'],['news','News','news'],['list','Trade','list'],['stats','Analisi','chart'],['more','Altro','grid']];
-const VIEWS = ['home','news','list','stats','cal','mc','opt','disc','coach','set'];
+const VIEWS = ['home','news','list','stats','cal','opt','disc','coach','set'];   // Simula (mc) per ora non è nel sito: il codice resta in simula.js
 const PTITLE = { home:'Panoramica', news:'News', list:'Trade', stats:'Analisi', cal:'Calendario', mc:'Simula', opt:'Ottimizza', disc:'Disciplina', coach:'Coach', set:'Impostazioni' };
 const NOFILE = ['news','set','disc','mc','opt'];   // pagine che non dipendono da EOW / Journal (la Disciplina usa sempre il Journal, Simula e Ottimizza sempre l'EOW)
 const FILE_LBL = { EOW:['EOW','End of Week · backtest della settimana'], Journal:['JOURNAL','Trade reali eseguiti'] };
@@ -425,7 +428,7 @@ function navTo(key, o) { const [id,f]=key.split(':'); if (S.sheet) closeSheet();
 function openMore() {
   S.sheet='more'; $('sh-sub').textContent=APP; $('sh-title').innerHTML=words('Altro');
   const it=[['cal','Calendario','cal','R giorno per giorno'],
-            ['disc','Disciplina','shield','Regole, errori ed esecuzione'],['coach','Coach','spark','Consigli e chat con Claude'],['mc','Simula','dice','Prop firm: passare le valutazioni'],['opt','Ottimizza','target','Il piano alle condizioni di adesso'],['set','Impostazioni','gear','Profilo, sessione, filtri']];
+            ['disc','Disciplina','shield','Regole, errori ed esecuzione'],['coach','Coach','spark','Consigli e chat con Claude'],['opt','Ottimizza','target','Il piano alle condizioni di adesso'],['set','Impostazioni','gear','Profilo, sessione, filtri']];
   $('sh-body').innerHTML='<div class="more">'+it.map((x,k)=>'<button type="button" data-nav="'+x[0]+'" style="--k:'+k+'" class="'+(curNavKey()===x[0]?'on':'')+'">'+ic(x[2],24,1.8)+'<b>'+x[1]+'</b><span>'+x[3]+'</span></button>').join('')+'</div>';
   $('sh-foot').innerHTML=''; openSheet();
 }
@@ -592,7 +595,7 @@ function renderFilters() {
         (E?'<div class="field"><span class="flabel">Target (esito del trade)</span>'+seg('f-tgt',[1,2,3,4,5].map(k=>({v:k,l:k+'R'})),tgt())+'</div>':'')+'</div>';
   h+='<div class="fsec"><div class="flabel">Periodo · lo stesso della barra in Panoramica</div>'+chips('quick',[{v:'all',l:'Tutto'},{v:'w',l:wkLbl()},{v:'m',l:'Questo mese'},{v:'3m',l:'Ultimi 3 mesi'},{v:'y',l:'Quest\'anno'},{v:'c',l:'Date'}],S.per).replace('class="chips"','class="chips scrollx"')+
         '<div class="g2"><div class="field"><label for="ff-from">Dal</label><input class="inp" id="ff-from" type="date" data-fk="from" value="'+esc(S.per==='c'?S.cust.from||'':'')+'"></div><div class="field"><label for="ff-to">Al</label><input class="inp" id="ff-to" type="date" data-fk="to" value="'+esc(S.per==='c'?S.cust.to||'':'')+'"></div></div></div>';
-  h+='<div class="fsec"><div class="field"><span class="flabel">Asset</span>'+seg('f-asset',[{v:'',l:'Tutti'},'ES','NQ'],F.asset||'')+'</div>'+
+  h+='<div class="fsec"><div class="field"><span class="flabel">Asset</span>'+seg('f-asset',[{v:'',l:'Tutti'},...L.asset],F.asset||'')+'</div>'+
      (hasCol('Direzione')?'<div class="field"><span class="flabel">Direzione</span>'+seg('f-dir',[{v:'',l:'Tutte'},...L.dir],F.dir||'')+'</div>':'')+
      '<div class="field"><span class="flabel">Idea 5m · anche più di una</span>'+chips('f-idea',L.idea,F.idea||[],true)+'</div>'+
      (hasCol('SMT')?'<div class="field"><span class="flabel">SMT · anche più di una</span>'+chips('f-smt',L.smt,F.smt||[],true)+'</div>':'')+
@@ -615,4 +618,4 @@ function filtClick(b) {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['core.js'] = '2026-11-05.1';
+EB_V['core.js'] = '2026-11-05.2';

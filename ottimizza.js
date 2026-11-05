@@ -17,7 +17,7 @@ function planCond(P) { P=P||PL(); const a=[];
 function planWhen(P) { P=P||PL(); const xb=bandNames().filter(b=>!P.bande.includes(b)), xd=L.days.filter(d=>!P.giorni.includes(d)), a=[];
   if (xb.length) a.push('niente '+xb.join(', ')); if (xd.length) a.push('niente '+xd.map(d=>d.toLowerCase()).join(', '));
   return a.length ? a.join(' · ') : 'tutte le fasce orarie, tutti i giorni'; }
-const planWhat = P => P.asset.join(' e ')+' · '+(P.idee.length===L.idea.length ? 'tutte le idee' : P.idee.join(', '));
+const planWhat = P => mkList(P.asset)+' · '+(P.idee.length===L.idea.length ? 'tutte le idee' : P.idee.join(', '));
 function planDesc(P) { P=P||PL(); const c=planCond(P);
   return { mercati_e_setup:planWhat(P), condizioni:c.length?c.join(', '):'nessun vincolo', orari:planWhen(P), gestione:mgTxt(P.g), regole_del_giorno:dayRuleTxt(P), altre_regole:P.altro||'' }; }
 function planSumHtml(P) { P=P||PL(); const c=planCond(P), row=(i,l,v)=>'<div class="pl-r">'+ic(i,16,2)+'<span>'+l+'</span><b>'+esc(v)+'</b></div>';
@@ -28,7 +28,7 @@ function planSaved(prev) { if (prev) S._planPrev=prev; normPiano(); syncTouch('p
 function openPlan() { S.sheet='plan'; $('sh-sub').textContent='Impostazioni · uguale su telefono e PC'; $('sh-title').innerHTML=words('Il mio piano'); renderPlanSheet(); openSheet(); }
 function renderPlanSheet() {
   const P=PL(), g=P.g, el=$('sh-body'), top=el.scrollTop, x=v=>({ v, l:fmtX(v)+'R' }), sec=(t,sub,b)=>'<div class="fsec"><div class="fsec-h"><div class="h2">'+t+'</div>'+(sub?'<span class="mut" style="font-size:12.5px">'+sub+'</span>':'')+'</div>'+b+'</div>', f=(l,b,hint)=>'<div class="field"><span class="flabel">'+l+'</span>'+b+(hint?'<span class="hint">'+hint+'</span>':'')+'</div>';
-  let h=sec('Cosa tradi','',f('Mercati · anche tutti e due',chips('pl-asset',L.asset,P.asset,true))+f('Idee 5m che fanno parte del piano',chips('pl-idee',L.idea,P.idee,true))+
+  let h=sec('Cosa tradi','',f('Mercati · anche più di uno',chips('pl-asset',L.asset,P.asset,true))+f('Idee 5m che fanno parte del piano',chips('pl-idee',L.idea,P.idee,true))+
     f('Direzione',seg('pl-dir',[{v:'',l:'Long e Short'},'Long','Short'],P.dir)));
   h+=sec('Condizioni d\'ingresso','lascia «indifferente» quello che non guardi',
     f('SMT',seg('pl-smt',[{v:'',l:'Indifferente'},{v:'nosf',l:'Non a sfavore'},{v:'fav',l:'Solo a favore'}],P.smt))+
@@ -107,7 +107,7 @@ function optR(B, x, g) { const mx=x.mx;
   if (mx<g.t1-1e-9) return -1;
   return .5*g.t1 + .5*(mx>=g.t2-1e-9 ? g.t2 : g.s); }
 function optPass(P, x) { const t=x.t;
-  if (!P.asset.includes(/NQ/i.test(t.a||'')?'NQ':'ES') || !P.idee.includes(t.idea) || !P.giorni.includes(t.day) || !P.bande.includes(x.band)) return false;
+  if (!P.asset.includes(mktOf(t.a)) || !P.idee.includes(t.idea) || !P.giorni.includes(t.day) || !P.bande.includes(x.band)) return false;
   if ((P.dir && t.dir!==P.dir) || (P.smt==='fav' && t.smt!=='SMT a favore') || (P.smt==='nosf' && t.smt==='SMT a sfavore')) return false;
   if ((P.lvn && t.lvn!==P.lvn) || (P.clean && !t.clean) || (P.cc2==='si' && !t.cc2) || (P.cc2==='no' && t.cc2)) return false;
   if ((P.news==='nored' && t.news==='Red News') || (P.news==='none' && t.news!=='No News Day')) return false;
@@ -146,7 +146,9 @@ function optMoves(B, P) {
   const out=[], cp=()=>JSON.parse(JSON.stringify(P)), add=(cat,l,f)=>{ const q=cp(); f(q); out.push({ cat, l, P:q }); };
   // le parziali sono stimate per eccesso: nei consigli si confrontano solo target fissi, e solo se il piano ha un target fisso
   if (P.g.k==='T') PLAN_MG.T.forEach(t=>{ if (t!==P.g.t) add('g', 'gestione: target '+fmtX(t)+'R', q=>{ q.g={ k:'T', t }; }); });
-  [['ES'],['NQ'],['ES','NQ']].forEach(a=>{ if (a.join()!==P.asset.join()) add('asset', a.length>1?'ES e NQ':'solo '+a[0], q=>{ q.asset=a; }); });
+  // mercati: ogni combinazione dei mercati che hanno trade nell'EOW (solo ES, ES e GC…)
+  const mk=L.asset.filter(a=>B.ts.some(x=>mktOf(x.t.a)===a));
+  for (let m=1; m<1<<mk.length; m++) { const a=mk.filter((_,i)=>m>>i&1); if (a.join()!==P.asset.filter(x=>mk.includes(x)).join()) add('asset', a.length>1?mkList(a):'solo '+a[0], q=>{ q.asset=a; }); }
   const tog=(cat,key,all,v,lbl)=>{ const on=P[key].includes(v); if (on && P[key].length<2) return; add(cat, (on?'togli ':'aggiungi ')+lbl, q=>{ q[key]=on ? q[key].filter(x=>x!==v) : all.filter(x=>q[key].includes(x)||x===v); }); };
   L.idea.forEach(i=>tog('idee','idee',L.idea,i,i)); bandNames().forEach(b=>tog('bande','bande',bandNames(),b,b)); L.days.forEach(d=>tog('giorni','giorni',L.days,d,d.toLowerCase()));
   const opt=(cat,key,vals,lbl)=>vals.forEach(v=>{ if (v!==P[key]) add(cat, lbl(v), q=>{ q[key]=v; }); });
@@ -239,11 +241,12 @@ function optDrift(B, P, to, N) {
 // che aveva fatto meglio nelle 4 settimane prima. Ha reso più del piano? Dice se conviene cambiare mercato per un periodo.
 const OPT_LB = 4;
 function optMkt(B, P, base) {
-  const W=B.weeks.length, as=[...P.asset.filter(a=>L.asset.includes(a)), ...L.asset.filter(a=>!P.asset.includes(a))];   // a parità vince quello del piano
+  const has=a=>B.ts.some(x=>mktOf(x.t.a)===a);   // solo i mercati con trade nell'EOW
+  const W=B.weeks.length, as=[...P.asset.filter(a=>L.asset.includes(a)), ...L.asset.filter(a=>!P.asset.includes(a))].filter(has);   // a parità vince quello del piano
   if (as.length<2) return null;
-  const sims={}; as.forEach(a=>{ sims[a]=optSim(B, Object.assign({}, P, { asset:[a] })); }); if (!as.every(a=>sims[a].seq.length)) return null;
-  const nums=s=>OPT_WIN.map(w=>optNums(B,s,w.k)), one=P.asset.length===1 ? P.asset[0] : null;
-  const rows=as.map(a=>({ l:a, cur:a===one, nums:nums(sims[a]) })); if (!one) rows.push({ l:P.asset.join(' e '), cur:true, nums:nums(base) });
+  const sims={}; as.forEach(a=>{ sims[a]=optSim(B, Object.assign({}, P, { asset:[a] })); }); if (as.some(a=>!sims[a].seq.length)) return null;
+  const nums=s=>OPT_WIN.map(w=>optNums(B,s,w.k)), pa=P.asset.filter(has), one=pa.length===1 ? pa[0] : null;
+  const rows=as.map(a=>({ l:a, cur:a===one, nums:nums(sims[a]) })); if (!one) rows.push({ l:mkList(pa), cur:true, nums:nums(base) });
   const lastR=(s,to,n)=>{ let r=0; for (let i=Math.max(0,to-n);i<to;i++) r+=s.wR[i]; return r; };
   const pick=to=>as.reduce((b,a)=>lastR(sims[a],to,OPT_LB)>lastR(sims[b],to,OPT_LB)?a:b, as[0]);
   const lead=pick(W), d=[], picks=[];
@@ -253,9 +256,9 @@ function optMkt(B, P, base) {
   const sw=n?picks.reduce((x,a,i)=>x+sims[a].wR[OPT_LB+i],0)/n:0, st=n?base.wR.slice(OPT_LB).reduce((x,y)=>x+y,0)/n:0;
   const T={ n, d:mean, p:pos/1000, sw, st, k:picks.filter(a=>a!==one).length, cnt:as.map(a=>[a, picks.filter(x=>x===a).length]), from:B.weeks[OPT_LB] };
   const kind = lead===one ? 'stay' : T.k && T.d>0 && T.p>=.85 ? 'go' : T.k && T.d>0 && T.p>=.6 ? 'mid' : 'stay';
-  return { rows, lead, one, cur:P.asset.join(' e '), l4:{ lead:lastR(sims[lead],W,OPT_LB)/OPT_LB, cur:lastR(base,W,OPT_LB)/OPT_LB }, T, kind }; }
+  return { rows, lead, one, cur:mkList(pa), l4:{ lead:lastR(sims[lead],W,OPT_LB)/OPT_LB, cur:lastR(base,W,OPT_LB)/OPT_LB }, T, kind }; }
 function optDims(B, P) {
-  const dims=[['asset','Mercati',x=>/NQ/i.test(x.t.a||'')?'NQ':'ES',L.asset,q=>{ q.asset=L.asset.slice(); }],
+  const dims=[['asset','Mercati',x=>mktOf(x.t.a),L.asset,q=>{ q.asset=L.asset.slice(); }],
     ['idee','Setup',x=>x.t.idea,L.idea,q=>{ q.idee=L.idea.slice(); }],
     ['bande','Fasce orarie',x=>x.band,bandNames(),q=>{ q.bande=bandNames(); }],
     ['giorni','Giorni',x=>x.t.day,L.days,q=>{ q.giorni=L.days.slice(); }],
@@ -316,7 +319,7 @@ function optTable(rows, key, fmt, o={}) {
   return t+'</table></div>'; }
 // il piano in etichette brevi (il dettaglio è nella scheda «Il mio piano»)
 function optPlanTags(P) { const w=planWhen(P);
-  const t=[P.asset.join(' e '), P.idee.length===L.idea.length ? 'tutte le idee' : P.idee.length<=2 ? P.idee.join(', ') : P.idee.length+' idee su '+L.idea.length,
+  const t=[mkList(P.asset), P.idee.length===L.idea.length ? 'tutte le idee' : P.idee.length<=2 ? P.idee.join(', ') : P.idee.length+' idee su '+L.idea.length,
     ...planCond(P), ...(w.indexOf('tutte')===0 ? [] : w.split(' · ')), mgTxt(P.g), ...dayRuleTxt(P,true).split(' · ')];
   return '<div class="op-tags">'+t.map(x=>'<span>'+esc(x)+'</span>').join('')+'</div>'; }
 function optPlanCard(O) { const n=O.nums;
@@ -442,4 +445,4 @@ function optCtx() { const O=optAll(); if (!O) return 'servono almeno 6 settimane
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['ottimizza.js'] = '2026-11-05.1';
+EB_V['ottimizza.js'] = '2026-11-05.2';

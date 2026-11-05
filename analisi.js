@@ -84,7 +84,6 @@ function renderStats() {
   }
   const order = E ? ['eq','mo','tg','cv','fo','gn','id','smt','lvn','sp','as','dir','cc'] : ['eq','mo','pr','fo','id','smt','gn','lvn','as','dir'];
   html+=rows2(order.filter(k=>C[k]).map(k=>C[k]));
-  html+='<button type="button" class="mc-cta rise" style="--d:560ms" data-act="mc"><span class="mc-ic">'+ic('dice',24,1.8)+'</span><span><b>Simula la prop firm</b><span>Il piano migliore per passare le valutazioni Topstep, coi trade dell\'EOW</span></span>'+ic('chev',18,2)+'</button>';
   enter(el, html, ()=>{ lineChart($('c-eq'), equityPts(ts,m), { h:200 }); barChart($('c-mo'), monthItems(ts,m), { h:170 }); });
 }
 
@@ -295,4 +294,4 @@ async function delTrade() {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['analisi.js'] = '2026-11-05.1';
+EB_V['analisi.js'] = '2026-11-05.2';

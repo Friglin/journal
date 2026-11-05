@@ -106,7 +106,7 @@ function validate(c) {
     if (empty(v)) return add(k, 'Inserisci '+what+'.');
     if (!isNumStr(v)) return add(k, /[a-z]/i.test(v) ? 'Qui vanno solo numeri: hai scritto delle lettere. Esempio: 6 o 6,25.' : 'Numero non valido: usa solo cifre e una virgola, es. 6,25.', true);
     const x=numS(v); if (x<min || (min===0 && k==='sl' && x===0)) return add(k, minMsg, true); if (x>max) add(k, 'Valore troppo alto ('+fmtN(x,2)+'): controlla.', true); };
-  if (!f.Asset) add('Asset','Scegli ES o NQ.');
+  if (!f.Asset) add('Asset','Scegli il mercato.');
   if (hasCol('Direzione') && !f.Dir) add('Dir','Scegli Long o Short.');
   if (empty(f.Data)) add('Data','Inserisci la data del trade.'); else if (new Date(f.Data+'T00:00') > new Date()) add('Data','La data è nel futuro: controlla.', true);
   if (empty(f.Ora)) add('Ora','Inserisci l\'ora di ingresso.');
@@ -434,4 +434,4 @@ if (!viaScript() && !(store.get('api','') && store.get('key',''))) showSetup(); 
 }
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['scheda.js'] = '2026-11-05.1';
+EB_V['scheda.js'] = '2026-11-05.2';

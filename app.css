@@ -1243,4 +1243,4 @@ nav.bar button:active .pill { transform:scale(.88); }
 .op-how ul { margin:10px 0 0; padding-left:18px; display:flex; flex-direction:column; gap:8px; } .op-how li { font-size:13px; line-height:1.55; color:var(--fg2); }
 
 /* versione del foglio di stile (la scrive tools/build.py): index.html controlla che sia uguale a BUILD */
-:root { --eb-build: "2026-11-05.1"; }
+:root { --eb-build: "2026-11-05.2"; }
