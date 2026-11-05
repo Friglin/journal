@@ -313,11 +313,14 @@ function revNews(wk) {
 // Serve quando il calendario di una settimana passata non c'è (ForexFactory blocca lo script sulle settimane vecchie). skipRow:
 // riga EOW da non contare (il trade che si sta modificando)
 const NEWS_W = { 'Red News':3, 'Orange News':2, 'No News Day':1 };
-function sheetCat(dIso, skipRow) {
-  const want=dIso.split('-').reverse().join('/'), n={};
-  ['EOW','Journal'].forEach(f=>{ const D=S.data[f]||cacheGet(f); if (!D || !D.h) return; const di=D.h.indexOf('Data')+1, ni=D.h.indexOf('News')+1; if (!di || !ni) return;
-    D.rows.forEach(a=>{ if (f==='EOW' && a[0]===skipRow) return; const v=String(a[ni]||'').trim(); if (NEWS_W[v] && String(a[di]).trim()===want) n[v]=(n[v]||0)+1; }); });
-  const k=Object.keys(n).sort((x,y)=>n[y]-n[x] || NEWS_W[y]-NEWS_W[x]); return k[0]||''; }
+function sheetDay(dIso, skipRow) {
+  const want=dIso.split('-').reverse().join('/'), n={}, mk={};
+  ['EOW','Journal'].forEach(f=>{ const D=S.data[f]||cacheGet(f); if (!D || !D.h) return; const di=D.h.indexOf('Data')+1, ni=D.h.indexOf('News')+1, ai=D.h.indexOf('Asset')+1; if (!di || !ni) return;
+    D.rows.forEach(a=>{ if (f==='EOW' && a[0]===skipRow) return; const v=String(a[ni]||'').trim();
+      if (NEWS_W[v] && String(a[di]).trim()===want) { n[v]=(n[v]||0)+1; (mk[v]=mk[v]||new Set()).add(mktOf(ai?a[ai]:'')); } }); });
+  const k=Object.keys(n).sort((x,y)=>n[y]-n[x] || NEWS_W[y]-NEWS_W[x])[0]||'';
+  return { c:k, mk:k ? L.asset.filter(x=>mk[k].has(x)) : [] }; }
+const sheetCat = (dIso, skipRow) => sheetDay(dIso, skipRow).c;
 // news di un giorno: dal calendario (archivio della settimana o calendario scaricato), se no quella scelta per quel giorno nella
 // revisione (CFG.nwMan, sincronizzata), se no dagli altri trade di quel giorno
 function newsCatSrc(dIso, skipRow) { const ev=revNews(weekOf(dIso));
@@ -354,9 +357,11 @@ function renderReview() {
   const el=$('v-list'), v=revState(), days=revDays(v.wk), m=curModel(); revNewsLoad(v.wk);
   const nev=revNews(v.wk), dev = d => nev ? nev.filter(e=>e.day===d) : null, cat = d => newsCatSrc(d).c;
   // giorno senza calendario: scelta della news con un tocco, guardando il giorno su ForexFactory
-  const manPick = (d, ns) => '<p class="mut">'+(ns.src==='man' ? 'Calendario di questa settimana non disponibile: news scelta da te per questo giorno, vale per tutti i mercati.' :
-      ns.src==='trade' ? 'Calendario di questa settimana non disponibile: uso la news già scritta negli altri trade di questo giorno.' :
-      'Calendario di questa settimana non disponibile. Guarda il giorno su ForexFactory e scegli la news: vale per tutti i mercati.')+'</p>'+
+  // news presa dai trade già scritti quel giorno (es. ES e NQ quando si fa il backtest di GC): basta quella, niente scelta a mano
+  const manPick = (d, ns) => ns.src==='trade' ? (()=>{ const mk=sheetDay(d).mk, oth=mk.filter(x=>x!==revPos(v).a);
+      return '<p class="mut">Presa dai trade '+mkList(oth.length?oth:mk)+' già scritti per questo giorno.</p>'; })() :
+    '<p class="mut">'+(ns.src==='man' ? 'Calendario di questa settimana non disponibile: news scelta da te per questo giorno, vale per tutti i mercati.' :
+      'Calendario di questa settimana non disponibile e nessun trade già scritto per questo giorno. Guarda il giorno su ForexFactory e scegli la news: vale per tutti i mercati.')+'</p>'+
     '<div class="rv-man"><div class="rv-mc">'+['Red News','Orange News','No News Day'].map(x=>'<button type="button" class="chip '+catCls(x)+(ns.c===x?' on':'')+'" data-act="rvnman" data-c="'+x+'">'+catLbl(x)+'</button>').join('')+'</div>'+
     '<a class="lnk" href="'+ffDayUrl(d)+'" target="_blank" rel="noopener">'+ic('ext',14,2.2)+'ForexFactory · '+dayName(d).toLowerCase()+'</a></div>';
   const d0=pdIso(days[0]), d4=pdIso(days[4]), wkL=d0.getDate()+(d0.getMonth()!==d4.getMonth()?' '+MESI[d0.getMonth()]:'')+'–'+d4.getDate()+' '+MESI_F[d4.getMonth()];
@@ -515,4 +520,4 @@ function renderList() {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['pagine.js'] = '2026-11-05.8';
+EB_V['pagine.js'] = '2026-11-05.9';
