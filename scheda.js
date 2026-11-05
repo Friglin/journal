@@ -276,7 +276,12 @@ async function save() {
     catch(e) { if (!netErr(e)) throw e; res = await verifySaved(file, d, edit); if (!res) throw e; }
     const D=S.data[file];
     if (D && res.h) D.h=res.h;   // il foglio ha una colonna nuova (PnL $)
-    if (D) { const nr=res.row[0], k=D.rows.findIndex(a=>a[0]===nr);
+    if (D && edit && res.moved) {   // trade modificato e spostato al suo posto nel foglio: le righe in mezzo salgono o scendono di uno
+      const [a,b]=res.moved, mv=x=>a<b ? (x>a && x<=b ? x-1 : x) : (x>=b && x<a ? x+1 : x);
+      D.rows=D.rows.filter(x=>x[0]!==a); D.rows.forEach(x=>{ x[0]=mv(x[0]); }); D.rows.push(res.row); D.rows.sort((x,y)=>x[0]-y[0]);
+      if (S.file===file) { S.rows.forEach(r=>{ if (r!==prov && r._row!=null) r._row=mv(r._row); }); if (S.edit) S.edit.row=mv(S.edit.row); }
+      cacheSet(file,D); }
+    else if (D) { const nr=res.row[0], k=D.rows.findIndex(a=>a[0]===nr);
       if (edit || (k>=0 && JSON.stringify(D.rows[k])===JSON.stringify(res.row))) { if (k>=0) D.rows[k]=res.row; else D.rows.push(res.row); }
       else {   // trade più vecchio inserito in mezzo al foglio: i trade da quella riga in giù scendono di uno
         D.rows.forEach(a=>{ if (a[0]>=nr) a[0]++; });
@@ -434,4 +439,4 @@ if (!viaScript() && !(store.get('api','') && store.get('key',''))) showSetup(); 
 }
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['scheda.js'] = '2026-11-05.4';
+EB_V['scheda.js'] = '2026-11-05.5';
