@@ -41,7 +41,7 @@ function formNewsAuto() {
   if (wait) revNewsLoad(weekOf(f.Data));   // settimana passata non ancora in memoria: la chiede allo script
   f.News=c;   // finché non si sa resta vuota: meglio sceglierla che salvare quella di un altro giorno
   const sg=document.querySelector('#sh-body [data-seg="News"]'); if (sg) setSeg(sg, c);
-  const l=document.querySelector('#sh-body [data-f="News"] .flabel'); if (l) l.textContent=c ? 'News · dal calendario' : wait ? 'News · carico il calendario…' : 'News';
+  const l=document.querySelector('#sh-body [data-f="News"] .flabel'); if (l) l.textContent=c ? 'News · dal calendario' : wait && S.nwErr && S.nwErrWk===weekOf(f.Data) ? 'News · calendario non disponibile, sceglila tu' : wait ? 'News · carico il calendario…' : 'News';
   if (typeof refresh==='function' && sg) refresh();
 }
 function renderForm() {
@@ -434,4 +434,4 @@ if (!viaScript() && !(store.get('api','') && store.get('key',''))) showSetup(); 
 }
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['scheda.js'] = '2026-11-05.3';
+EB_V['scheda.js'] = '2026-11-05.4';

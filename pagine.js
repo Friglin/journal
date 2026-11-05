@@ -292,9 +292,10 @@ const nwP={};
 function revNewsLoad(wk) {
   const c=S.nw[wk], end=pdIso(wk).getTime()+5*dayMs;
   if ((c && c.got>end+6*3600000) || nwP[wk]) return;   // già preso a settimana finita
-  nwP[wk]=call('newsWeek', wk).then(d=>{ if (!d || !Array.isArray(d.ev)) throw new Error('lo script ha risposto senza news'); S.nwErr=''; const o=Object.assign({}, S.nw, { [wk]:{ ev:d.ev, got:Date.now() } }); S.nw={};   // le ultime 8 settimane
-    Object.keys(o).sort().slice(-8).forEach(k=>{ S.nw[k]=o[k]; }); try { localStorage.setItem('tj.nw', JSON.stringify(S.nw)); } catch(e) {} if (S.sheet==='form') formNewsAuto(); })
-    .catch(e=>{ S.nwErr = /sconosciuta/i.test(e.message||'') ? 'OLD' : (e.message||String(e)); })
+  nwP[wk]=call('newsWeek', wk).then(d=>{ if (!d || !Array.isArray(d.ev)) throw new Error('lo script ha risposto senza news'); S.nwErr=''; const o=Object.assign({}, S.nw, { [wk]:{ ev:d.ev, got:Date.now() } }); S.nw={};
+    // tiene le 20 settimane scaricate più di recente (non le 20 più recenti: una settimana vecchia appena chiesta resta)
+    Object.keys(o).sort((a,b)=>(o[b].got||0)-(o[a].got||0)).slice(0,20).forEach(k=>{ S.nw[k]=o[k]; }); try { localStorage.setItem('tj.nw', JSON.stringify(S.nw)); } catch(e) {} if (S.sheet==='form') formNewsAuto(); })
+    .catch(e=>{ S.nwErr = /sconosciuta/i.test(e.message||'') ? 'OLD' : (e.message||String(e)); S.nwErrWk=wk; if (S.sheet==='form') formNewsAuto(); })
     .finally(()=>{ setTimeout(()=>{ delete nwP[wk]; }, 60000); if (S.tab==='list' && !S.sheet) renderCurrent(true); });
 }
 function revNews(wk) {
@@ -473,4 +474,4 @@ function renderList() {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['pagine.js'] = '2026-11-05.3';
+EB_V['pagine.js'] = '2026-11-05.4';
