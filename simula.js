@@ -445,4 +445,4 @@ function drawPass(R, quiet) {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['simula.js'] = '2026-11-07.2';
+EB_V['simula.js'] = '2026-11-07.3';

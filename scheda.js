@@ -429,6 +429,7 @@ $('setupForm').addEventListener('submit', async e => {
 document.addEventListener('visibilitychange', () => { if (document.visibilityState==='visible') { checkUpdate(); pullSettings(); loadNews().catch(()=>{}); if (S.tab==='news' || S.tab==='home') renderCurrent(true); } if (document.visibilityState==='visible' && S.loaded && !S.sheet && Date.now()-(fetchedAt[S.file]||0) > FRESH_MS) load(true); });
 // avvio: lo chiama index.html (ebStart) dopo aver controllato che tutti i file siano della stessa versione
 function boot() {
+gcSess(true);   // GC nel piano (anche arrivato da un altro dispositivo): sessione dalle 14:30
 applyTheme(); if (store.get('sbc','')==='1') document.documentElement.classList.add('sbc');
 { const [t,f]=location.hash.slice(1).split('/'); if (f==='EOW'||f==='Journal') { S.file=f; S.type=f==='EOW'?'EOW':'JOURNAL'; S.filt=S.filtBy[f]; }
   if (VIEWS.includes(t) && t!=='home') { S.tab=t; VIEWS.forEach(v=>{ $('v-'+v).hidden = v!==t; }); } }
@@ -440,4 +441,4 @@ if (!viaScript() && !(store.get('api','') && store.get('key',''))) showSetup(); 
 }
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['scheda.js'] = '2026-11-07.2';
+EB_V['scheda.js'] = '2026-11-07.3';
