@@ -274,10 +274,11 @@ const revDue = () => !revState().fin;
 function revSave(v) { if (v.custom) { CFG.revX=v; syncTouch('revX'); } else { CFG.rev=v; syncTouch('rev'); } }
 // fine di una settimana: nel backtest si passa alla prossima della coda, se c'è
 function revFinish(v) {
+  if (v.custom) S.revShow={ wk:v.wk, mk:v.mk.slice(), next:v.queue && v.queue.length ? v.queue[0] : '' };   // riepilogo della settimana appena fatta
   if (v.custom && v.queue && v.queue.length) { const nx={ custom:true, wk:v.queue[0], queue:v.queue.slice(1), mk:v.mk, go:true, fin:false };
-    revSave(nx); toast('Settimana fatta: ora quella del '+wkLbl2(nx.wk)); return; }
+    revSave(nx); setTimeout(confetti, 200); return; }
   v.fin=true; revSave(v);
-  if (v.custom) { toast('Backtest delle settimane passate completato'); setTimeout(confetti, 200); } else { S.revJust=true; setTimeout(confetti, 200); } }
+  if (v.custom) { setTimeout(confetti, 200); } else { S.revJust=true; setTimeout(confetti, 200); } }
 const wkLbl2 = wk => { const a=pdIso(wk), b=addDays(a,4); return a.getDate()+(a.getMonth()!==b.getMonth()?' '+MESI[a.getMonth()]:'')+'–'+b.getDate()+' '+MESI[b.getMonth()]; };
 function revPos(v) {   // dove sei: l'asset e il giorno scelti, se no il primo giorno ancora da fare
   const days=revDays(v.wk);
@@ -352,6 +353,39 @@ function revHomeCard() {
     '<div class="rv-acts"><button type="button" class="btn rv-w" data-act="rvgo">'+(revStarted(v)?'Riprendi da '+revPos(v).a:'Inizia da ES')+ic('chev',18,2.2)+'</button><button type="button" class="btn rv-g" data-act="rvlater">Più tardi</button></div></div>';
 }
 
+// i trade della settimana che il piano avrebbe preso: setup del piano (optPass) e regole del giorno, con i mercati indicati
+// contati insieme in ordine di ora; esito con la gestione del piano (optR, dal Max Real RR), come in Ottimizza
+function revPlan(wk, mks) {
+  const P=PL(), out=[]; let day='', n=0, stop=false, ls=0, R=0;
+  all().forEach(t=>{ if (!t.d || t.d.getDay()%6===0 || weekOf(iso(t.d))!==wk || !mks.includes(revAsset(t))) return;
+    const mx=isFinite(t.max)?t.max:t.best; if (!isFinite(mx)) return;
+    const x={ t, mx, wk, day:iso(t.d), band:bandOf(t), pb:String(t.raw['Candele PB']??'').trim() }; if (!optPass(P,x)) return;
+    if (x.day!==day) { day=x.day; n=0; stop=false; ls=0; R=0; }
+    if (stop || (P.maxN && n>=P.maxN) || (P.sll && ls>=P.sll) || (P.lossR && R<=-P.lossR+1e-9)) return;
+    const r=optR(null,x,P.g); n++; R+=r; if (r<0) ls++; if (P.sw && r>0) stop=true; out.push({ t, r }); });
+  return { ts:out, R:out.reduce((s,o)=>s+o.r,0) };
+}
+// carta «col tuo piano» alla fine di un mercato e della settimana: quanti trade, quanti R e quali
+function revPlanCard(wk, mks) {
+  const P=PL(), inP=mks.filter(a=>P.asset.includes(a));
+  if (!inP.length) return '<div class="rv-plan"><div class="rv-plh">Col tuo piano</div><p class="mut">'+mkList(mks)+(mks.length>1?' non sono':' non è')+' nel tuo piano di trading.</p></div>';
+  const pl=revPlan(wk, inP), wd=['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
+  return '<div class="rv-plan"><div class="rv-plh">Col tuo piano · '+esc(mkList(inP))+'<em>'+esc(mgTxt(P.g,true))+' · '+esc(dayRuleTxt())+'</em></div>'+
+    '<div class="rv-sum g"><div><b>'+pl.ts.length+'</b><span>trade presi</span></div><div><b class="'+sgn(pl.R)+'">'+fmtRc(pl.R,1)+'</b><span>risultato</span></div><div><b>'+(pl.ts.filter(o=>o.r>0).length)+'/'+pl.ts.length+'</b><span>vincenti</span></div></div>'+
+    (pl.ts.length ? '<div class="rv-pl">'+pl.ts.map(o=>'<div><span>'+wd[o.t.d.getDay()]+' '+o.t.d.getDate()+'</span><span>'+esc(o.t.a)+' · '+esc(String(o.t.raw.Ora).slice(0,5))+'</span><span>'+esc(o.t.idea||'')+'</span><b class="'+sgn(o.r)+'">'+fmtRc(o.r,1)+'</b></div>').join('')+'</div>'
+      : '<p class="mut">Nessun trade di questa settimana rispetta il piano.</p>')+'</div>';
+}
+
+// fine di una settimana del backtest di settimane passate: trade per mercato e quelli che il piano avrebbe preso
+function renderRevShow() {
+  const o=S.revShow, m=curModel(), wk=o.wk;
+  const rows=o.mk.map(a=>{ const ts=all().filter(t=>revAsset(t)===a && weekOf(iso(t.d))===wk); return '<div><span>'+a+'</span><b>'+ts.length+' trade · '+fmtRc(ts.reduce((s,t)=>s+m.rOf(t),0),0)+'</b></div>'; }).join('');
+  enter($('v-list'), '<div class="stat-h rise"><div><div class="eyebrow">Backtest di una settimana passata · EOW</div><h1>'+words('Settimana '+wkLbl2(wk))+'</h1></div></div>'+
+    '<div class="rv-hero done rise"><div class="rv-t">Settimana fatta</div><p>'+mkList(o.mk)+' completi · tutti i trade a '+tgt()+'R:</p><div class="rv-sum">'+rows+'</div></div>'+
+    '<div class="card rise">'+revPlanCard(wk, o.mk)+'</div>'+
+    '<div class="rv-foot"><button type="button" class="btn" data-act="rvshowok">'+(o.next ? 'Avanti · settimana '+wkLbl2(o.next) : 'Fatto · torna ai trade')+ic('chev',18,2.2)+'</button></div>');
+}
+
 // pagina Trade dell'EOW durante la revisione
 function renderReview() {
   const el=$('v-list'), v=revState(), days=revDays(v.wk), m=curModel(); revNewsLoad(v.wk);
@@ -373,7 +407,7 @@ function renderReview() {
   const started = revStarted(v);
   if (v.fin) {   // appena completata
     h+='<div class="rv-hero done rise"><div class="rv-t">Settimana rivista</div><p>'+wkL+' · '+mkList(revMk())+' completi. La carta in Home torna venerdì prossimo dopo le '+esc(CFG.s1)+'.</p>'+
-      '<div class="rv-sum">'+revMk().map(a=>[a,sum(a)]).map(([a,s])=>'<div><span>'+a+'</span><b>'+s.n+' trade · '+fmtRc(s.R,0)+'</b></div>').join('')+'</div>'+
+      '<div class="rv-sum">'+revMk().map(a=>[a,sum(a)]).map(([a,s])=>'<div><span>'+a+'</span><b>'+s.n+' trade · '+fmtRc(s.R,0)+'</b></div>').join('')+'</div>'+revPlanCard(v.wk, revMk())+
       '<div class="rv-acts"><button type="button" class="btn rv-w" data-nav="stats">Vai all\'analisi</button><button type="button" class="btn rv-g" data-act="rvall">Vedi i trade</button></div></div>';
     enter(el,h); return;
   }
@@ -393,6 +427,7 @@ function renderReview() {
     const pa=mk[ia-1], s=sum(pa);
     h+='<div class="card rv-start rise"><span class="rv-ic ok">'+ic('check',22,2.6)+'</span><div class="rv-t">'+pa+' fatto</div>'+
       '<div class="rv-sum g">'+'<div><b>'+s.n+'</b><span>trade</span></div><div><b class="'+sgn(s.R)+'">'+fmtRc(s.R,0)+'</b><span>a '+tgt()+'R</span></div><div><b>'+s.empty+'</b><span>giorni senza trade</span></div></div>'+
+      revPlanCard(v.wk, mk.slice(0, ia))+
       '<p>Ora tocca a <b>'+p.a+'</b>: stessi giorni, stesse news.</p><button type="button" class="btn" data-act="rvmk" data-a="'+p.a+'">Passa a '+p.a+' · '+dayName(days[0]).toLowerCase()+ic('chev',18,2.2)+'</button></div>';
     enter(el,h); return;
   }
@@ -445,6 +480,7 @@ function revClick(b) {
   const inRev = S.tab==='list' && S.file==='EOW' && revDue() && !S.revAll && !v.pause && revStarted(v);
   if (b.dataset.act==='rvadd' || (b.id==='fab' && inRev)) { const p=revPos(v), c=newsCatOf(p.d);
     openForm(null, { Asset:p.a, Data:p.d, News: c || undefined }); return true; }
+  if (b.dataset.act==='rvshowok') { S.revShow=null; renderCurrent(true); return true; }
   if (b.dataset.act==='rvnman') { setNwMan(revPos(v).d, b.dataset.c); renderCurrent(true); return true; }
   if (b.dataset.act==='rvfixnews') {   // trade del giorno salvati con una news diversa dal calendario: si scrive quella giusta
     const p=revPos(v), c=b.dataset.c, ts=revTrades(p.a,p.d).filter(t=>t.raw.News!==c); b.disabled=true;
@@ -498,6 +534,7 @@ function trow(t, m, noDate) {
 }
 function renderList() {
   const el=$('v-list'); if (!S.loaded) { el.innerHTML=skeleton(); return; }
+  if (S.file==='EOW' && S.revShow) { renderRevShow(); return; }
   const rv = S.file==='EOW' && (revDue() || S.revJust);
   if (rv && !S.revAll && !(revDue() && revState().pause)) { renderReview(); return; }
   const m=curModel(), E=S.type==='EOW', base=filtered(m);
@@ -520,4 +557,4 @@ function renderList() {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['pagine.js'] = '2026-11-05.13';
+EB_V['pagine.js'] = '2026-11-07.1';

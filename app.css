@@ -1138,6 +1138,11 @@ nav.bar button:active .pill { transform:scale(.88); }
 .rv-sum > div { padding:12px; border-radius:14px; background:rgba(255,255,255,.16); display:flex; flex-direction:column; gap:2px; }
 .rv-sum span { font-size:12.5px; font-weight:600; opacity:.85; } .rv-sum b { font-family:var(--display); font-size:17px; font-weight:600; }
 .rv-sum.g { grid-template-columns:repeat(3,minmax(0,1fr)); }
+.rv-plan { margin:14px 0 4px; display:flex; flex-direction:column; gap:8px; text-align:left; }
+.rv-plh { font-weight:600; font-size:14px; display:flex; flex-direction:column; gap:2px; } .rv-plh em { font-style:normal; font-weight:400; font-size:12.5px; color:var(--fg2); }
+.rv-pl { display:flex; flex-direction:column; border-radius:12px; background:var(--sunk); padding:4px 12px; }
+.rv-pl > div { display:grid; grid-template-columns:52px 92px minmax(0,1fr) auto; gap:8px; align-items:center; padding:8px 0; font-size:13px; border-top:1px solid var(--line); }
+.rv-pl > div:first-child { border-top:0; } .rv-pl span:nth-child(3) { color:var(--fg2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .rv-pl b { font-weight:600; }
 .rv-sum.g > div { background:var(--sunk); } .rv-sum.g span { opacity:1; color:var(--fg2); font-weight:500; }
 .rv-start { display:flex; flex-direction:column; gap:10px; padding:22px 20px; }
 .rv-start p { margin:0; color:var(--fg2); } .rv-start p b { color:var(--fg); }
@@ -1260,4 +1265,4 @@ nav.bar button:active .pill { transform:scale(.88); }
 @media (max-width:520px) { .rvp-w { grid-template-columns:24px minmax(0,1fr); } .rvp-n { grid-column:2; justify-content:flex-start; } }
 
 /* versione del foglio di stile (la scrive tools/build.py): index.html controlla che sia uguale a BUILD */
-:root { --eb-build: "2026-11-05.13"; }
+:root { --eb-build: "2026-11-07.1"; }
