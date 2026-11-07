@@ -398,7 +398,7 @@ function renderReview() {
   // news presa dai trade già scritti quel giorno (es. ES e NQ quando si fa il backtest di GC): basta quella, niente scelta a mano
   const manPick = (d, ns) => ns.src==='trade' ? (()=>{ const mk=sheetDay(d).mk, oth=mk.filter(x=>x!==revPos(v).a);
       return '<p class="mut">Presa dai trade '+mkList(oth.length?oth:mk)+' già scritti per questo giorno.</p>'; })() :
-    '<p class="mut">'+(ns.src==='man' ? 'Calendario di questa settimana non disponibile: news scelta da te per questo giorno, vale per tutti i mercati.' :
+    '<p class="mut">'+(ns.src==='man' ? 'Calendario di questa settimana non disponibile. Vale per tutti i mercati: puoi cambiarla qui.' :
       'Calendario di questa settimana non disponibile e nessun trade già scritto per questo giorno. Guarda il giorno su ForexFactory e scegli la news: vale per tutti i mercati.')+'</p>'+
     '<div class="rv-man"><div class="rv-mc">'+['Red News','Orange News','No News Day'].map(x=>'<button type="button" class="chip '+catCls(x)+(ns.c===x?' on':'')+'" data-act="rvnman" data-c="'+x+'">'+catLbl(x)+'</button>').join('')+'</div>'+
     '<a class="lnk" href="'+ffDayUrl(d)+'" target="_blank" rel="noopener">'+ic('ext',14,2.2)+'ForexFactory · '+dayName(d).toLowerCase()+'</a></div>';
@@ -440,11 +440,18 @@ function renderReview() {
     '<button type="button" class="lnk" data-act="rvpause">'+ic('pause',14,2.4)+'Pausa</button></div>';
   h+='<div class="rv-assets rise">'+mk.map(x=>'<button type="button" class="chip'+(x===a?' on':'')+'" data-rva="'+x+'">'+x+' <em>'+v[x].length+'/5</em></button>').join('')+'</div>';
   h+='<div class="rv-days rise">'+days.map((x,i)=>{ const n=revTrades(a,x).length, ok=done.includes(x);
-    return '<button type="button" class="'+(x===d?'cur':ok?'ok':'')+'" data-rvd="'+x+'">'+['Lun','Mar','Mer','Gio','Ven'][i]+'<span>'+(ok?(n?n+' trade':'nessuno'):x===d?'ora':n?n+' trade':'–')+'</span></button>'; }).join('')+'</div>';
+    const nc=catCls(cat(x))||(cat(x)?'ok':'');
+    return '<button type="button" class="'+(x===d?'cur':ok?'ok':'')+'" data-rvd="'+x+'" style="--k:'+i+'">'+(nc?'<i class="rvd-n '+nc+'" title="'+esc(cat(x))+'"></i>':'')+['Lun','Mar','Mer','Gio','Ven'][i]+'<span>'+(ok?(n?n+' trade':'nessuno'):x===d?'ora':n?n+' trade':'–')+'</span></button>'; }).join('')+'</div>';
   h+='<div class="stat-h rise"><h1>'+words(GIORNI[pdIso(d).getDay()].replace(/^./,ch=>ch.toUpperCase())+' '+pdIso(d).getDate()+' '+MESI_F[pdIso(d).getMonth()])+'</h1></div>';
   const key = ev ? ev.filter(e=>e.imp==='High'||e.imp==='Medium'||e.imp==='Holiday'||e.trump) : [];
-  h+='<div class="card rv-news rise"><div class="card-h"><span class="eyebrow">News del giorno</span>'+(c?'<span class="ncat '+catCls(c)+'">'+c+'</span>':'')+'</div>'+
-    (!ev ? (S.nwErr && S.nwErrWk===v.wk || newsCatSrc(d).src ? manPick(d, newsCatSrc(d)) : noNews) : key.length ? '<div class="rv-nl">'+key.map(e=>'<div><span class="num">'+esc(e.hm)+'</span><i class="'+e.imp2+'"></i><span>'+esc(newsIt(e.title))+'</span></div>').join('')+'</div>' : '<p class="mut">Nessuna news USD ad alto o medio impatto.</p>')+
+  // carta della giornata con lo stile della pagina News: colore e stato grande in alto, poi le news sulla linea del tempo
+  const ns=newsCatSrc(d), cc = c==='Red News'?'hi':c==='Orange News'?'md':c?'ok':'', nH=key.filter(e=>e.imp==='High').length, nM=key.filter(e=>e.imp==='Medium').length, nS=key.filter(e=>e.imp!=='Holiday' && inSess(e)).length;
+  const big = c==='Red News'?'Giornata Red':c==='Orange News'?'Giornata Orange':c?'Nessuna news':'News da scegliere';
+  const sub = ev ? (key.length ? [nH?nH+(nH===1?' ad alto impatto':' ad alto impatto'):'', nM?nM+(nM===1?' a impatto medio':' a impatto medio'):'', nS?nS+' in sessione':''].filter(Boolean).join(' · ') : 'Nessuna news USD ad alto o medio impatto')
+    : ns.src==='trade' ? 'dai trade '+mkList(sheetDay(d).mk)+' già scritti' : ns.src==='man' ? 'scelta da te per questo giorno' : 'calendario non disponibile';
+  h+='<div class="card rv-news rvn '+(cc?'rvn-'+cc:'')+' rise"><div class="rvn-glow"></div><div class="card-h"><span class="eyebrow">News del giorno</span>'+(ev?'<span class="rvn-src">'+ic('cal',13,2.2)+'ForexFactory</span>':'')+'</div>'+
+    '<div class="rvn-state"><span class="rvn-ic">'+ic(cc==='ok'?'check':cc?'alert':'clock',20,2.4)+'</span><div><b>'+big+'</b><em>'+esc(sub)+'</em></div></div>'+
+    (!ev ? (S.nwErr && S.nwErrWk===v.wk || ns.src ? (ns.src==='trade' ? '' : manPick(d, ns)) : noNews) : key.length ? '<div class="nlist rvn-list">'+key.map((e,i)=>nrow(e,0,null).replace('class="nrow','style="--k:'+i+'" class="nrow')).join('')+'</div>' : '')+
     (c?'<p class="rv-ok">'+ic('check',15,2.4)+'Scritta in automatico in ogni trade di questo giorno</p>':'')+
     ((ev || newsCatSrc(d).src==='man') && c && ts.some(t=>t.raw.News!==c) ? (()=>{ const w=ts.filter(t=>t.raw.News!==c);
       return '<div class="rv-fix"><span>'+(w.length===1?'1 trade già salvato ha':w.length+' trade già salvati hanno')+' «'+esc(catLbl(w[0].raw.News||'')||'vuota')+'»'+(w.some(t=>t.raw.News!==w[0].raw.News)?' o altro':'')+'</span>'+
@@ -561,4 +568,4 @@ function renderList() {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['pagine.js'] = '2026-11-07.4';
+EB_V['pagine.js'] = '2026-11-07.5';
