@@ -234,10 +234,12 @@ function pushSettings() { if (S.noSync) return; clearTimeout(pushT); pushT=setTi
 async function pullSettings() {
   try { if (syncMerge(await call('appSettings'))) pushSettings(); } catch(e) { if (/sconosciuta/i.test(e.message||'')) S.noSync=true; }
 }
-// GC nel piano: il primo ingresso della sessione passa da solo alle 14:30 (apertura di GC); tolto GC torna com'era
+// GC nel piano: il primo ingresso della sessione passa da solo alle 14:30 (apertura di GC); senza GC (solo ES/NQ) non parte
+// prima delle 15:30 (torna all'orario di prima, se era dopo)
 function gcSess(quiet) { const has=PL().asset.includes('GC');
   if (has && mins(CFG.s0)>GC_OPEN) { CFG.s0Pre=CFG.s0; CFG.s0='14:30'; cfgChanged('s0'); if (!quiet) toast('Sessione dalle 14:30: GC è nel piano'); }
-  else if (!has && CFG.s0==='14:30' && CFG.s0Pre) { const b=CFG.s0Pre; delete CFG.s0Pre; CFG.s0=b; cfgChanged('s0'); if (!quiet) toast('Sessione di nuovo dalle '+b+': GC non è più nel piano'); } }
+  else if (!has && mins(CFG.s0)<930) {   // solo ES/NQ: la sessione parte dall'apertura di Wall Street, 15:30
+    const b = CFG.s0Pre && mins(CFG.s0Pre)>=930 ? CFG.s0Pre : '15:30'; delete CFG.s0Pre; CFG.s0=b; cfgChanged('s0'); if (!quiet) toast('Sessione dalle '+b+': nel piano non c\'è GC'); } }
 function cfgChanged(k) {
   if (k==='risk') syncTouch('risk');
   if (k==='name') USER=CFG.name.trim()||'trader';
@@ -559,4 +561,4 @@ function renderList() {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['pagine.js'] = '2026-11-07.3';
+EB_V['pagine.js'] = '2026-11-07.4';
