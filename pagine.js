@@ -380,14 +380,32 @@ function revPlanCard(wk, a) {
       : '<p class="mut">Nessun trade di questa settimana rispetta il piano.</p>')+'</div>';
 }
 
+// recap animato di fine settimana (tutti i mercati fatti): risultato di tutti i trade e con le regole del piano, mercati,
+// giorni con news e R, miglior trade; i trade del piano di ogni mercato si aprono a richiesta
+function revRecap(wk, mks) {
+  const m=curModel(), days=revDays(wk), ts=all().filter(t=>mks.includes(revAsset(t)) && weekOf(iso(t.d))===wk);
+  const Rall=ts.reduce((s,t)=>s+m.rOf(t),0), wins=ts.filter(t=>m.isWin(t)).length, pls=mks.map(a=>[a,revPlan(wk,[a])]), Rpl=pls.reduce((s,x)=>s+x[1].R,0);
+  const per=mks.map(a=>{ const g=ts.filter(t=>revAsset(t)===a); return { a, n:g.length, w:g.filter(t=>m.isWin(t)).length, R:g.reduce((s,t)=>s+m.rOf(t),0), P:pls.find(x=>x[0]===a)[1] }; });
+  const mx=Math.max(1, ...per.map(x=>Math.abs(x.R)), ...per.map(x=>Math.abs(x.P.R)));
+  const dR=days.map(d=>{ const g=ts.filter(t=>iso(t.d)===d); return { d, n:g.length, R:g.reduce((s,t)=>s+m.rOf(t),0), c:newsCatSrc(d).c }; }), dm=Math.max(1, ...dR.map(x=>Math.abs(x.R)));
+  const best=ts.slice().sort((x,y)=>m.rOf(y)-m.rOf(x) || (y.max||0)-(x.max||0))[0], wr=ts.length?wins/ts.length:0, wd=['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
+  const bar=(v,cls)=>'<i class="rc-bar '+cls+' '+sgn(v)+'" style="--w:'+Math.max(3,Math.abs(v)/mx*100)+'%"></i>';
+  return '<div class="card rc rise"><div class="rc-glow"></div><div class="rc-top"><span class="rc-badge">'+ic('check',18,2.6)+'</span><div><div class="eyebrow">Recap · '+mkList(mks)+'</div><div class="rc-t">Settimana '+wkLbl2(wk)+'</div></div></div>'+
+    '<div class="rc-big"><div><b class="'+sgn(Rall)+'">'+numEl(Rall,1,true)+' R</b><span>tutti i trade · '+ts.length+' trade a '+tgt()+'R</span></div>'+
+      '<div><b class="'+sgn(Rpl)+'">'+numEl(Rpl,1,true)+' R</b><span>con le regole del piano · '+pls.reduce((s,x)=>s+x[1].ts.length,0)+' trade</span></div>'+
+      '<div class="rc-ring" style="--p:'+(wr*100).toFixed(0)+'"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15.9"/><circle class="v" cx="18" cy="18" r="15.9" pathLength="100"/></svg><b>'+numEl(wr*100,0)+'%</b><span>vincenti</span></div></div>'+
+    '<div class="rc-sec">Mercati</div><div class="rc-mk">'+per.map((x,i)=>'<div style="--k:'+i+'"><span class="rc-a">'+x.a+'</span><div class="rc-bars"><div>'+bar(x.R,'all')+'<em>'+fmtRc(x.R,1)+' · '+x.n+' trade</em></div><div>'+bar(x.P.R,'pl')+'<em>'+fmtRc(x.P.R,1)+' col piano · '+x.P.ts.length+'</em></div></div></div>').join('')+'</div>'+
+    '<div class="rc-sec">Giorni</div><div class="rc-days">'+dR.map((x,i)=>'<div style="--k:'+i+'"><div class="rc-col"><i class="'+sgn(x.R)+'" style="--h:'+(x.n?Math.max(6,Math.abs(x.R)/dm*100):0)+'%"></i></div><b class="'+sgn(x.R)+'">'+(x.n?fmtRc(x.R,1):'–')+'</b><span>'+wd[pdIso(x.d).getDay()]+'</span>'+(x.c?'<em class="rvd-n '+(catCls(x.c)||'ok')+'" title="'+esc(x.c)+'"></em>':'')+'</div>').join('')+'</div>'+
+    (best && m.rOf(best)>0 ? '<div class="rc-best">'+ic('target',16,2.2)+'<span>Miglior trade</span><b>'+esc(best.a)+' · '+wd[best.d.getDay()]+' '+best.d.getDate()+' · '+esc(String(best.raw.Ora).slice(0,5))+' · '+esc(best.idea||'')+'</b><em class="pos">'+fmtRc(m.rOf(best),1)+'</em></div>' : '')+
+    '<details class="rvn-more rc-pl"><summary>'+ic('chev',15,2.4)+'Trade presi con le regole del piano</summary>'+mks.map(a=>revPlanCard(wk, a)).join('')+'</details></div>';
+}
+
 // fine di una settimana del backtest di settimane passate: trade per mercato e quelli che il piano avrebbe preso
 function renderRevShow() {
-  const o=S.revShow, m=curModel(), wk=o.wk;
-  const rows=o.mk.map(a=>{ const ts=all().filter(t=>revAsset(t)===a && weekOf(iso(t.d))===wk); return '<div><span>'+a+'</span><b>'+ts.length+' trade · '+fmtRc(ts.reduce((s,t)=>s+m.rOf(t),0),0)+'</b></div>'; }).join('');
+  const o=S.revShow, wk=o.wk;
   enter($('v-list'), '<div class="stat-h rise"><div><div class="eyebrow">Backtest di una settimana passata · EOW</div><h1>'+words('Settimana '+wkLbl2(wk))+'</h1></div></div>'+
-    '<div class="rv-hero done rise"><div class="rv-t">Settimana fatta</div><p>'+mkList(o.mk)+' completi · tutti i trade a '+tgt()+'R:</p><div class="rv-sum">'+rows+'</div></div>'+
-    '<div class="card rise">'+o.mk.map(a=>revPlanCard(wk, a)).join('')+'</div>'+
-    '<div class="rv-foot"><button type="button" class="btn" data-act="rvshowok">'+(o.next ? 'Avanti · settimana '+wkLbl2(o.next) : 'Fatto · torna ai trade')+ic('chev',18,2.2)+'</button></div>');
+    revRecap(wk, o.mk)+
+    '<div class="rv-foot"><button type="button" class="btn" data-act="rvshowok">'+(o.next ? 'Avanti · settimana '+wkLbl2(o.next) : 'Fatto · torna ai trade')+ic('chev',18,2.2)+'</button></div>'); countUp($('v-list'), 350);
 }
 
 // pagina Trade dell'EOW durante la revisione
@@ -410,10 +428,9 @@ function renderReview() {
   const noNews = !nev ? '<p class="rv-note">'+(S.nwErr==='OLD' ? 'Per le news delle settimane passate aggiorna Code.gs (Distribuisci → Nuova versione).' : S.nwErr ? 'News non disponibili ('+esc(S.nwErr)+'): scegli tu il tipo di news nel trade.' : 'Carico le news della settimana…')+'</p>' : '';
   const started = revStarted(v);
   if (v.fin) {   // appena completata
-    h+='<div class="rv-hero done rise"><div class="rv-t">Settimana rivista</div><p>'+wkL+' · '+mkList(revMk())+' completi. La carta in Home torna venerdì prossimo dopo le '+esc(CFG.s1)+'.</p>'+
-      '<div class="rv-sum">'+revMk().map(a=>[a,sum(a)]).map(([a,s])=>'<div><span>'+a+'</span><b>'+s.n+' trade · '+fmtRc(s.R,0)+'</b></div>').join('')+'</div>'+revMk().map(a=>revPlanCard(v.wk, a)).join('')+
-      '<div class="rv-acts"><button type="button" class="btn rv-w" data-nav="stats">Vai all\'analisi</button><button type="button" class="btn rv-g" data-act="rvall">Vedi i trade</button></div></div>';
-    enter(el,h); return;
+    h+=revRecap(v.wk, revMk())+'<p class="rv-note c">Settimana rivista. La carta in Home torna venerdì prossimo dopo le '+esc(CFG.s1)+'.</p>'+
+      '<div class="rv-acts rc-acts"><button type="button" class="btn" data-nav="stats">Vai all\'analisi</button><button type="button" class="btn sec" data-act="rvall">Vedi i trade</button></div>';
+    enter(el,h); countUp(el, 350); return;
   }
   if (!started) {
     h+='<div class="card rv-start rise"><span class="rv-ic">'+ic('cal',24,2)+'</span><div class="rv-t">Pronto a rivedere la settimana?</div><p>Iniziamo da <b>'+revMk()[0]+'</b> come al solito, poi passiamo a '+mkList(revMk().slice(1))+'.</p></div>';
@@ -451,8 +468,9 @@ function renderReview() {
     : ns.src==='trade' ? 'dai trade '+mkList(sheetDay(d).mk)+' già scritti' : ns.src==='man' ? 'scelta da te per questo giorno' : 'calendario non disponibile';
   h+='<div class="card rv-news rvn '+(cc?'rvn-'+cc:'')+' rise"><div class="rvn-glow"></div><div class="card-h"><span class="eyebrow">News del giorno</span>'+(ev?'<span class="rvn-src">'+ic('cal',13,2.2)+'ForexFactory</span>':'')+'</div>'+
     '<div class="rvn-state"><span class="rvn-ic">'+ic(cc==='ok'?'check':cc?'alert':'clock',20,2.4)+'</span><div><b>'+big+'</b><em>'+esc(sub)+'</em></div></div>'+
-    (!ev ? (S.nwErr && S.nwErrWk===v.wk || ns.src ? (ns.src==='trade' ? '' : manPick(d, ns)) : noNews) : key.length ? '<div class="nlist rvn-list">'+key.map((e,i)=>nrow(e,0,null).replace('class="nrow','style="--k:'+i+'" class="nrow')).join('')+'</div>' : '')+
-    (c?'<p class="rv-ok">'+ic('check',15,2.4)+'Scritta in automatico in ogni trade di questo giorno</p>':'')+
+    (!ev ? (S.nwErr && S.nwErrWk===v.wk || ns.src ? (ns.src==='trade' ? '' : manPick(d, ns)) : noNews) : key.length ? (()=>{ const tm={}; key.forEach(e=>{ const k=e.tbd?'—':e.hm, w=e.imp==='High'?3:e.imp==='Medium'?2:1; tm[k]=tm[k]||{ n:0, w:0 }; tm[k].n++; tm[k].w=Math.max(tm[k].w,w); });
+      return '<div class="rvn-times">'+Object.entries(tm).map(([k,o],i)=>'<span class="'+(o.w===3?'hi':o.w===2?'md':'')+'" style="--k:'+i+'"><i></i>'+k+(o.n>1?' <em>×'+o.n+'</em>':'')+'</span>').join('')+'</div>'+
+        '<details class="rvn-more"><summary>'+ic('chev',15,2.4)+'Vedi le '+key.length+(key.length===1?' news':' news')+'</summary><div class="nlist rvn-list">'+key.map((e,i)=>nrow(e,0,null).replace('class="nrow','style="--k:'+i+'" class="nrow')).join('')+'</div></details>'; })() : '')+
     ((ev || newsCatSrc(d).src==='man') && c && ts.some(t=>t.raw.News!==c) ? (()=>{ const w=ts.filter(t=>t.raw.News!==c);
       return '<div class="rv-fix"><span>'+(w.length===1?'1 trade già salvato ha':w.length+' trade già salvati hanno')+' «'+esc(catLbl(w[0].raw.News||'')||'vuota')+'»'+(w.some(t=>t.raw.News!==w[0].raw.News)?' o altro':'')+'</span>'+
         '<button type="button" class="mini" data-act="rvfixnews" data-c="'+esc(c)+'">Correggi in '+esc(catLbl(c))+'</button></div>'; })() : '')+'</div>';
@@ -568,4 +586,4 @@ function renderList() {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['pagine.js'] = '2026-11-07.5';
+EB_V['pagine.js'] = '2026-11-07.6';
