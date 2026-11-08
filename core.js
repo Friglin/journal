@@ -66,7 +66,7 @@ normProp();
 // Lo usano i filtri di partenza dell'EOW, la Disciplina, il riepilogo di oggi e la pagina Ottimizza; è sincronizzato tra i
 // dispositivi come rischio e conti. Gestione (g): { k:'T', t } target fisso · { k:'P', t1, s, t2 } metà a t1, stop del resto
 // spostato a s (0 = BE), resto a t2. (Lo stop a BE «quando il prezzo arriva a l» non c'è più: diventa target fisso.)
-const PLAN_MG = { T:[1,1.5,2,2.5,3,4,5], P1:[2,2.5,3], PS:[0,.5,1], P2:[3,4,5] };
+const PLAN_MG = { T:[1,1.5,2,2.5,3,4,5], BE:[1,1.5,2], P1:[2,2.5,3], PS:[0,.5,1], P2:[3,4,5] };
 const PLAN_PB = { '':[], '2':['1','2'], '3':['1','2','3'], '4':['1','2','3','4'] };
 function planDef() { const P=CFG.plan;   // le impostazioni di prima (asset, idee e «max 2 al giorno» dell'EOW, limite di perdita)
   return { asset: CFG.asset ? [CFG.asset] : L.asset.slice(), idee: L.idea.filter(i=>!(CFG.exIdea||[]).includes(i)), dir:'', smt:'', lvn:'', clean:'', cc2:'', news:'',
@@ -78,7 +78,7 @@ function normPiano() {
   q.pb=Array.isArray(q.pb)?L.pb.filter(x=>q.pb.includes(x)):[];
   ['dir','smt','lvn','clean','cc2','news'].forEach(k=>{ q[k]=String(q[k]||''); });
   const g=q.g||{}, has=(a,v)=>a.includes(+v);
-  q.g = g.k==='T' && has(PLAN_MG.T,g.t) ? { k:'T', t:+g.t }
+  q.g = g.k==='T' && has(PLAN_MG.T,g.t) ? Object.assign({ k:'T', t:+g.t }, has(PLAN_MG.BE,g.be) && +g.be<+g.t ? { be:+g.be } : {})
       : g.k==='BE' && has(PLAN_MG.T,g.t) ? { k:'T', t:+g.t }
       : g.k==='P' && has(PLAN_MG.P1,g.t1) && has(PLAN_MG.PS,g.s) && has(PLAN_MG.P2,g.t2) && +g.t2>+g.t1 ? { k:'P', t1:+g.t1, s:+g.s, t2:+g.t2 } : d.g;
   q.maxN=[0,1,2,3].includes(+q.maxN)?+q.maxN:2; q.sw=q.sw?1:0; q.sll=[0,1,2].includes(+q.sll)?+q.sll:0;
@@ -86,11 +86,25 @@ function normPiano() {
   CFG.piano=q; }
 normPiano();
 const PL = () => CFG.piano;
+// percorso di un trade dalla nota dell'EOW: «scende a −0.3rr, raggiunge 1.2rr, torna a BE, … poi torna allo stop (−1rr)
+// (screenshot fino alle 17:53), oltre lo screenshot arriva a 6.3rr (EOW)». p = gli estremi in ordine (da 0), af = massimo dopo lo
+// screenshot, stop = finisce allo stop. null se la nota manca o ha frasi che non si riconoscono (allora vale solo il Max Real RR).
+function notePath(s) {
+  s=String(s||'').trim(); if (!s) return null;
+  const num=t=>parseFloat(String(t).replace(',','.')), af=s.match(/oltre lo screenshot arriva a\s*(-?\d+(?:[.,]\d+)?)\s*rr/i);
+  const core=s.replace(/\(screenshot fino alle [^)]*\)/gi,'').replace(/,?\s*oltre lo screenshot arriva a [^,]*\(EOW\)/gi,'');
+  const p=[0]; let stop=false, bad=0;
+  core.split(',').map(x=>x.trim()).filter(Boolean).forEach(part=>{ const q=part.replace(/^poi\s+/i,'');
+    if (/^(va|torna) allo stop/i.test(q)) { p.push(-1); stop=true; return; }
+    if (/^torna a BE\b/i.test(q)) { p.push(0); return; }
+    const m=q.match(/^(scende a|raggiunge|torna a|arriva a)\s+(-?\d+(?:[.,]\d+)?)\s*rr$/i); if (m) p.push(num(m[2])); else bad++; });
+  return bad || p.length<2 ? null : { p, af:af?num(af[1]):null, stop };
+}
 const planLoss = () => PL().lossR || NaN;   // limite di perdita giornaliero in R (NaN = nessuno)
 // gestione e regole del giorno in parole
 const fmtX = x => fmtN(x, x%1?1:0);
 function mgTxt(g, short) { g=g||PL().g;
-  if (g.k==='T') return (short?'':'target ')+fmtX(g.t)+'R';
+  if (g.k==='T') return (short?'':'target ')+fmtX(g.t)+'R'+(g.be?(short?' · BE a ':', stop a BE da ')+fmtX(g.be)+'R':'');
   return 'metà a '+fmtX(g.t1)+'R, stop '+(g.s?'a +'+fmtX(g.s)+'R':'a BE')+', resto a '+fmtX(g.t2)+'R'; }
 function dayRuleTxt(P, short) { P=P||PL(); const a=[];
   a.push(P.maxN ? (short?'max '+P.maxN+' al giorno':'al massimo '+P.maxN+' trade al giorno') : (short?'nessun limite di trade':'nessun limite di trade al giorno'));
@@ -630,4 +644,4 @@ function filtClick(b) {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['core.js'] = '2026-11-07.6';
+EB_V['core.js'] = '2026-11-08.1';
