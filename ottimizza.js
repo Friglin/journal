@@ -43,6 +43,7 @@ function renderPlanSheet() {
     '<p class="hint" style="margin:0">In breve: '+esc(mgTxt(g))+'.</p>');
   h+=sec('Regole del giorno','',f('Trade al giorno, al massimo',seg('pl-maxN',[{v:1,l:'1'},{v:2,l:'2'},{v:3,l:'3'},{v:0,l:'Nessuno'}],P.maxN))+
     f('Stop dopo il primo trade in profitto',seg('pl-sw',[{v:1,l:'Sì'},{v:0,l:'No'}],P.sw))+f('Stop dopo le perdite',seg('pl-sll',[{v:0,l:'No'},{v:1,l:'Dopo la prima'},{v:2,l:'Dopo 2'}],P.sll))+
+    f('Un trade alla volta',seg('pl-uno',[{v:1,l:'Sì'},{v:0,l:'No'}],P.uno),'Con «Sì» non entri se hai già un trade aperto: per esempio quando ES e NQ danno il segnale insieme ne prendi uno solo (il primo: ES, poi NQ, poi GC).')+
     '<div class="field"><label for="pl-loss">Perdita massima al giorno (R)</label><input class="inp" id="pl-loss" data-pl="lossR" inputmode="decimal" value="'+(P.lossR?fmtN(P.lossR,P.lossR%1?1:0):'')+'" placeholder="vuoto = nessuna"><span class="hint">Oltre questa, la Panoramica ti dice di fermarti.</span></div>');
   h+=sec('Altre regole','',fld('altro','','<textarea class="inp" id="pl-altro" data-pl="altro" rows="3" maxlength="600" placeholder="Es. niente trade nei 5 minuti prima di una news rossa">'+esc(P.altro)+'</textarea>')+
     '<p class="hint" style="margin:0">Quello che i campi sopra non coprono. Lo legge Claude quando gli chiedi un parere sul piano.</p>');
@@ -62,7 +63,7 @@ function planClick(b) {
   else if (name==='gt1') { P.g.t1=n; if (P.g.t2<=n) P.g.t2=PLAN_MG.P2.find(x=>x>n); }
   else if (name==='gs') P.g.s=n;
   else if (name==='gt2') { if (n<=P.g.t1) { toast('Il resto deve uscire oltre la prima metà', true); return true; } P.g.t2=n; }
-  else if (['maxN','sw','sll'].includes(name)) P[name]=n;
+  else if (['maxN','sw','sll','uno'].includes(name)) P[name]=n;
   else P[name]=v;
   CFG.piano=P; planSaved(prev); renderPlanSheet(); return true;
 }
@@ -83,10 +84,14 @@ const OPT_HL = 12;           // peso delle settimane: si dimezza ogni 12 settima
 // soglie tarate rimescolando a caso gli esiti dei trade (nessun legame tra filtri ed esito): vedi optnull in CLAUDE.md.
 // p = probabilità con le settimane recenti pesate di più, pa = tutte uguali. «Conviene» non deve peggiorare troppo il drawdown.
 const optDDok = c => c.ddV >= c.ddB - Math.max(2, .3*Math.abs(c.ddB));
-// «Forte di recente» (scelta dell'utente: il mercato cambia, il recente deve contare). Prova sul passato (8/11/2026) con tre piani
-// di partenza: ammettere nel piano proposto anche queste modifiche ha reso +1,63 / +1,42 / +2,17 R a settimana contro +0,71 /
-// +1,21 / +1,42 con i soli «conviene» (piano fermo −0,33 / +1,33 / +1,00). Soglie più spinte erano instabili (a volte 0).
-const optNowOk = c => c.aff3>=4 && c.w3>=1 && c.m1>=.5 && c.m3>0;
+// «Forte di recente» (scelta dell'utente: il mercato cambia, il recente deve contare): almeno 4 trade cambiati e +1 R a settimana
+// nelle ultime 3 settimane, positiva nelle ultime 4 e nei 3 mesi, e non negativa sullo storico (adattarsi al mercato di adesso
+// senza andare contro il lungo periodo). Prova sul passato del 9/11/2026, con le regole del giorno senza senno di poi e cinque
+// piani di partenza: seguire «conviene + forte di recente» ha reso 1,04 / 1,42 / 1,58 / 1,67 / 3,88 R a settimana contro
+// 0,25 / 1,25 / 1,00 / 1,67 / 4,58 del piano fermo (meglio in 3, pari in 1, peggio in 1); con i soli «conviene» 0,25 / 1,04 /
+// 1,42 / 1,50. Senza il vincolo sullo storico o con soglie diverse i risultati erano più instabili. Per questo il piano per
+// adesso si propone solo se, con i dati e il piano dell'utente, la stessa prova rende più del piano (almeno +0,1 R a settimana e più settimane migliori che peggiori).
+const optNowOk = c => c.aff3>=4 && c.w3>=1 && c.m1>=.5 && c.m3>0 && c.all>=0;
 const OPT_NOW = c => c.verdict==='si' || optNowOk(c);
 function optVerdict(c) {
   if (!c.aff) return '';
@@ -138,18 +143,15 @@ function optPass(P, x) { const t=x.t;
   return true; }
 // simulazione del piano: i trade presi giorno per giorno con le regole del giorno, i R per settimana e l'esito di ogni trade
 function optSim(B, P) {
-  const W=B.weeks.length, wR=new Float64Array(W), wN=new Float64Array(W), rs=new Map(), seq=[];
-  let day='', n=0, stop=false, ls=0, R=0;
+  const W=B.weeks.length, wR=new Float64Array(W), wN=new Float64Array(W), rs=new Map(), seq=[], take=dayRules(P);
   B.ts.forEach((x,i)=>{ if (!optPass(P,x)) return;
-    if (x.day!==day) { day=x.day; n=0; stop=false; ls=0; R=0; }
-    if (stop || (P.maxN && n>=P.maxN) || (P.sll && ls>=P.sll) || (P.lossR && R<=-P.lossR+1e-9)) return;
-    const r=optR(B,x,P.g); n++; R+=r; if (r<0) ls++; if (P.sw && r>0) stop=true;
+    const r=optR(B,x,P.g); if (!take(x.t, r, P.g)) return;   // regole del giorno senza senno di poi (dayRules in core.js)
     const w=B.wi[x.wk]; wR[w]+=r; wN[w]++; rs.set(i,r); seq.push([w,r]); });
   return { wR, wN, rs, seq }; }
 // i numeri di una simulazione nelle ultime n settimane (fino alla settimana «to», esclusa)
 function optNums(B, sim, n, to) { to=to??B.weeks.length; const from=Math.max(0, to-(n==='all'?to:n)), k=to-from; let R=0, N=0, w=0, eq=0, pk=0, dd=0;
   sim.seq.forEach(([wk,r])=>{ if (wk<from || wk>=to) return; R+=r; N++; if (r>0) w++; eq+=r; if (eq>pk) pk=eq; if (eq-pk<dd) dd=eq-pk; });
-  return { R, n:N, wk:k, rw:k?R/k:NaN, rt:N?R/N:NaN, wr:N?w/N:NaN, dd }; }
+  return { R, n:N, wk:k, rw:k?R/k:NaN, rt:N?R/N:NaN, wr:N?w/N:NaN, dd, cur:eq-pk }; }
 // generatore di numeri casuali con seme: gli stessi dati danno sempre lo stesso risultato
 function optRng(seed) { let a=seed>>>0; return ()=>{ a=(a+0x6D2B79F5)>>>0; let t=a; t=Math.imul(t^t>>>15,t|1); t^=t+Math.imul(t^t>>>7,t|61); return ((t^t>>>14)>>>0)/4294967296; }; }
 // confronto di una variante con il piano, settimana per settimana nelle settimane [0, to)
@@ -183,6 +185,7 @@ function optMoves(B, P) {
   ['','2','3','4'].forEach(k=>{ if (k!==pbKey(P.pb)) add('ctx', k?'fino a '+k+' candele di pullback':'tutte le candele di pullback', q=>{ q.pb=PLAN_PB[k]; }); });
   opt('day','maxN',[1,2,3,0],v=>v?'al massimo '+v+' trade al giorno':'nessun limite di trade al giorno'); opt('day','sw',[0,1],v=>v?'stop dopo il primo TP':'niente stop dopo il primo TP');
   opt('day','sll',[0,1,2],v=>v?'stop dopo '+(v===1?'la prima perdita':'2 perdite'):'niente stop dopo le perdite');
+  opt('day','uno',[0,1],v=>v?'un trade alla volta':'anche più trade aperti insieme');
   opt('day','lossR',[1,2,3,0],v=>v?'perdita massima −'+v+' R al giorno':'nessun limite di perdita al giorno');
   return out; }
 // ricerca a passi: dal piano, una modifica alla volta (la migliore tra quelle che passano il test), al massimo 4
@@ -214,9 +217,12 @@ function optAll() {
   const wfRes = wf ? { H, steps:wf.steps, cut:B.weeks[W-H], plan:optNums(B,base,H), prop:optNums(B,simOf(wf.P),H) } : null;
   const roll=optRoll(B,P,base,simOf);
   // piano per il mercato di adesso: «conviene» più «forte di recente»; si propone se ha almeno una modifica recente e, nella prova
-  // sul passato fatta con la stessa regola, seguirlo non ha reso meno del piano
+  // sul passato fatta con la stessa regola, seguirlo ha reso davvero di più del piano (almeno +0,1 R a settimana) e in più settimane
+  // di quante ha fatto peggio: un pareggio non basta per cambiare piano. Con gli esiti rimescolati (9/11/2026, 40 giri) una singola
+  // modifica «forte di recente» che toglie trade esce circa una volta per analisi (è rumore: 3 settimane sono poche), ma il piano
+  // per adesso con meno trade viene proposto solo nel 5% dei casi: la prova sul passato è il filtro che conta.
   const gNow=optGreedy(B,P,undefined,OPT_NOW,simOf), rollNow=gNow.steps.some(x=>x.c.verdict!=='si') ? optRoll(B,P,base,simOf,OPT_NOW) : null;
-  const now = rollNow && rollNow.rw>=rollNow.rb ? Object.assign(gNow, { nums:nums(gNow.sim), roll:rollNow }) : null;
+  const now = rollNow && rollNow.rw-rollNow.rb>=.1 && rollNow.up>rollNow.dn ? Object.assign(gNow, { nums:nums(gNow.sim), roll:rollNow }) : null;
   const sugg=moves.filter(m=>m.c.verdict==='si').sort((a,b)=>b.c.wm-a.c.wm), hint=moves.filter(m=>m.c.verdict==='indizio').sort((a,b)=>b.c.p-a.c.p||b.c.wm-a.c.wm);
   // una sola proposta per categoria di gestione, asset e regole (sono alternative tra loro)
   const one=l=>{ const seen=new Set(); return l.filter(m=>{ const k=['g','asset','day'].includes(m.cat)?m.cat:m.l; if (seen.has(k)) return false; seen.add(k); return true; }); };
@@ -244,10 +250,10 @@ function optAll() {
 // usassi Ottimizza quel giorno, e tiene il piano proposto per la settimana dopo. Confronto con il piano fisso.
 function optRoll(B, P, base, simOf, ok) {
   const W=B.weeks.length, from=Math.max(8, Math.ceil(W/2)); if (W-from<4) return null;
-  let R=0, Rb=0, ch=0;
-  for (let t=from; t<W; t++) { const g=optGreedy(B,P,t,ok||['si'],simOf,400);
-    R+=g.sim.wR[t]; Rb+=base.wR[t]; if (g.steps.length) ch++; }
-  const n=W-from; return { n, from:B.weeks[from], rw:R/n, rb:Rb/n, ch }; }
+  let R=0, Rb=0, ch=0, up=0, dn=0;
+  for (let t=from; t<W; t++) { const g=optGreedy(B,P,t,ok||['si'],simOf,400), d=g.sim.wR[t]-base.wR[t];
+    R+=g.sim.wR[t]; Rb+=base.wR[t]; if (g.steps.length) ch++; if (d>1e-9) up++; else if (d<-1e-9) dn++; }
+  const n=W-from; return { n, from:B.weeks[from], rw:R/n, rb:Rb/n, ch, up, dn }; }
 // ── da tenere d'occhio: cambiamenti nel tempo. Per il piano e per ogni valore (setup, mercato, orario, condizione) i R a trade
 // delle ultime settimane contro quelli di prima, con la gestione del piano. Test di permutazione sull'ordine dei trade: se
 // rimescolando a caso l'ordine una differenza così grande esce di rado, il cambiamento è reale. Si guardano più finestre
@@ -353,31 +359,34 @@ function optTable(rows, key, fmt, o={}) {
     t+='<tr class="'+(r.cur?'cur':'')+'"><td>'+esc(r.l)+(r.cur&&!o.noTag?' <em class="tag">piano</em>':'')+'</td>'+cols.map((j,i)=>{ const v=r.nums[j][key];
     return '<td class="num '+sgn(v)+(isFinite(v)&&v===best[i]&&rows.length>2?' best':'')+'">'+fmt(v)+'</td>'; }).join('')+'</tr>'; });
   return t+'</table></div>'; }
-// il piano in etichette brevi (il dettaglio è nella scheda «Il mio piano»)
-function optPlanTags(P) { const w=planWhen(P);
-  const t=[mkList(P.asset), P.idee.length===L.idea.length ? 'tutte le idee' : P.idee.length<=2 ? P.idee.join(', ') : P.idee.length+' idee su '+L.idea.length,
-    ...planCond(P), ...(w.indexOf('tutte')===0 ? [] : w.split(' · ')), mgTxt(P.g), ...dayRuleTxt(P,true).split(' · ')];
-  return '<div class="op-tags">'+t.map(x=>'<span>'+esc(x)+'</span>').join('')+'</div>'; }
 // ───── La pagina in tre domande: il piano va bene? (verdetto) · cosa posso provare? · cosa sta cambiando? Il resto in «Tutti i numeri».
 // verdetto: il numero che conta (R a settimana in più del piano migliore, o il piano com'è), le finestre e la curva
 function optHero(O) { const n=O.nums, NW=O.now, G=NW || O.best, w=O.wf, gn=G ? (NW ? NW.nums : O.greedyNums) : null;
   const why={ poche:'Qualcosa sembra migliore, ma le settimane sono ancora poche per confermarlo.', recenti:'Qualcosa sembra migliore, ma solo grazie alle ultime settimane.',
     retto:'Qualcosa sembrava migliore, ma non ha retto sulle settimane più recenti.', metodo:'Qualcosa sembra migliore, ma in passato seguire questi consigli non ha pagato.' }[O.doubt] || 'Nessuna delle '+O.moves.length+' alternative lo batte, né sullo storico né nelle ultime settimane.';
   const nR = NW ? NW.steps.filter(x=>x.c.verdict!=='si').length : 0, nS = G ? G.steps.length-nR : 0;
-  const d = !G ? 0 : NW ? gn[3].rw-n[3].rw : gn[0].rw-n[0].rw;
-  const sub = !G ? esc(why) : NW ? (nS ? nS+(nS===1?' confermata':' confermate')+' dallo storico, '+nR+(nR===1?' forte':' forti')+' nelle ultime settimane.' : (nR===1?'Una modifica forte':nR+' modifiche forti')+' nelle ultime settimane, positive anche a 4 settimane e 3 mesi.')
+  // il numero grande è quello onesto: quanto ha reso in più seguire questa ricerca settimana per settimana con i soli dati di prima
+  const rl = NW ? NW.roll : O.roll, d = !G ? 0 : rl ? rl.rw-rl.rb : gn[0].rw-n[0].rw;
+  const sub = !G ? esc(why) : NW ? (nS ? nS+(nS===1?' confermata':' confermate')+' dallo storico, '+nR+(nR===1?' forte':' forti')+' nelle ultime settimane.' : (nR===1?'Una modifica forte':nR+' modifiche forti')+' nelle ultime settimane, che regge anche a 3 mesi e sullo storico.')
     : (G.steps.length===1?'Con una modifica':'Con '+G.steps.length+' modifiche')+', confermate anche sulle '+w.H+' settimane che non ho usato per trovarle.';
-  let h='<div class="card wide rise op-hero'+(G?' go':'')+'"><div class="op-glow"></div>'+
+  // rischio: drawdown massimo, trade a settimana e R a trade, prima → dopo
+  // fase negativa: niente da proporre, ultime 4 settimane in perdita e calo dal massimo già oltre metà del peggiore di sempre.
+  // In una fase così si abbassa il rischio per trade, non si cambiano le regole (cambiarle in drawdown è inseguire il rumore).
+  const cold = !G && n[2].rw<0 && n[0].dd<0 && n[0].cur<=.5*n[0].dd;
+  const a0=n[0], a1=G?gn[0]:null, rk=(l,x,y,f)=>'<span><em>'+l+'</em><b class="num">'+f(x)+'</b>'+(y!==undefined?ic('chev',11,2.6)+'<b class="num '+(l==='Drawdown'?(y<x-1e-9?'neg':y>x+1e-9?'pos':''):'')+'">'+f(y)+'</b>':'')+'</span>';
+  const risk='<div class="op-risk">'+rk('Drawdown',a0.dd,a1?a1.dd:undefined,x=>fmtN(x,1)+' R')+rk('Trade a sett.',a0.n/a0.wk,a1?a1.n/a1.wk:undefined,x=>fmtN(x,1))+rk('R a trade',a0.rt,a1?a1.rt:undefined,x=>fmtN(x,2,true))+rk('Vinti',a0.wr,a1?a1.wr:undefined,pct)+'</div>';
+  let h='<div class="card wide rise op-hero'+(G?' go':cold?' cold':'')+'"><div class="op-glow"></div>'+
     '<div class="op-hh"><div class="eyebrow">Il tuo piano · R a settimana</div><button type="button" class="op-edit" data-act="planedit">'+ic('gear',15,2.2)+'Modifica</button></div>'+
     '<div class="op-pt">'+esc(optPlanLine(O.P))+'</div>'+
-    '<div class="op-vb"><span class="op-vi">'+ic(NW?'trendUp':G?'spark':'check',22,2.4)+'</span><div class="op-vt"><b>'+(NW?'Adatta il piano al mercato di adesso':G?'Puoi fare meglio':'Il tuo piano è il migliore')+'</b><span>'+sub+'</span></div>'+
-      (G ? '<div class="op-up"><b class="'+sgn(d)+'">'+numEl(d,1,true)+'</b><span>R a settimana'+(NW?' nelle ultime 3 sett.':'')+'</span></div>' : '')+'</div>'+
+    '<div class="op-vb"><span class="op-vi">'+ic(NW?'trendUp':G?'spark':cold?'shield':'check',22,2.4)+'</span><div class="op-vt"><b>'+(NW?'Adatta il piano al mercato di adesso':G?'Puoi fare meglio':cold?'Resta sul piano, riduci il rischio':'Il tuo piano è il migliore')+'</b><span>'+
+      (cold ? 'Sei a '+fmtN(n[0].cur,1)+' R dal massimo (il calo peggiore finora: '+fmtN(n[0].dd,1)+' R) e nessuna alternativa è più affidabile del tuo piano. In una fase così si abbassa il rischio per trade, non si cambiano le regole.' : sub)+'</span></div>'+
+      (G ? '<div class="op-up"><b class="'+sgn(d)+'">'+numEl(d,1,true)+'</b><span>R a settimana'+(rl?' nella prova sul passato':' sullo storico')+'</span></div>' : '')+'</div>'+
     '<div class="op-k">'+OPT_WIN.map((x,i)=>'<div style="--k:'+i+'"><span>'+x.l+'</span><b class="num '+sgn(n[i].rw)+'">'+numEl(n[i].rw,1,true)+'</b>'+
       (G ? '<em class="'+sgn(gn[i].rw-n[i].rw)+'">'+ic(gn[i].rw>=n[i].rw?'trendUp':'trendDn',12,2.6)+fRw(gn[i].rw)+'</em>' : '<em>'+n[i].n+' trade</em>')+'</div>').join('')+'</div>'+
-    '<div class="chart" id="c-opt"></div>';
+    '<div class="chart" id="c-opt"></div>'+risk;
   if (G) h+='<div class="op-steps2">'+G.steps.map((x,i)=>'<span style="--k:'+i+'"><i>'+(i+1)+'</i>'+esc(optLbl(x))+(NW?'<em class="'+(x.c.verdict==='si'?'s':'r')+'">'+(x.c.verdict==='si'?'storico':'recente')+'</em>':'')+'</span>').join('')+'</div>'+
     '<button type="button" class="btn op-best" data-act="'+(NW?'optnow':'optall')+'">'+ic('check',18,2.2)+(NW?'Usa il piano per adesso':'Usa il piano migliore')+'</button>'+
-    (NW ? '<p class="op-leg">Prova sul passato: rifacendo ogni settimana questa ricerca con i soli dati di prima, seguirla ha reso '+fRw(NW.roll.rw)+' R a settimana contro '+fRw(NW.roll.rb)+' del tuo piano'+(O.roll?' e '+fRw(O.roll.rw)+' guardando solo lo storico':'')+'. Ricontrolla ogni settimana: il mercato cambia.</p>'
+    (rl ? '<p class="op-leg">Prova sul passato: rifacendo questa ricerca ogni settimana con i soli dati di prima (ultime '+rl.n+' settimane), seguirla ha reso '+fRw(rl.rw)+' R a settimana contro '+fRw(rl.rb)+' del tuo piano'+(rl.up+rl.dn ? ' (meglio in '+rl.up+' settiman'+(rl.up===1?'a':'e')+', peggio in '+rl.dn+')' : '')+'. Sotto ogni periodo, quanto farebbe il piano proposto: è un conto fatto a posteriori, vale meno della prova.'+(NW?' Ricontrolla ogni settimana.':'')+'</p>'
       : '<p class="op-leg">Nelle '+w.H+' settimane non usate: '+fmtN(w.held,1,true)+' R contro '+fmtN(w.plan.R,1,true)+' R del tuo piano.</p>');
   if (S._planPrev) h+='<button type="button" class="link" data-act="planundo">'+ic('refresh',15,2)+'Annulla l\'ultima modifica al piano</button>';
   return h+'</div>'; }
@@ -461,7 +470,7 @@ function optHowCard(O) {
     '<li><b>Storico e recente.</b> Ricampiono le settimane mille volte in due modi: tutte uguali, e con più peso alle recenti (il peso si dimezza ogni '+OPT_HL+' settimane). La probabilità è quante volte il miglioramento resta positivo.</li>'+
     '<li><b>Conviene</b>: almeno 99% con il peso sulle recenti e 95% tutte uguali, meglio anche negli ultimi 3 mesi, non peggio nelle ultime 4 e nelle ultime 3 settimane, almeno 8 trade che cambiano e drawdown non molto peggiore. <b>Da provare</b>: almeno 90% e 75%, oppure 95% su tutto lo storico e 80% sul recente.</li>'+
     '<li><b>Perché soglie così alte.</b> Su tante alternative qualcuna sembra buona per caso: rimescolando a caso gli esiti dei trade, un falso «conviene» esce circa una volta ogni 10 analisi, un falso «da provare» una ogni 3.</li>'+
-    '<li><b>Il mercato di adesso.</b> Una modifica è «forte di recente» se nelle ultime 3 settimane rende almeno 1 R a settimana in più su almeno 4 trade, ed è positiva anche nelle ultime 4 settimane e nei 3 mesi. Il piano per adesso unisce queste modifiche a quelle che convengono sullo storico. Nella prova sul passato (rifacendo la ricerca ogni settimana con i soli dati di prima) seguirlo ha reso di più che guardare solo lo storico, con tre piani di partenza diversi: per questo il recente ha la priorità. Si propone solo se anche con i tuoi dati la prova non è andata peggio del tuo piano.</li><li><b>Cosa sta cambiando.</b> Per il piano e per ogni setup, mercato, orario e condizione confronto i R a trade delle ultime 4, 6, 8 o 13 settimane con quelli di prima. Rimescolo l\'ordine dei trade centinaia di volte: lo segnalo solo se una differenza così grande esce per caso al massimo 5 volte su 100. Nella prova sul passato i cambiamenti segnalati sono continuati nelle settimane dopo.</li>'+
+    '<li><b>Il mercato di adesso.</b> Una modifica è «forte di recente» se nelle ultime 3 settimane rende almeno 1 R a settimana in più su almeno 4 trade, è positiva anche nelle ultime 4 settimane e nei 3 mesi e non è negativa sullo storico. Il piano per adesso unisce queste modifiche a quelle che convengono sullo storico. Si propone solo se, rifacendo la ricerca ogni settimana con i soli dati di prima, seguirlo ha reso più del tuo piano, e in più settimane di quante ha fatto peggio: il numero grande in alto è proprio quella differenza. Una singola modifica «forte di recente» da sola vale poco (3 settimane sono poche, può essere un caso): provala in piccolo.</li><li><b>Niente senno di poi.</b> Le regole del giorno (stop dopo il primo TP, dopo le perdite, perdita massima, un trade alla volta) reagiscono solo ai trade già chiusi quando entra il successivo. Un vincente è chiuso quando tocca il target (Holding time); per chi perde non c\'è un orario e conto circa 5 minuti per R dall\'ultimo livello toccato. Se ES e NQ entrano insieme, il secondo era già dentro quando il primo ha chiuso: conta.</li><li><b>Cosa sta cambiando.</b> Per il piano e per ogni setup, mercato, orario e condizione confronto i R a trade delle ultime 4, 6, 8 o 13 settimane con quelli di prima. Rimescolo l\'ordine dei trade centinaia di volte: lo segnalo solo se una differenza così grande esce per caso al massimo 5 volte su 100. Nella prova sul passato i cambiamenti segnalati sono continuati nelle settimane dopo.</li>'+
     '<li><b>Il piano migliore</b> compare solo se è sicuro: mette insieme le modifiche che convengono, una alla volta; rifacendo la stessa ricerca senza le ultime settimane deve trovare le stesse modifiche, e in quelle settimane (che non ha visto) deve fare meglio del tuo piano. Inoltre, rifacendo l\'analisi ogni settimana con i soli dati di prima, seguirla non deve aver reso meno del tuo piano.</li>'+
     '<li><b>Uscite.</b> Il target fisso è esatto dal Max Real RR. Stop a BE e parziali seguono il percorso scritto nelle note («raggiunge 2rr, torna a 1rr…»): se dopo la fine della nota non si sa cosa è successo prima, conta il caso peggiore.</li>'+
     '<li><b>Quale mercato.</b> Ogni mercato da solo con tutte le regole del piano. Il test tradava ogni settimana il mercato che aveva fatto meglio nelle 4 settimane prima: «passa» solo se così avrebbe reso più del piano con probabilità almeno dell\'85%.</li></ul></details>'; }
@@ -486,11 +495,11 @@ function optClick(b) {
   return false; }
 // contesto per Claude quando la chat parte da questa pagina: piano, numeri per periodo, proposte e gruppi
 function optCtx() { const O=optAll(); if (!O) return 'servono almeno 6 settimane di trade nell\'EOW';
-  const w=n=>OPT_WIN.reduce((o,x,i)=>(o[x.l]={ R_a_settimana:r2(n[i].rw), R_a_trade:r2(n[i].rt), trade:n[i].n, vinti:r2(n[i].wr), drawdown_R:r2(n[i].dd) }, o), {});
+  const w=n=>OPT_WIN.reduce((o,x,i)=>(o[x.l]={ R_a_settimana:r2(n[i].rw), R_a_trade:r2(n[i].rt), trade:n[i].n, vinti:r2(n[i].wr), drawdown_R:r2(n[i].dd), calo_attuale_dal_massimo_R:r2(n[i].cur) }, o), {});
   const c=m=>({ modifica:m.l, verdetto:OPT_V[m.c.verdict]?OPT_V[m.c.verdict][1]:'nessuno', R_a_settimana_in_piu:{ tutto:r2(m.c.all), ultimi_3_mesi:r2(m.c.m3), ultimo_mese:r2(m.c.m1), ultime_3_settimane:r2(m.c.w3) }, probabilita_che_sia_vero:r2(m.c.p), trade_che_cambiano:m.c.aff });
-  return { nota:'Backtest sui trade dell\'EOW: ogni alternativa simulata con le regole del piano e confrontata settimana per settimana. «Conviene» con probabilità ≥ 99% (pesata sulle settimane recenti) e ≥ 95% (tutte uguali), «da provare» con ≥ 90% e ≥ 75% (o ≥ 95% su tutte le settimane e ≥ 80% pesata): con decine di alternative provate un «da provare» falso esce circa una volta su tre. Esiti: target fisso esatto dal Max Real RR; stop a BE e parziali calcolati dal percorso scritto nelle note dei trade (caso peggiore quando la nota non basta).',
+  return { nota:'Backtest sui trade dell\'EOW: ogni alternativa simulata con le regole del piano e confrontata settimana per settimana. «Conviene» con probabilità ≥ 99% (pesata sulle settimane recenti) e ≥ 95% (tutte uguali), «da provare» con ≥ 90% e ≥ 75% (o ≥ 95% su tutte le settimane e ≥ 80% pesata): con decine di alternative provate un «da provare» falso esce circa una volta su tre. Esiti: target fisso esatto dal Max Real RR; stop a BE e parziali calcolati dal percorso scritto nelle note dei trade (caso peggiore quando la nota non basta). Le regole del giorno reagiscono solo ai trade già chiusi quando entra il successivo (niente senno di poi).',
     periodo:optDates(O.B), settimane:O.B.weeks.length, piano:planDesc(O.P), risultati_del_piano:w(O.nums),
-    consigliate:O.sugg.map(c), da_provare:O.hint.map(c), ultime_3_settimane:O.recent.map(m=>Object.assign(c(m), { trade_cambiati_nelle_ultime_3_settimane:m.c.aff3 })), da_tenere_d_occhio:O.drift.map(d=>({ cosa:d.id==='piano'?'il piano intero':d.dim+': '+d.k, nel_piano:d.on, R_a_trade_ultime_settimane:r2(d.mr), settimane:d.win, trade_recenti:d.c, R_a_trade_prima:r2(d.mb), probabilita_che_sia_un_caso:r2(d.p) })), piano_per_il_mercato_di_adesso: O.now ? { modifiche:O.now.steps.map(x=>x.l+(x.c.verdict==='si'?' (confermata dallo storico)':' (forte nelle ultime 3 settimane)')), prova_sul_passato_R_a_settimana:{ seguendolo:r2(O.now.roll.rw), piano_fermo:r2(O.now.roll.rb) } } : null, piano_migliore:{ sicuro:!!O.best, nota:'si propone solo se trovato con i «conviene», trovato uguale anche senza le ultime settimane e migliore del piano proprio in quelle', modifiche:O.greedy.steps.map(s=>s.l), risultati:w(O.greedyNums) },
+    consigliate:O.sugg.map(c), da_provare:O.hint.map(c), ultime_3_settimane:O.recent.map(m=>Object.assign(c(m), { trade_cambiati_nelle_ultime_3_settimane:m.c.aff3 })), da_tenere_d_occhio:O.drift.map(d=>({ cosa:d.id==='piano'?'il piano intero':d.dim+': '+d.k, nel_piano:d.on, R_a_trade_ultime_settimane:r2(d.mr), settimane:d.win, trade_recenti:d.c, R_a_trade_prima:r2(d.mb), probabilita_che_sia_un_caso:r2(d.p) })), piano_per_il_mercato_di_adesso: O.now ? { modifiche:O.now.steps.map(x=>x.l+(x.c.verdict==='si'?' (confermata dallo storico)':' (forte nelle ultime 3 settimane)')), prova_sul_passato_R_a_settimana:{ seguendolo:r2(O.now.roll.rw), piano_fermo:r2(O.now.roll.rb), settimane:O.now.roll.n, settimane_meglio:O.now.roll.up, settimane_peggio:O.now.roll.dn } } : null, piano_migliore:{ sicuro:!!O.best, nota:'si propone solo se trovato con i «conviene», trovato uguale anche senza le ultime settimane e migliore del piano proprio in quelle', modifiche:O.greedy.steps.map(s=>s.l), risultati:w(O.greedyNums) },
     quale_mercato:O.mkt ? { nota:'ogni mercato da solo con tutte le regole del piano; test: ogni settimana il mercato migliore delle 4 settimane prima, confrontato con il piano', mercati:O.mkt.rows.map(r=>({ mercato:r.l, del_piano:r.cur, R_a_settimana:OPT_WIN.reduce((o,x,i)=>(o[x.l]=r2(r.nums[i].rw), o), {}) })),
       davanti_nelle_ultime_4_settimane:O.mkt.lead, verdetto:{ go:'passa per ora', mid:'davanti ma presto per cambiare', stay:'resta' }[O.mkt.kind],
       test_cambio_mercato:{ settimane:O.mkt.T.n, settimane_fuori_dal_piano:O.mkt.T.k, R_a_settimana_cambiando:r2(O.mkt.T.sw), R_a_settimana_restando:r2(O.mkt.T.st), probabilita_che_sia_meglio:r2(O.mkt.T.p) } } : null,
@@ -501,4 +510,4 @@ function optCtx() { const O=optAll(); if (!O) return 'servono almeno 6 settimane
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['ottimizza.js'] = '2026-11-08.3';
+EB_V['ottimizza.js'] = '2026-11-09.1';

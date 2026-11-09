@@ -14,7 +14,7 @@ function renderCal() {
   const tie=(x,y)=>U?dayU(x)-dayU(y):0, best=ks.slice().sort((x,y)=>dayR(y)-dayR(x)||tie(y,x))[0], worst=ks.slice().sort((x,y)=>dayR(x)-dayR(y)||tie(x,y))[0];
   let h='<div class="stat-h rise"><div><div class="eyebrow">'+S.file+' · R per giorno</div><h1>'+words('Calendario')+'</h1></div><span class="mut num">'+mt.length+' trade</span></div>'+fbar(20);
   h+='<div class="card wide calcard rise" style="--d:60ms"><div class="cal-h"><button type="button" class="icon-btn" data-cal="-1" aria-label="Mese precedente">'+ic('chev',18,2).replace('<svg','<svg style="transform:rotate(180deg)"')+'</button>'+
-     '<div><b>'+MESI_F[M-1].replace(/^./,c=>c.toUpperCase())+' '+Y+'</b><span class="'+sgn(a.R)+'">'+fmtR(a.R)+(U?' · '+fmtU(usdSum(mt,m)):'')+' · '+pos+' giorni verdi · '+neg+' rossi</span></div>'+
+     '<div><b>'+MESI_F[M-1].replace(/^./,c=>c.toUpperCase())+' '+Y+'</b><span class="'+sgn(a.R)+'">'+fmtR(a.R)+(U?' · '+fmtU(usdSum(mt,m)):'')+' · '+pos+(pos===1?' giorno verde':' giorni verdi')+' · '+neg+(neg===1?' rosso':' rossi')+'</span></div>'+
      '<button type="button" class="icon-btn" data-cal="1" aria-label="Mese successivo">'+ic('chev',18,2)+'</button></div>'+
      '<div class="cal-g"><span class="cw">Lun</span><span class="cw">Mar</span><span class="cw">Mer</span><span class="cw">Gio</span><span class="cw">Ven</span><span class="cw">Sett.</span>';
   let d=addDays(first, -((first.getDay()+6)%7)), wi=0;
@@ -93,7 +93,8 @@ function discRules(ts, lbl) {
     (P.maxN ? rule('Massimo '+P.maxN+(P.maxN===1?' trade':' trade')+' al giorno', D.filter(d=>d.max2).length, D.length, D.filter(d=>!d.max2).map(d=>d.k), 'giornate') : '')+
     (P.sw ? rule('Stop dopo il TP', D.filter(d=>d.hadWin && d.tp).length, D.filter(d=>d.hadWin).length, D.filter(d=>d.hadWin && !d.tp).map(d=>d.k), 'giornate con un TP') : '')+
     (P.sll ? rule('Stop dopo '+(P.sll===1?'la prima perdita':P.sll+' perdite'), D.filter(d=>d.hadL && d.sl).length, D.filter(d=>d.hadL).length, D.filter(d=>d.hadL && !d.sl).map(d=>d.k), 'giornate con '+(P.sll===1?'una perdita':P.sll+' perdite')) : '')+
-    (isFinite(lim)&&lim>0 ? rule('Perdita massima −'+fmtN(lim,1)+' R al giorno', D.filter(d=>d.loss).length, D.length, D.filter(d=>!d.loss).map(d=>d.k), 'giornate') : '')+'</div>'+
+    (isFinite(lim)&&lim>0 ? rule('Perdita massima −'+fmtN(lim,1)+' R al giorno', D.filter(d=>d.loss).length, D.length, D.filter(d=>!d.loss).map(d=>d.k), 'giornate') : '')+
+    (P.uno ? rule('Un trade alla volta', D.filter(d=>d.uno).length, D.length, D.filter(d=>!d.uno).map(d=>d.k), 'giornate') : '')+'</div>'+
     (okN && koN ? '<div class="ds-cost"><div><span>Giornata in regola</span><b class="'+sgn(okR)+' num">'+fmtN(okR,2,true)+' R</b><em>in media · '+okN+' giornate</em></div><div><span>Giornata fuori regola</span><b class="'+sgn(koR)+' num">'+fmtN(koR,2,true)+' R</b><em>in media · '+koN+' giornate</em></div></div>' : ''));
 }
 function discErr(ts) {
@@ -362,13 +363,11 @@ function revHomeCard() {
 // i trade di un mercato nella settimana che il piano avrebbe preso: regole del piano (setup, LVN, SMT, news, orari, regole del
 // giorno, gestione) applicate a quel mercato da solo, anche se nel piano ci sono altri mercati o non c'è (scelta dell'utente)
 function revPlan(wk, mks) {
-  const P=Object.assign({}, PL(), { asset:mks.slice() }), out=[]; let day='', n=0, stop=false, ls=0, R=0;
+  const P=Object.assign({}, PL(), { asset:mks.slice() }), out=[], take=dayRules(P);
   all().forEach(t=>{ if (!t.d || t.d.getDay()%6===0 || weekOf(iso(t.d))!==wk || !mks.includes(revAsset(t))) return;
     const mx=isFinite(t.max)?t.max:t.best; if (!isFinite(mx)) return;
     const x={ t, mx, wk, day:iso(t.d), band:bandOf(t), pb:String(t.raw['Candele PB']??'').trim() }; if (!optPass(P,x)) return;
-    if (x.day!==day) { day=x.day; n=0; stop=false; ls=0; R=0; }
-    if (stop || (P.maxN && n>=P.maxN) || (P.sll && ls>=P.sll) || (P.lossR && R<=-P.lossR+1e-9)) return;
-    const r=optR(null,x,P.g); n++; R+=r; if (r<0) ls++; if (P.sw && r>0) stop=true; out.push({ t, r }); });
+    const r=optR(null,x,P.g); if (take(t, r, P.g)) out.push({ t, r }); });
   return { ts:out, R:out.reduce((s,o)=>s+o.r,0) };
 }
 // carta «con le regole del piano» per un mercato: quanti trade, quanti R e quali
@@ -391,7 +390,7 @@ function revRecap(wk, mks) {
   const best=ts.slice().sort((x,y)=>m.rOf(y)-m.rOf(x) || (y.max||0)-(x.max||0))[0], wr=ts.length?wins/ts.length:0, wd=['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
   const bar=(v,cls)=>'<i class="rc-bar '+cls+' '+sgn(v)+'" style="--w:'+Math.max(3,Math.abs(v)/mx*100)+'%"></i>';
   return '<div class="card rc rise"><div class="rc-glow"></div><div class="rc-top"><span class="rc-badge">'+ic('check',18,2.6)+'</span><div><div class="eyebrow">Recap · '+mkList(mks)+'</div><div class="rc-t">Settimana '+wkLbl2(wk)+'</div></div></div>'+
-    '<div class="rc-big"><div><b class="'+sgn(Rall)+'">'+numEl(Rall,1,true)+' R</b><span>tutti i trade · '+ts.length+' trade a '+tgt()+'R</span></div>'+
+    '<div class="rc-big"><div><b class="'+sgn(Rall)+'">'+numEl(Rall,1,true)+' R</b><span>tutti i trade · '+ts.length+' trade · '+esc(tgtTxt())+'</span></div>'+
       '<div><b class="'+sgn(Rpl)+'">'+numEl(Rpl,1,true)+' R</b><span>con le regole del piano · '+pls.reduce((s,x)=>s+x[1].ts.length,0)+' trade</span></div>'+
       '<div class="rc-ring" style="--p:'+(wr*100).toFixed(0)+'"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15.9"/><circle class="v" cx="18" cy="18" r="15.9" pathLength="100"/></svg><b>'+numEl(wr*100,0)+'%</b><span>vincenti</span></div></div>'+
     '<div class="rc-sec">Mercati</div><div class="rc-mk">'+per.map((x,i)=>'<div style="--k:'+i+'"><span class="rc-a">'+x.a+'</span><div class="rc-bars"><div>'+bar(x.R,'all')+'<em>'+fmtRc(x.R,1)+' · '+x.n+' trade</em></div><div>'+bar(x.P.R,'pl')+'<em>'+fmtRc(x.P.R,1)+' col piano · '+x.P.ts.length+'</em></div></div></div>').join('')+'</div>'+
@@ -447,7 +446,7 @@ function renderReview() {
   if (!revSeen(v, p.a)) {   // mercato prima finito: passaggio al successivo
     const pa=mk[ia-1], s=sum(pa);
     h+='<div class="card rv-start rise"><span class="rv-ic ok">'+ic('check',22,2.6)+'</span><div class="rv-t">'+pa+' fatto</div>'+
-      '<div class="rv-plh">Tutti i trade '+pa+'</div><div class="rv-sum g">'+'<div><b>'+s.n+'</b><span>trade</span></div><div><b class="'+sgn(s.R)+'">'+fmtRc(s.R,0)+'</b><span>a '+tgt()+'R</span></div><div><b>'+s.empty+'</b><span>giorni senza trade</span></div></div>'+
+      '<div class="rv-plh">Tutti i trade '+pa+'</div><div class="rv-sum g">'+'<div><b>'+s.n+'</b><span>trade</span></div><div><b class="'+sgn(s.R)+'">'+fmtRc(s.R,0)+'</b><span>'+esc(tgtTxt())+'</span></div><div><b>'+s.empty+'</b><span>giorni senza trade</span></div></div>'+
       revPlanCard(v.wk, pa)+
       '<p>Ora tocca a <b>'+p.a+'</b>: stessi giorni, stesse news.</p><button type="button" class="btn" data-act="rvmk" data-a="'+p.a+'">Passa a '+p.a+' · '+dayName(days[0]).toLowerCase()+ic('chev',18,2.2)+'</button></div>';
     enter(el,h); return;
@@ -586,4 +585,4 @@ function renderList() {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['pagine.js'] = '2026-11-08.3';
+EB_V['pagine.js'] = '2026-11-09.1';

@@ -73,7 +73,7 @@ function renderHome() {
     '<span class="sess'+(ses.open?' open':'')+'" id="sess"><i></i>'+ses.txt+'</span></div>';
   h += revHomeCard();
   if (!S.loaded) { enter(el, h+skeleton()); return; }
-  const T=tgt(), m=curModel(), ALL=filtered(m,true), ts=inRange(ALL,periodRange(S.per,0)), prev=inRange(ALL,periodRange(S.per,1));
+  const m=curModel(), ALL=filtered(m,true), ts=inRange(ALL,periodRange(S.per,0)), prev=inRange(ALL,periodRange(S.per,1));
   const a=agg(ts,m), pa=agg(prev,m), E=S.type==='EOW';
   const dd = d => d.getDate()+' '+MESI[d.getMonth()], cr = S.per==='c' ? periodRange('c',0) : null, cOk = cr && cr[0].getFullYear()>2000;
   const perLbl = { w:wkLbl().toLowerCase(), m: MESI_F[now.getMonth()]+' '+now.getFullYear(), '3m':'ultimi 3 mesi', y:String(now.getFullYear()), all:'da sempre',
@@ -92,7 +92,7 @@ function renderHome() {
     if (prevLbl && prev.length) { const dv=a.R-pa.R; delta='<span class="delta '+(dv>0?'up':dv<0?'down':'flat')+'">'+ic(dv>=0?'trendUp':'trendDn',14,2.2)+fmtR(dv)+(U?' · '+fmtU(uT-usdSum(prev,m)):'')+'</span><span>'+prevLbl+'</span>'; }
     h += '<div class="hero"><div class="hero-glow"></div><div class="hero-top"><div><div class="eyebrow">Risultato · '+perLbl+'</div>'+
       '<div class="big '+sgn(a.R)+'">'+numEl(a.R,E?0:1,true)+'<small>R</small></div>'+(U?'<div class="hero-usd num '+sgn(uT)+'">'+fmtU(uT)+(usdWhat()?'<small>'+usdWhat()+'</small>':'')+'</div>':'')+'</div><span class="hero-n">'+a.n+' trade</span></div>'+
-      '<div class="hero-meta">'+(delta||'<span>'+(E?'esito a '+T+'R':'RR dei trade')+'</span>')+'</div>'+
+      '<div class="hero-meta">'+(delta||'<span>'+(E?'esito: '+tgtTxt():'RR dei trade')+'</span>')+'</div>'+
       '<div class="spark" id="c-spark"></div></div>';
     const ringOff = 94.25*(1-(isFinite(a.wr)?a.wr:0));
     h += '<div class="kgrid">'+
@@ -141,10 +141,13 @@ const jModel = { rOf:t=> isFinite(t.rr)?t.rr:0, isWin:t=>t.out==='Win', isLoss:t
 function discDays(ts) {
   const P=PL(), rr=t=>isFinite(t.rr)?t.rr:0, lim=planLoss(), days={};
   ts.forEach(t=>{ const k=iso(t.d); (days[k]=days[k]||[]).push(t); });
-  return Object.entries(days).sort((a,b)=>a[0]<b[0]?-1:1).map(([k,g])=>{ const afterTP=g.some((t,i)=>i>0 && g.slice(0,i).some(x=>x.out==='Win'||rr(x)>0)), R=g.reduce((s,t)=>s+rr(t),0);
-    const afterL=P.sll ? g.some((t,i)=>g.slice(0,i).filter(x=>rr(x)<0).length>=P.sll) : false;
-    const d={ k, n:g.length, R, max2:!P.maxN || g.length<=P.maxN, tp:!P.sw || !afterTP, sl:!afterL, loss:!(isFinite(lim)&&lim>0) || R>-lim-1e-9, valid:!g.some(t=>t.exe==='Errore'), hadWin:g.some(x=>x.out==='Win'||rr(x)>0), hadL:P.sll ? g.filter(x=>rr(x)<0).length>=P.sll : false };
-    d.ok = d.max2 && d.tp && d.sl && d.loss && d.valid; return d; });
+  // un trade «c'era già» per il successivo solo se era chiuso quando è entrato (ora di uscita); senza orari vale l'ordine
+  const closed=(x,t)=>!(isFinite(x.o) && isFinite(x.hold) && isFinite(t.o)) || x.o+x.hold<=t.o;
+  return Object.entries(days).sort((a,b)=>a[0]<b[0]?-1:1).map(([k,g])=>{ const afterTP=g.some((t,i)=>i>0 && g.slice(0,i).some(x=>(x.out==='Win'||rr(x)>0) && closed(x,t))), R=g.reduce((s,t)=>s+rr(t),0);
+    const afterL=P.sll ? g.some((t,i)=>g.slice(0,i).filter(x=>rr(x)<0 && closed(x,t)).length>=P.sll) : false;
+    const over=P.uno ? g.some((t,i)=>g.slice(0,i).some(x=>!closed(x,t))) : false;
+    const d={ k, n:g.length, R, max2:!P.maxN || g.length<=P.maxN, tp:!P.sw || !afterTP, sl:!afterL, uno:!over, loss:!(isFinite(lim)&&lim>0) || R>-lim-1e-9, valid:!g.some(t=>t.exe==='Errore'), hadWin:g.some(x=>x.out==='Win'||rr(x)>0), hadL:P.sll ? g.filter(x=>rr(x)<0).length>=P.sll : false };
+    d.ok = d.max2 && d.tp && d.sl && d.loss && d.valid && d.uno; return d; });
 }
 function discMini() {
   const J=rowsOf('Journal')||[], now=new Date(), jm=J.filter(t=>t.d>=new Date(now.getFullYear(),now.getMonth(),1)), D=discDays(jm), okN=D.filter(d=>d.ok).length;
@@ -153,7 +156,7 @@ function discMini() {
     (D.length ? '<div class="ds-lead"><b class="num">'+okN+' su '+D.length+'</b><span>giornate in regola</span></div><div class="ds-bar"><i style="width:'+(100*okN/D.length)+'%"></i></div>'+
       '<div class="dm-rules">'+[['Solo trade validi',D.filter(d=>d.valid).length,D.length]].concat(PL().maxN?[['Max '+PL().maxN+' trade al giorno',D.filter(d=>d.max2).length,D.length]]:[],
         PL().sw?[['Stop dopo il TP',D.filter(d=>d.hadWin&&d.tp).length,D.filter(d=>d.hadWin).length]]:[], PL().sll?[['Stop dopo '+PL().sll+(PL().sll===1?' perdita':' perdite'),D.filter(d=>d.hadL&&d.sl).length,D.filter(d=>d.hadL).length]]:[],
-        isFinite(planLoss())?[['Perdita max −'+fmtN(planLoss(),1)+' R',D.filter(d=>d.loss).length,D.length]]:[])
+        isFinite(planLoss())?[['Perdita max −'+fmtN(planLoss(),1)+' R',D.filter(d=>d.loss).length,D.length]]:[], PL().uno?[['Un trade alla volta',D.filter(d=>d.uno).length,D.length]]:[])
         .map(([l,o,t])=>'<span class="'+(o===t?'ok':'ko')+'">'+ic(o===t?'check':'alert',14,2.2)+l+'<b class="num">'+(t?o+'/'+t:'–')+'</b></span>').join('')+'</div>'+
       '<p class="ds-note">'+(run>1?'Sei a <b>'+run+' giornate in regola di fila</b>.':'Errori ed esecuzione nella pagina Disciplina.')+'</p>'
     : '<div class="empty-row">Nessun trade reale questo mese.</div>')+'<span class="link">Apri Disciplina'+ic('chev',15,2)+'</span></button>';
@@ -386,12 +389,15 @@ function newsSummary(ev, per) {
     : '<button type="button" class="btn sec sm" data-act="nsai" data-k="'+esc(k)+'" data-per="'+per+'">'+ic('spark',16,2)+'Approfondisci con Claude</button>';
   return h+'</div>';
 }
+// chi è il trader, per il sunto delle news: mercati e orari veri del piano (prima erano scritti fissi nello script)
+function newsWho() { const P=PL(), ss=sessOf(todayIso());
+  return 'mercati '+(P.asset.length?P.asset:L.asset).join(', ')+' · sessione '+hhmm(ss[0])+'–'+hhmm(ss[1])+' ora italiana · uscita: '+mgTxt(P.g)+' · '+dayRuleTxt(P); }
 function askNewsAI(b) {
   const k=b.dataset.k, per=b.dataset.per, t=todayIso(), wk=weekOf(t), nwk=iso(addDays(pdIso(wk),7));
   const ev=newsEvents().filter(e=>(e.imp==='High'||e.imp==='Medium'||e.trump) && (per==='d'?e.day===t:per==='n'?weekOf(e.day)===nwk:weekOf(e.day)===wk));
   const items=ev.map(e=>dayLbl(e.day)+' '+e.hm+' · '+e.impL+' · '+e.title+' · '+[e.fc,e.pv,e.ac].map(x=>x||'–').join(' / '));
   S.nsAI[k]=1; renderCurrent(true);
-  call('newsSunto', { d:'oggi ('+dayLbl(t)+')', w:'questa settimana', n:'la prossima settimana' }[per], items)
+  call('newsSunto', { d:'oggi ('+dayLbl(t)+')', w:'questa settimana', n:'la prossima settimana' }[per], items, newsWho())
     .then(txt=>{ S.nsAI[k]=txt; }).catch(e=>{ delete S.nsAI[k]; toast(/NO_CLAUDE_KEY/.test(e.message||'')?'Claude non è collegato allo script':/Funzione sconosciuta/.test(e.message||'')?'Aggiorna Code.gs per usare Claude sulle news':'Claude non ha risposto: '+(e.message||e), true); })
     .finally(()=>{ if (S.tab==='news') renderCurrent(true); });
 }
@@ -416,8 +422,8 @@ function renderNews() {
       '<i class="'+(cat==='Red News'?'hi':cat==='Orange News'?'md':'')+'"></i><em>'+(hi?hi+' alte':g.length?g.length+' medie':'nessuna')+'</em></button>'; }).join('')+'</div>';
   h += newsToday(byDay(t), all, now, nextT);
   h += trumpCard(all.filter(e=>e.trump && (e.tbd || e.t>now-4*3600000)).slice(0,3));
-  const dayCard = d => { const g=byDay(d), hi=g.filter(e=>e.imp==='High').length, cat=newsCat(d);
-    return '<div class="card wide nday" id="nd-'+d+'"><div class="card-h"><h3 class="h2">'+dayLbl(d)+'</h3><span class="ncat '+(cat==='Red News'?'hi':cat==='Orange News'?'md':'')+'">'+(hi?hi+' alto impatto':cat)+'</span></div><div class="nlist">'+g.map(e=>nrow(e,now,nextT)).join('')+'</div></div>'; };
+  const dayCard = d => { const g=byDay(d), cat=newsCat(d);
+    return '<div class="card wide nday" id="nd-'+d+'"><div class="card-h"><h3 class="h2">'+dayLbl(d)+'</h3><span class="ncat '+(cat==='Red News'?'hi':cat==='Orange News'?'md':'')+'">'+cat+'</span></div><div class="nlist">'+g.map(e=>nrow(e,now,nextT)).join('')+'</div></div>'; };
   const days=[...new Set(ev.map(e=>e.day))], next=days.filter(d=>d>t && weekOf(d)===wk), nw=days.filter(d=>weekOf(d)===nwk), past=days.filter(d=>d<t);
   if (next.length) h += '<h2 class="sect">Prossimi giorni</h2>'+next.map(dayCard).join('');
   h += newsSummary(pev, 'w');
@@ -439,7 +445,7 @@ function rowsOf(f) { if (f===S.file && S.loaded) return all(); const d=S.data[f]
 function expectations(dayName, cat) {
   const E=rowsOf('EOW'); if (!E || E.length<10) return null;
   const F=FILT_DEF('EOW'), m=eModel(2);
-  const ts=plan(E.filter(t=>(!fAs(F).length||fAs(F).includes(t.a)) && (!F.idea.length || F.idea.includes(t.idea))), m.rOf);
+  const ts=plan(E.filter(t=>(!fAs(F).length||fAs(F).includes(t.a)) && (!F.idea.length || F.idea.includes(t.idea))), m.rOf, null, { k:'T', t:2 });
   const byDay = g => { const o={}; g.forEach(t=>{ const k=iso(t.d); (o[k]=o[k]||[]).push(m.rOf(t)); }); return Object.values(o).map(a=>a.reduce((x,y)=>x+y,0)); };
   const dstat = g => { const d=byDay(g); return { n:d.length, avg:d.length?d.reduce((x,y)=>x+y,0)/d.length:NaN, pos:d.length?d.filter(x=>x>0).length/d.length:NaN }; };
   const wd=ts.filter(t=>t.day===dayName), nw=cat?ts.filter(t=>t.news===cat):[];
@@ -498,4 +504,4 @@ function briefing() {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['home.js'] = '2026-11-08.3';
+EB_V['home.js'] = '2026-11-09.1';

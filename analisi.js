@@ -47,9 +47,9 @@ function renderStats() {
   if (!ts.length) { enter(el, html+emptyState('Nessun trade', 'Nessun trade corrisponde ai filtri scelti. Allarga il periodo o togli qualche filtro.')); return; }
   const a=agg(ts,m), ringOff=94.25*(1-(a.wr||0)), U=usdOn(), uT=U?usdSum(ts,m):0;
   html+='<div class="kgrid">'+
-    kpi('Trade', numEl(a.n,0), E?'Esito calcolato a '+T+'R':(a.be?a.be+' in pareggio':'Nessun pareggio'), 60)+
+    kpi('Trade', numEl(a.n,0), E?'Esito: '+tgtTxt():(a.be?a.be+' in pareggio':'Nessun pareggio'), 60)+
     kpi('Win rate', '<svg class="ring" viewBox="0 0 36 36"><circle class="bgc" cx="18" cy="18" r="15"/><circle class="fgc" cx="18" cy="18" r="15" stroke-dasharray="94.25" stroke-dashoffset="'+ringOff+'"/></svg>'+numEl(a.wr*100,0)+'<small>%</small>', a.w+' vinti su '+(a.w+a.l)+(!E&&a.be?' · con BE '+pct(a.wrAll):''), 90)+
-    kpi('R totali', numEl(a.R,1,true)+'<small>R</small>', U?fmtU(uT)+(usdWhat()?' · '+usdWhat():E?' a '+usd(riskUsd())+' per trade':''):E?'Vinto '+T+'R, perso 1R':'Somma degli RR dei trade', 120, sgn(a.R))+
+    kpi('R totali', numEl(a.R,1,true)+'<small>R</small>', U?fmtU(uT)+(usdWhat()?' · '+usdWhat():E?' a '+usd(riskUsd())+' per trade':''):E?(tgtP()?'Con le uscite del piano':'Vinto '+T+'R, perso 1R'):'Somma degli RR dei trade', 120, sgn(a.R))+
     kpi('Profit factor', a.pf===Infinity?'∞':numEl(a.pf,2), isFinite(a.pf)?fmtN(a.pf,1)+' R guadagnati per R perso':'', 150)+
     kpi('Expectancy', numEl(a.exp,2,true)+'<small>R</small>', U?fmtU(uT/ts.length)+' in media a trade':'Resa media per trade', 180, sgn(a.exp))+
     kpi('Max drawdown', numEl(a.dd,1)+'<small>R</small>', U?usd(usdDD(ts,m))+' dal picco':'Calo massimo dal picco', 210);
@@ -62,7 +62,7 @@ function renderStats() {
   C.eq=card('Curva dei risultati', ts.length+' trade', '<div class="chart" id="c-eq"></div>', 300);
   C.mo=card('R per mese', '', '<div class="chart" id="c-mo"></div>', 330);
   if (E) {
-    C.tg=card('Win rate per target', 'expectancy a destra', levelRows([1,2,3,4,5].map(k=>{ const p=ts.filter(t=>t.best>=k).length/ts.length, ex=p*k-(1-p); return { l:k+'R', p, right:fmtN(ex,2,true), cls:sgn(ex), sub:k===T?'target attuale':'' }; })), 360);
+    C.tg=card('Win rate per target', 'expectancy a destra', levelRows([1,2,3,4,5].map(k=>{ const p=ts.filter(t=>t.best>=k).length/ts.length, ex=p*k-(1-p); return { l:k+'R', p, right:fmtN(ex,2,true), cls:sgn(ex), sub:k===T?(tgtP()?(PL().g.k==='P'?'prima metà del piano':'target del piano'):'target attuale'):'' }; })), 360);
     const conv=(x,y)=>{ const nx=ts.filter(t=>t.best>=x).length, ny=ts.filter(t=>t.best>=y).length; return { l:x+'R → '+y+'R', p:nx?ny/nx:NaN, right:ny+'/'+nx }; };
     C.cv=card('Conversione tra livelli', 'chi arriva a… poi arriva a…', levelRows([conv(1,2),conv(2,3),conv(3,4),conv(4,5),conv(2,5)]), 390);
   } else {
@@ -120,7 +120,7 @@ function coachData(scope) {
     const errs={}; ko.forEach(t=>(t.errs||[]).forEach(e=>{ (errs[e]=errs[e]||{n:0,R:0}); errs[e].n++; errs[e].R+=m.rOf(t); }));
     disc={ valid:ok.length, errors:ko.length, R_valid:ok.reduce((s,t)=>s+m.rOf(t),0), R_errors:ko.reduce((s,t)=>s+m.rOf(t),0), byError:errs }; } }
   const d0=ts[0].d, d1=ts[ts.length-1].d;
-  return { file:S.file, esito: E?'EOW: vinto '+T+'R se il trade arriva a '+T+'R prima dello stop, altrimenti −1R':'Journal: RR scritto nel trade (il PnL in dollari può differire per commissioni, slippage e size)',
+  return { file:S.file, esito: E?(tgtP()?'EOW: esito con le uscite del piano ('+mgTxt()+'), calcolato dal Max Real RR e dal percorso scritto nelle note':'EOW: vinto '+T+'R se il trade arriva a '+T+'R prima dello stop, altrimenti −1R'):'Journal: RR scritto nel trade (il PnL in dollari può differire per commissioni, slippage e size)',
     periodo: d0.getDate()+' '+MESI[d0.getMonth()]+' '+d0.getFullYear()+' → '+d1.getDate()+' '+MESI[d1.getMonth()]+' '+d1.getFullYear(),
     filtri: allSc ? ['nessuno: tutti i trade del file'] : activeFilters().map(x=>x.t||x.l), trade:ts.length, winrate:a.wr, R_totali:a.R, expectancy:overall, profit_factor:isFinite(a.pf)?a.pf:null, max_drawdown_R:a.dd,
     target_attuale: E?T:null, targets, target_consigliato: best && best.T, forma_recente: rec && { ultimi:recentN, expectancy:rec.mean, storico:overall },
@@ -246,7 +246,7 @@ function tableCtx(ts, m) {
 }
 function ctxNow() {
   const m=curModel(), ts=filtered(m), a=agg(ts,m), E=S.type==='EOW', tab=S.tab;
-  const c={ app:APP, file:S.file, significato_file: E ? 'EOW: review di fine settimana dei setup (backtest), esito calcolato a un target fisso di '+tgt()+'R' : 'Journal: trade reali eseguiti, esito = RR effettivo',
+  const c={ app:APP, file:S.file, significato_file: E ? 'EOW: review di fine settimana dei setup (backtest), esito calcolato '+(tgtP()?'con le uscite del piano ('+mgTxt()+')':'a un target fisso di '+tgt()+'R') : 'Journal: trade reali eseguiti, esito = RR effettivo',
     pagina:PAGE_LBL[tab], piano_di_trading:planDesc(), filtri:activeFilters().map(x=>x.t||x.l), oggi:new Date().toLocaleDateString('it-IT',{ weekday:'long', day:'numeric', month:'long', year:'numeric' }),
     trade_filtrati:ts.length, riepilogo_filtrati:{ winrate:r2(a.wr), R_totali:r2(a.R), expectancy:r2(a.exp), profit_factor:isFinite(a.pf)?r2(a.pf):null, max_drawdown_R:r2(a.dd) },
     statistiche_tutti_i_trade:coachData('all'), statistiche_con_filtri:coachData('filt'), tutti_i_trade:tableCtx(all(), m) };
@@ -294,4 +294,4 @@ async function delTrade() {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['analisi.js'] = '2026-11-08.3';
+EB_V['analisi.js'] = '2026-11-09.1';

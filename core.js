@@ -46,7 +46,6 @@ const pdate = s => { const p=String(s).split('/'); return p.length===3 ? new Dat
 const iso = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 const fmtIt = s => { if (!s) return ''; const p=s.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; };
 const bestNum = s => { s=String(s||''); if (s.indexOf('<')===0) return 0; const n=parseInt(s); return isFinite(n)?n:NaN; };
-const nowHM = () => { const d=new Date(); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); };
 // numeri all'italiana: virgola decimale, segno meno tipografico
 function fmtN(x, dec, sign) { if (!isFinite(x)) return '–'; const s=Math.abs(x).toFixed(dec).replace('.',','); return (x<0 && Math.abs(x)>=Math.pow(10,-dec)/2 ? '−' : (sign && x>0 ? '+' : ''))+s; }
 const fmtR = (x, dec=1) => fmtN(x, dec, true)+' R';
@@ -54,7 +53,7 @@ const pct = x => isFinite(x) ? Math.round(x*100)+'%' : '–';
 const sgn = x => x>0 ? 'pos' : x<0 ? 'neg' : '';
 // impostazioni dell'utente (pagina Impostazioni), salvate su questo dispositivo
 const CFG_DEF = { name:'Gianmarco', theme:'auto', motion:'full', s0:'15:30', s1:'18:30', asset:'ES', plan:'max2', exIdea:['Open Play','Reversal Play'], risk:'', lossR:'2', newsImp:'high', prop:{ view:'tot', n:1 },
-  check:['Ho controllato le news di oggi','Ho segnato livelli e LVN su ES e NQ','So quanto rischio su questo trade','Sono riposato e concentrato','Accetto la perdita prima di entrare'] };
+  check:['Ho controllato le news di oggi','Ho segnato livelli e LVN sui miei mercati','So quanto rischio su questo trade','Sono riposato e concentrato','Accetto la perdita prima di entrare'] };
 let CFG = (()=>{ let c={}; try { c=JSON.parse(localStorage.getItem('tj.cfg')||'{}')||{}; } catch(e) {} return Object.assign({}, CFG_DEF, c); })();
 // conti prop in copy trading: conta solo quanti sono (le versioni di prima avevano un elenco di conti con date e payout)
 function normProp() { const P=Object.assign({ view:'tot' }, CFG.prop||{});
@@ -70,7 +69,7 @@ const PLAN_MG = { T:[1,1.5,2,2.5,3,4,5], BE:[1,1.5,2], P1:[2,2.5,3], PS:[0,.5,1]
 const PLAN_PB = { '':[], '2':['1','2'], '3':['1','2','3'], '4':['1','2','3','4'] };
 function planDef() { const P=CFG.plan;   // le impostazioni di prima (asset, idee e «max 2 al giorno» dell'EOW, limite di perdita)
   return { asset: CFG.asset ? [CFG.asset] : L.asset.slice(), idee: L.idea.filter(i=>!(CFG.exIdea||[]).includes(i)), dir:'', smt:'', lvn:'', clean:'', cc2:'', news:'',
-    bande: L.bands.map(b=>b[0]), giorni: L.days.slice(), pb: [], g:{ k:'P', t1:2, s:1, t2:4 }, maxN: P==='max2'?2:0, sw: P==='max2'?1:0, sll:0,
+    bande: L.bands.map(b=>b[0]), giorni: L.days.slice(), pb: [], g:{ k:'P', t1:2, s:1, t2:4 }, maxN: P==='max2'?2:0, sw: P==='max2'?1:0, sll:0, uno:0,
     lossR: isFinite(num(CFG.lossR)) && num(CFG.lossR)>0 ? num(CFG.lossR) : 0, altro:'' }; }
 function normPiano() {
   const d=planDef(), q=Object.assign({}, d, CFG.piano||{}), inL=(a,all,def)=>{ const v=Array.isArray(a)?all.filter(x=>a.includes(x)):[]; return v.length?v:def; };
@@ -81,7 +80,7 @@ function normPiano() {
   q.g = g.k==='T' && has(PLAN_MG.T,g.t) ? Object.assign({ k:'T', t:+g.t }, has(PLAN_MG.BE,g.be) && +g.be<+g.t ? { be:+g.be } : {})
       : g.k==='BE' && has(PLAN_MG.T,g.t) ? { k:'T', t:+g.t }
       : g.k==='P' && has(PLAN_MG.P1,g.t1) && has(PLAN_MG.PS,g.s) && has(PLAN_MG.P2,g.t2) && +g.t2>+g.t1 ? { k:'P', t1:+g.t1, s:+g.s, t2:+g.t2 } : d.g;
-  q.maxN=[0,1,2,3].includes(+q.maxN)?+q.maxN:2; q.sw=q.sw?1:0; q.sll=[0,1,2].includes(+q.sll)?+q.sll:0;
+  q.maxN=[0,1,2,3].includes(+q.maxN)?+q.maxN:2; q.sw=q.sw?1:0; q.uno=q.uno?1:0; q.sll=[0,1,2].includes(+q.sll)?+q.sll:0;
   q.lossR=isFinite(num(q.lossR)) && num(q.lossR)>0 ? Math.min(20, num(q.lossR)) : 0; q.altro=String(q.altro||'').slice(0,600);
   CFG.piano=q; }
 normPiano();
@@ -111,6 +110,7 @@ function dayRuleTxt(P, short) { P=P||PL(); const a=[];
   if (P.sw) a.push(short?'stop al TP':'stop dopo il primo trade in profitto');
   if (P.sll) a.push(short?'stop dopo '+P.sll+' loss':P.sll===1?'stop dopo la prima perdita':'stop dopo 2 perdite');
   if (P.lossR) a.push((short?'max ':'perdita massima ')+'−'+fmtN(P.lossR,1)+' R');
+  if (P.uno) a.push(short?'uno alla volta':'un trade alla volta');
   return a.join(short?' · ':', '); }
 const saveCfg = () => store.set('cfg', JSON.stringify(CFG));
 let USER = CFG.name.trim() || 'trader';
@@ -558,27 +558,53 @@ const emptyState = (t, p, btn) => '<div class="card empty rise">'+logo(40)+'<div
 // filtro mercati: elenco (vuoto = tutti); i filtri salvati prima erano un solo mercato in testo
 const fAs = F => Array.isArray(F.asset) ? F.asset : (F.asset ? [F.asset] : []);
 const FILT_DEF = f => { if ((f||S.file)==='Journal') return { asset:[], plan:'', tgt:2, idea:[] };
-  const P=PL(), day=P.maxN||P.sw||P.sll||P.lossR;
-  return { asset:P.asset.length<L.asset.length?P.asset.slice():[], plan:day?'max2':'', tgt:P.g.k==='T' && Number.isInteger(P.g.t)?P.g.t:2, idea:P.idee.length<L.idea.length?P.idee.slice():[] }; };
+  const P=PL(), day=P.maxN||P.sw||P.sll||P.lossR||P.uno||P.dir||P.smt||P.lvn||P.clean||P.cc2||P.news||P.pb.length||P.bande.length<L.bands.length||P.giorni.length<L.days.length;
+  return { asset:P.asset.length<L.asset.length?P.asset.slice():[], plan:day?'max2':'', tgt:P.g.k==='T' && !P.g.be && Number.isInteger(P.g.t)?P.g.t:'P', idea:P.idee.length<L.idea.length?P.idee.slice():[] }; };
 function loadFilt() { let v=null; try { v=JSON.parse(sessionStorage.getItem('tj.filtBy2')||'null'); } catch(e) {}
   return v && v.EOW && v.Journal ? v : { EOW:FILT_DEF('EOW'), Journal:FILT_DEF('Journal') }; }
 const saveFilt = () => { S.filtBy[S.file]=S.filt; try { sessionStorage.setItem('tj.filtBy2', JSON.stringify(S.filtBy)); } catch(e) {} };
-const tgt = () => S.type==='EOW' ? (+S.filt.tgt || 2) : 2;
-const curModel = () => model(tgt());
-function plan(ts, rOf, P) { // regole del giorno del piano: trade al giorno, stop dopo il primo trade in profitto, dopo le perdite, perdita massima
-  P=P||PL(); const out=[]; let day='', n=0, stop=false, ls=0, R=0;
-  ts.forEach(t=>{ const k=t.d.toDateString(); if (k!==day){ day=k; n=0; stop=false; ls=0; R=0; }
-    if (stop || (P.maxN && n>=P.maxN) || (P.sll && ls>=P.sll) || (P.lossR && R<=-P.lossR+1e-9)) return;
-    out.push(t); n++; const r=rOf(t); R+=r; if (r<0) ls++; if (P.sw && r>0) stop=true; });
-  return out;
+// Esito dei trade dell'EOW: a un target fisso (1–5R) oppure con le uscite del piano (tgt 'P': target, stop a BE o parziali,
+// calcolati come in Ottimizza dal Max Real RR e dal percorso scritto nelle note).
+const tgtP = () => S.type==='EOW' && S.filt.tgt==='P';
+const tgt = () => { if (S.type!=='EOW') return 2; if (S.filt.tgt==='P') { const g=PL().g; return Math.max(1, Math.min(5, Math.round(g.k==='T'?g.t:g.t1))); } return +S.filt.tgt || 2; };
+const tgtTxt = () => tgtP() ? mgTxt(PL().g, true) : tgt()+'R';
+const planX = t => t._x || (t._x={ t, mx:isFinite(t.max)?t.max:t.best, day:iso(t.d), band:bandOf(t), pb:String(t.raw['Candele PB']??'').trim() });
+function planModel() { const g=PL().g, r=t=>optR(null, planX(t), g); return { rOf:r, isWin:t=>r(t)>0, isLoss:t=>r(t)<0 }; }
+const curModel = () => tgtP() ? planModel() : model(tgt());
+// Quanto dura un trade prima che se ne conosca l'esito (minuti dall'ingresso). Journal: fino all'ora di uscita. EOW: il tempo per
+// arrivare al target (Holding time del livello); chi perde non ha un orario: dall'ultimo livello toccato allo stop a R_MIN minuti
+// per R (nei dati 1R si fa in 3 minuti di mediana, 2R in 10). g = gestione ({k:'T',t,be?} o {k:'P',t1,s,t2}).
+const R_MIN = 5;
+function tradeDur(t, r, g) {
+  if (isFinite(t.hold)) return Math.max(0, t.hold);
+  g=g||{ k:'T', t:2 }; const h=t.h||[];
+  const lv=x=>{ const c=Math.min(5,Math.ceil(x-1e-9)), f=Math.min(5,Math.floor(x+1e-9)); return isFinite(h[c-1]) ? h[c-1] : f>=1 && isFinite(h[f-1]) ? h[f-1]+R_MIN*(x-f) : R_MIN*2*x; };
+  if (g.k==='P') { if (r>0) return lv(g.t1); }
+  else if (r>=g.t-1e-9) return lv(g.t);
+  else if (r===0 && g.be) return lv(g.be)+R_MIN*g.be;
+  const last=isFinite(t.best) ? Math.max(0, Math.min(5, t.best)) : 0;
+  return (last>0 && isFinite(h[last-1]) ? h[last-1] : R_MIN*2*last)+R_MIN*(last+1);
 }
+// Regole del giorno del piano senza «senno di poi»: trade al giorno, stop dopo il primo trade in profitto, dopo le perdite, perdita
+// massima, un trade alla volta. Le regole che dipendono dall'esito reagiscono solo ai trade già chiusi all'ora del nuovo ingresso:
+// se ES e NQ entrano insieme e il primo va a target, il secondo era già dentro e conta. Restituisce take(t, r, g) → preso sì/no;
+// i trade vanno passati in ordine di data e ora.
+function dayRules(P) { P=P||PL(); let day='', n=0, stop=false, ls=0, R=0, open=[];
+  return (t, r, g) => { const k=t.d.toDateString(), o=t.o;
+    if (k!==day) { day=k; n=0; stop=false; ls=0; R=0; open=[]; }
+    open=open.filter(x=>{ if (isFinite(o) && x.at>o) return true; R+=x.r; if (x.r<0) ls++; if (P.sw && x.r>0) stop=true; return false; });
+    if (stop || (P.maxN && n>=P.maxN) || (P.sll && ls>=P.sll) || (P.lossR && R<=-P.lossR+1e-9) || (P.uno && open.length)) return false;
+    n++; open.push({ at:isFinite(o) ? o+tradeDur(t,r,g) : -1, r }); return true; }; }
+function plan(ts, rOf, P, g) { const take=dayRules(P); return ts.filter(t=>take(t, rOf(t), g)); }
 function filtered(m, noPer) {
   const F=S.filt; m=m||curModel();
   let ts=all().filter(t=>
     (!fAs(F).length||fAs(F).includes(t.a)) && (!(F.idea&&F.idea.length)||F.idea.includes(t.idea)) && (!(F.smt&&F.smt.length)||F.smt.includes(t.smt)) &&
     (!F.lvn||t.lvn===F.lvn) && (!F.clean||(F.clean==='Sì')===t.clean) && (!F.band||bandOf(t)===F.band) && (!F.dir||t.dir===F.dir));
   if (!noPer && S.per!=='all') ts=inRange(ts, periodRange(S.per,0));
-  if (F.plan==='max2') ts=plan(ts, m.rOf);
+  if (F.plan==='max2') {   // il piano: condizioni, orari e giorni (solo EOW; mercati e idee hanno i loro filtri), poi le regole del giorno
+    if (S.type==='EOW') { const Pc=Object.assign({}, PL(), { asset:L.asset, idee:L.idea }); ts=ts.filter(t=>optPass(Pc, planX(t))); }
+    ts=plan(ts, m.rOf, null, tgtP() ? PL().g : { k:'T', t:tgt() }); }
   return ts;
 }
 // il periodo è lo stesso ovunque: la barra Sett./Mese/3M/Anno/Tutto della Panoramica e il «Periodo» dei filtri
@@ -587,10 +613,11 @@ function perLabel() { const now=new Date(), cr=S.per==='c'?periodRange('c',0):nu
     c: cr && cr[0].getFullYear()>2000 ? fmtIt(iso(cr[0]))+' → '+fmtIt(iso(addDays(cr[1],-1))) : 'Date da scegliere' }[S.per]; }
 function setPer(v) { S.per=v; store.set('per',v); }
 function activeFilters() { const F=S.filt, a=[];
-  if (F.plan==='max2') a.push({k:'plan', l:'Piano', t:'Regole del giorno del piano: '+dayRuleTxt(null,true)});   // t: il testo intero (tooltip e Claude)
+  if (F.plan==='max2') a.push({k:'plan', l:'Piano', t:'Regole del piano (condizioni, orari, regole del giorno): '+dayRuleTxt(null,true)});   // t: il testo intero (tooltip e Claude)
   if (fAs(F).length) a.push({k:'asset', l:mkList(fAs(F))});
   if (F.dir) a.push({k:'dir', l:F.dir});
-  if (S.type==='EOW' && tgt()!==2) a.push({k:'tgt', l:'Target '+tgt()+'R'});
+  if (tgtP()) a.push({k:'tgt', l:'Uscite del piano', t:'Esito con le uscite del piano: '+mgTxt(PL().g)});
+  else if (S.type==='EOW' && tgt()!==2) a.push({k:'tgt', l:'Target '+tgt()+'R'});
   if (S.per!=='all' && S.tab!=='home' && S.tab!=='cal') a.push({k:'per', l:perLabel()});   // in Panoramica c'è già la barra del periodo
   if (F.band) a.push({k:'band', l:F.band}); if (F.lvn) a.push({k:'lvn', l:'LVN '+(F.lvn==='Si'?'sì':'no')});
   if (F.clean) a.push({k:'clean', l:'1m clean '+F.clean.toLowerCase()});
@@ -612,9 +639,10 @@ function openFilters() {
 }
 function renderFilters() {
   const F=S.filt, E=S.type==='EOW';
-  let h='<div class="fsec"><div class="field"><span class="flabel">Regole del giorno</span>'+seg('f-plan',[{v:'max2',l:'Quelle del piano'},{v:'',l:'Nessuna'}],F.plan||'')+
-        '<span class="hint">Il tuo piano: '+esc(dayRuleTxt())+'. Le cambi in Impostazioni → Il mio piano.</span></div>'+
-        (E?'<div class="field"><span class="flabel">Target (esito del trade)</span>'+seg('f-tgt',[1,2,3,4,5].map(k=>({v:k,l:k+'R'})),tgt())+'</div>':'')+'</div>';
+  let h='<div class="fsec"><div class="field"><span class="flabel">Regole del piano</span>'+seg('f-plan',[{v:'max2',l:'Quelle del piano'},{v:'',l:'Nessuna'}],F.plan||'')+
+        '<span class="hint">'+(E?'Condizioni, orari e regole del giorno del tuo piano':'Le regole del giorno del tuo piano')+': '+esc(dayRuleTxt())+'. Le cambi in Impostazioni → Il mio piano.</span></div>'+
+        (E?'<div class="field"><span class="flabel">Esito del trade</span>'+seg('f-tgt',[...[1,2,3,4,5].map(k=>({v:k,l:k+'R'})),{v:'P',l:'Piano'}],tgtP()?'P':tgt())+
+          '<span class="hint">«Piano» usa le uscite del tuo piano: '+esc(mgTxt())+'.</span></div>':'')+'</div>';
   h+='<div class="fsec"><div class="flabel">Periodo · lo stesso della barra in Panoramica</div>'+chips('quick',[{v:'all',l:'Tutto'},{v:'w',l:wkLbl()},{v:'m',l:'Questo mese'},{v:'3m',l:'Ultimi 3 mesi'},{v:'y',l:'Quest\'anno'},{v:'c',l:'Date'}],S.per).replace('class="chips"','class="chips scrollx"')+
         '<div class="g2"><div class="field"><label for="ff-from">Dal</label><input class="inp" id="ff-from" type="date" data-fk="from" value="'+esc(S.per==='c'?S.cust.from||'':'')+'"></div><div class="field"><label for="ff-to">Al</label><input class="inp" id="ff-to" type="date" data-fk="to" value="'+esc(S.per==='c'?S.cust.to||'':'')+'"></div></div></div>';
   h+='<div class="fsec"><div class="field"><span class="flabel">Asset · anche più di uno</span>'+segm('f-asset',L.asset,fAs(F))+'</div>'+
@@ -634,7 +662,7 @@ function filtClick(b) {
     F[k] = v==='' ? [] : a.includes(v) ? a.filter(x=>x!==v) : L.asset.filter(x=>x===v || a.includes(x));
     if (F[k].length===L.asset.length) F[k]=[];   // tutti accesi = Tutti
     sg.querySelectorAll('button').forEach(x=>{ const on = x.dataset.v==='' ? !F[k].length : F[k].includes(x.dataset.v); x.classList.toggle('on', on); x.setAttribute('aria-pressed', on); }); }
-  else if (sg) { const k=sg.dataset.seg.slice(2); F[k]= k==='tgt' ? +b.dataset.v : b.dataset.v; setSeg(sg,b.dataset.v); }
+  else if (sg) { const k=sg.dataset.seg.slice(2); F[k]= k==='tgt' ? (b.dataset.v==='P' ? 'P' : +b.dataset.v) : b.dataset.v; setSeg(sg,b.dataset.v); }
   else if (ch) { const k=ch.dataset.chips, v=b.dataset.v;
     if (k==='quick') { setPer(v); renderFilters(); renderCurrent(true); return; }
     if (ch.dataset.multi) { const f=k.slice(2), a=f==='asset'?fAs(F):(F[f]||[]); F[f]=a.includes(v)?a.filter(x=>x!==v):[...a,v]; b.classList.toggle('on'); }
@@ -644,4 +672,4 @@ function filtClick(b) {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['core.js'] = '2026-11-08.3';
+EB_V['core.js'] = '2026-11-09.1';
