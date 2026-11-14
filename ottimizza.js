@@ -510,4 +510,4 @@ function optCtx() { const O=optAll(); if (!O) return 'servono almeno 6 settimane
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['ottimizza.js'] = '2026-11-09.1';
+EB_V['ottimizza.js'] = '2026-11-14.1';

@@ -379,24 +379,40 @@ function revPlanCard(wk, a) {
       : '<p class="mut">Nessun trade di questa settimana rispetta il piano.</p>')+'</div>';
 }
 
-// recap animato di fine settimana (tutti i mercati fatti): risultato di tutti i trade e con le regole del piano, mercati,
-// giorni con news e R, miglior trade; i trade del piano di ogni mercato si aprono a richiesta
+// recap di fine settimana (tutti i mercati fatti), minimal (richiesta dell'utente: «confusionale»): un numero grande = la
+// settimana col tuo piano (i suoi mercati e le sue regole, come il Calendario), accanto tutti i trade con la stessa uscita
+// e una frase su cosa hanno fatto le regole; poi i giorni (barre su e giù dallo zero) e ogni mercato da solo col piano.
+// Tutto con l'uscita del piano, così l'unica differenza tra i due numeri sono le regole.
 function revRecap(wk, mks) {
-  const m=curModel(), days=revDays(wk), ts=all().filter(t=>mks.includes(revAsset(t)) && weekOf(iso(t.d))===wk);
-  const Rall=ts.reduce((s,t)=>s+m.rOf(t),0), wins=ts.filter(t=>m.isWin(t)).length, pls=mks.map(a=>[a,revPlan(wk,[a])]), Rpl=pls.reduce((s,x)=>s+x[1].R,0);
-  const per=mks.map(a=>{ const g=ts.filter(t=>revAsset(t)===a); return { a, n:g.length, w:g.filter(t=>m.isWin(t)).length, R:g.reduce((s,t)=>s+m.rOf(t),0), P:pls.find(x=>x[0]===a)[1] }; });
-  const mx=Math.max(1, ...per.map(x=>Math.abs(x.R)), ...per.map(x=>Math.abs(x.P.R)));
-  const dR=days.map(d=>{ const g=ts.filter(t=>iso(t.d)===d); return { d, n:g.length, R:g.reduce((s,t)=>s+m.rOf(t),0), c:newsCatSrc(d).c }; }), dm=Math.max(1, ...dR.map(x=>Math.abs(x.R)));
-  const best=ts.slice().sort((x,y)=>m.rOf(y)-m.rOf(x) || (y.max||0)-(x.max||0))[0], wr=ts.length?wins/ts.length:0, wd=['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
-  const bar=(v,cls)=>'<i class="rc-bar '+cls+' '+sgn(v)+'" style="--w:'+Math.max(3,Math.abs(v)/mx*100)+'%"></i>';
-  return '<div class="card rc rise"><div class="rc-glow"></div><div class="rc-top"><span class="rc-badge">'+ic('check',18,2.6)+'</span><div><div class="eyebrow">Recap · '+mkList(mks)+'</div><div class="rc-t">Settimana '+wkLbl2(wk)+'</div></div></div>'+
-    '<div class="rc-big"><div><b class="'+sgn(Rall)+'">'+numEl(Rall,1,true)+' R</b><span>tutti i trade · '+ts.length+' trade · '+esc(tgtTxt())+'</span></div>'+
-      '<div><b class="'+sgn(Rpl)+'">'+numEl(Rpl,1,true)+' R</b><span>con le regole del piano · '+pls.reduce((s,x)=>s+x[1].ts.length,0)+' trade</span></div>'+
-      '<div class="rc-ring" style="--p:'+(wr*100).toFixed(0)+'"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15.9"/><circle class="v" cx="18" cy="18" r="15.9" pathLength="100"/></svg><b>'+numEl(wr*100,0)+'%</b><span>vincenti</span></div></div>'+
-    '<div class="rc-sec">Mercati</div><div class="rc-mk">'+per.map((x,i)=>'<div style="--k:'+i+'"><span class="rc-a">'+x.a+'</span><div class="rc-bars"><div>'+bar(x.R,'all')+'<em>'+fmtRc(x.R,1)+' · '+x.n+' trade</em></div><div>'+bar(x.P.R,'pl')+'<em>'+fmtRc(x.P.R,1)+' col piano · '+x.P.ts.length+'</em></div></div></div>').join('')+'</div>'+
-    '<div class="rc-sec">Giorni</div><div class="rc-days">'+dR.map((x,i)=>'<div style="--k:'+i+'"><div class="rc-col"><i class="'+sgn(x.R)+'" style="--h:'+(x.n?Math.max(6,Math.abs(x.R)/dm*100):0)+'%"></i></div><b class="'+sgn(x.R)+'">'+(x.n?fmtRc(x.R,1):'–')+'</b><span>'+wd[pdIso(x.d).getDay()]+'</span>'+(x.c?'<em class="rvd-n '+(catCls(x.c)||'ok')+'" title="'+esc(x.c)+'"></em>':'')+'</div>').join('')+'</div>'+
-    (best && m.rOf(best)>0 ? '<div class="rc-best">'+ic('target',16,2.2)+'<span>Miglior trade</span><b>'+esc(best.a)+' · '+wd[best.d.getDay()]+' '+best.d.getDate()+' · '+esc(String(best.raw.Ora).slice(0,5))+' · '+esc(best.idea||'')+'</b><em class="pos">'+fmtRc(m.rOf(best),1)+'</em></div>' : '')+
-    '<details class="rvn-more rc-pl"><summary>'+ic('chev',15,2.4)+'Trade presi con le regole del piano</summary>'+mks.map(a=>revPlanCard(wk, a)).join('')+'</details></div>';
+  const P=PL(), pm=(P.asset.length?P.asset:mks).filter(a=>L.asset.includes(a)), days=revDays(wk), wd=['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
+  const rOf=t=>optR(null, planX(t), P.g), ok=t=>isFinite(isFinite(t.max)?t.max:t.best);
+  const ts=all().filter(t=>t.d && mks.includes(revAsset(t)) && weekOf(iso(t.d))===wk && ok(t)), Rall=ts.reduce((s,t)=>s+rOf(t),0);
+  const pl=revPlan(wk, pm), n=pl.ts.length, w=pl.ts.filter(o=>o.r>0).length, d=pl.R-Rall;
+  // cosa hanno fatto le regole: risparmiato, lasciato fuori o niente
+  const said = !ts.length ? 'Nessun trade questa settimana.' : Math.abs(d)<.05 ? 'Le regole del piano non hanno cambiato il risultato.'
+    : d>0 ? 'Le regole del piano ti hanno risparmiato <b class="pos">'+fmtRc(d,1)+'</b>.' : 'Le regole del piano hanno lasciato fuori <b class="neg">'+fmtRc(-d,1).replace('+','')+'</b>.';
+  // giorni: R col piano, barra su (verde) o giù (rossa) dallo zero, news del giorno scritta sotto
+  const dR=days.map(x=>{ const g=pl.ts.filter(o=>iso(o.t.d)===x); return { d:x, n:g.length, R:g.reduce((s,o)=>s+o.r,0), c:newsCatSrc(x).c }; });
+  // zero proporzionale: solo guadagni → zero in fondo (o a sinistra); guadagni e perdite → lo spazio si divide in proporzione
+  const axis=v=>{ const up=Math.max(0,...v), dn=Math.max(0,...v.map(x=>-x)), t=Math.max(1e-9, up+dn); return { z:dn/t*100, k:(up||dn)?100/t:0 }; }, ad=axis(dR.filter(x=>x.n).map(x=>x.R));
+  // mercati: ognuno da solo con le regole del piano (scelta dell'utente), barra a destra o a sinistra dello zero
+  const per=mks.map(a=>{ const g=ts.filter(t=>revAsset(t)===a), q=revPlan(wk,[a]); return { a, n:g.length, R:g.reduce((s,t)=>s+rOf(t),0), pn:q.ts.length, pR:q.R }; });
+  const am=axis(per.filter(x=>x.pn).map(x=>x.pR));
+  const best=pl.ts.slice().sort((x,y)=>y.r-x.r)[0];
+  const tag=c=>c==='Red News'?'<em class="rc-n hi">Red</em>':c==='Orange News'?'<em class="rc-n md">Orange</em>':'<em class="rc-n"></em>';
+  return '<div class="card rc rise">'+
+    '<div class="rc-top"><span class="rc-badge">'+ic('check',16,2.8)+'</span><div><div class="eyebrow">Recap · '+mkList(mks)+'</div><div class="rc-t">Settimana '+wkLbl2(wk)+'</div></div></div>'+
+    '<div class="rc-hero"><div class="rc-main"><span class="rc-l">Col tuo piano</span><b class="'+sgn(pl.R)+'">'+numEl(pl.R,1,true)+' R</b>'+
+        '<span class="rc-s">'+n+' trade · '+w+' vint'+(w===1?'o':'i')+' · '+esc(mkList(pm))+' · '+esc(mgTxt(P.g,true))+'</span></div>'+
+      '<div class="rc-alt"><span class="rc-l">Tutti i trade</span><b class="'+sgn(Rall)+'">'+numEl(Rall,1,true)+' R</b><span class="rc-s">'+ts.length+' trade</span></div>'+
+      '<p class="rc-say">'+said+'</p></div>'+
+    '<div class="rc-sec">Giorni · col piano</div><div class="rc-days" style="--z:'+ad.z+'%">'+dR.map((x,i)=>'<div style="--k:'+i+'"><div class="rc-col">'+(x.n?'<i class="'+sgn(x.R)+'" style="--h:'+Math.abs(x.R)*ad.k+'%"></i>':'')+'</div>'+
+      '<b class="'+(x.n?sgn(x.R):'')+'">'+(x.n?fmtRc(x.R,1):'–')+'</b><span>'+wd[pdIso(x.d).getDay()]+'</span>'+tag(x.c)+'</div>').join('')+'</div>'+
+    '<div class="rc-sec">Mercati · ognuno da solo col piano</div><div class="rc-mk" style="--z:'+am.z+'%">'+per.map((x,i)=>'<div style="--k:'+i+'"><span class="rc-a">'+x.a+'</span>'+
+      '<div class="rc-track">'+(x.pn?'<i class="'+sgn(x.pR)+'" style="--w:'+Math.abs(x.pR)*am.k+'%"></i>':'')+'</div>'+
+      '<b class="'+(x.pn?sgn(x.pR):'')+'">'+(x.pn?fmtRc(x.pR,1):'–')+'</b><span class="rc-of">'+x.pn+' di '+x.n+' trade</span></div>').join('')+'</div>'+
+    (best && best.r>0 ? '<div class="rc-best">'+ic('target',15,2.2)+'<span>Miglior trade</span><b>'+esc(best.t.a)+' · '+wd[best.t.d.getDay()]+' '+best.t.d.getDate()+' · '+esc(String(best.t.raw.Ora).slice(0,5))+(best.t.idea?' · '+esc(best.t.idea):'')+'</b><em class="pos">'+fmtRc(best.r,1)+'</em></div>' : '')+
+    '<details class="rvn-more rc-pl"><summary>'+ic('chev',15,2.4)+'Vedi i trade del piano</summary>'+mks.map(a=>revPlanCard(wk, a)).join('')+'</details></div>';
 }
 
 // fine di una settimana del backtest di settimane passate: trade per mercato e quelli che il piano avrebbe preso
@@ -585,4 +601,4 @@ function renderList() {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['pagine.js'] = '2026-11-09.1';
+EB_V['pagine.js'] = '2026-11-14.1';
