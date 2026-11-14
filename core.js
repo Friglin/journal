@@ -65,7 +65,9 @@ normProp();
 // Lo usano i filtri di partenza dell'EOW, la Disciplina, il riepilogo di oggi e la pagina Ottimizza; è sincronizzato tra i
 // dispositivi come rischio e conti. Gestione (g): { k:'T', t } target fisso · { k:'P', t1, s, t2 } metà a t1, stop del resto
 // spostato a s (0 = BE), resto a t2. (Lo stop a BE «quando il prezzo arriva a l» non c'è più: diventa target fisso.)
-const PLAN_MG = { T:[1,1.5,2,2.5,3,4,5], BE:[1,1.5,2], P1:[2,2.5,3], PS:[0,.5,1], P2:[3,4,5] };
+// uscite possibili: target fisso (T), con lo stop spostato a BE o in profitto quando arriva a un livello (BE → BS), stop che segue
+// il prezzo a distanza LD da quando arriva a LA, con target LT (0 = nessuno), metà a P1 con stop a +PS e resto a P2
+const PLAN_MG = { T:[1,1.5,2,2.5,3,3.5,4,4.5,5], BE:[1,1.5,2,2.5,3], BS:[0,.5,1,1.5,2], LA:[1,1.5,2,2.5,3], LD:[.5,1,1.5,2], LT:[0,3,4,5], P1:[1.5,2,2.5,3], PS:[0,.5,1,1.5], P2:[3,4,5] };
 const PLAN_PB = { '':[], '2':['1','2'], '3':['1','2','3'], '4':['1','2','3','4'] };
 function planDef() { const P=CFG.plan;   // le impostazioni di prima (asset, idee e «max 2 al giorno» dell'EOW, limite di perdita)
   return { asset: CFG.asset ? [CFG.asset] : L.asset.slice(), idee: L.idea.filter(i=>!(CFG.exIdea||[]).includes(i)), dir:'', smt:'', lvn:'', clean:'', cc2:'', news:'',
@@ -77,9 +79,10 @@ function normPiano() {
   q.pb=Array.isArray(q.pb)?L.pb.filter(x=>q.pb.includes(x)):[];
   ['dir','smt','lvn','clean','cc2','news'].forEach(k=>{ q[k]=String(q[k]||''); });
   const g=q.g||{}, has=(a,v)=>a.includes(+v);
-  q.g = g.k==='T' && has(PLAN_MG.T,g.t) ? Object.assign({ k:'T', t:+g.t }, has(PLAN_MG.BE,g.be) && +g.be<+g.t ? { be:+g.be } : {})
+  q.g = g.k==='T' && has(PLAN_MG.T,g.t) ? Object.assign({ k:'T', t:+g.t }, has(PLAN_MG.BE,g.be) && +g.be<+g.t ? Object.assign({ be:+g.be }, has(PLAN_MG.BS,g.bs) && +g.bs>0 && +g.bs<+g.be ? { bs:+g.bs } : {}) : {})
+      : g.k==='L' && has(PLAN_MG.LA,g.a) && has(PLAN_MG.LD,g.d) && has(PLAN_MG.LT,g.t||0) && (!+g.t || +g.t>+g.a) ? { k:'L', a:+g.a, d:+g.d, t:+g.t||0 }
       : g.k==='BE' && has(PLAN_MG.T,g.t) ? { k:'T', t:+g.t }
-      : g.k==='P' && has(PLAN_MG.P1,g.t1) && has(PLAN_MG.PS,g.s) && has(PLAN_MG.P2,g.t2) && +g.t2>+g.t1 ? { k:'P', t1:+g.t1, s:+g.s, t2:+g.t2 } : d.g;
+      : g.k==='P' && has(PLAN_MG.P1,g.t1) && has(PLAN_MG.PS,g.s) && +g.s<+g.t1 && has(PLAN_MG.P2,g.t2) && +g.t2>+g.t1 ? { k:'P', t1:+g.t1, s:+g.s, t2:+g.t2 } : d.g;
   q.maxN=[0,1,2,3].includes(+q.maxN)?+q.maxN:2; q.sw=q.sw?1:0; q.uno=q.uno?1:0; q.sll=[0,1,2].includes(+q.sll)?+q.sll:0;
   q.lossR=isFinite(num(q.lossR)) && num(q.lossR)>0 ? Math.min(20, num(q.lossR)) : 0; q.altro=String(q.altro||'').slice(0,600);
   CFG.piano=q; }
@@ -103,7 +106,10 @@ const planLoss = () => PL().lossR || NaN;   // limite di perdita giornaliero in 
 // gestione e regole del giorno in parole
 const fmtX = x => fmtN(x, x%1?1:0);
 function mgTxt(g, short) { g=g||PL().g;
-  if (g.k==='T') return (short?'':'target ')+fmtX(g.t)+'R'+(g.be?(short?' · BE a ':', stop a BE da ')+fmtX(g.be)+'R':'');
+  const lk=g=>g.bs ? '+'+fmtX(g.bs)+'R' : 'BE';
+  if (g.k==='T') return (short?'':'target ')+fmtX(g.t)+'R'+(g.be?(short?' · '+(g.bs?'stop '+lk(g):'BE')+' da ':', stop a '+lk(g)+' da ')+fmtX(g.be)+'R':'');
+  if (g.k==='L') return short ? 'trail '+fmtX(g.d)+'R da '+fmtX(g.a)+'R'+(g.t?' · '+fmtX(g.t)+'R':'')
+    : 'stop che segue il prezzo a '+fmtX(g.d)+'R da quando arriva a '+fmtX(g.a)+'R, '+(g.t?'target '+fmtX(g.t)+'R':'senza target');
   return 'metà a '+fmtX(g.t1)+'R, stop '+(g.s?'a +'+fmtX(g.s)+'R':'a BE')+', resto a '+fmtX(g.t2)+'R'; }
 function dayRuleTxt(P, short) { P=P||PL(); const a=[];
   a.push(P.maxN ? (short?'max '+P.maxN+' al giorno':'al massimo '+P.maxN+' trade al giorno') : (short?'nessun limite di trade':'nessun limite di trade al giorno'));
@@ -567,7 +573,7 @@ const saveFilt = () => { S.filtBy[S.file]=S.filt; try { sessionStorage.setItem('
 // Esito dei trade dell'EOW: a un target fisso (1–5R) oppure con le uscite del piano (tgt 'P': target, stop a BE o parziali,
 // calcolati come in Ottimizza dal Max Real RR e dal percorso scritto nelle note).
 const tgtP = () => S.type==='EOW' && S.filt.tgt==='P';
-const tgt = () => { if (S.type!=='EOW') return 2; if (S.filt.tgt==='P') { const g=PL().g; return Math.max(1, Math.min(5, Math.round(g.k==='T'?g.t:g.t1))); } return +S.filt.tgt || 2; };
+const tgt = () => { if (S.type!=='EOW') return 2; if (S.filt.tgt==='P') { const g=PL().g; return Math.max(1, Math.min(5, Math.round(g.k==='T'?g.t:g.k==='L'?(g.t||g.a+1):g.t1))); } return +S.filt.tgt || 2; };
 const tgtTxt = () => tgtP() ? mgTxt(PL().g, true) : tgt()+'R';
 const planX = t => t._x || (t._x={ t, mx:isFinite(t.max)?t.max:t.best, day:iso(t.d), band:bandOf(t), pb:String(t.raw['Candele PB']??'').trim() });
 function planModel() { const g=PL().g, r=t=>optR(null, planX(t), g); return { rOf:r, isWin:t=>r(t)>0, isLoss:t=>r(t)<0 }; }
@@ -581,8 +587,9 @@ function tradeDur(t, r, g) {
   g=g||{ k:'T', t:2 }; const h=t.h||[];
   const lv=x=>{ const c=Math.min(5,Math.ceil(x-1e-9)), f=Math.min(5,Math.floor(x+1e-9)); return isFinite(h[c-1]) ? h[c-1] : f>=1 && isFinite(h[f-1]) ? h[f-1]+R_MIN*(x-f) : R_MIN*2*x; };
   if (g.k==='P') { if (r>0) return lv(g.t1); }
+  else if (g.k==='L') { if (g.t && r>=g.t-1e-9) return lv(g.t); if (r>-1) { const top=Math.min(5, r+g.d); return lv(top)+R_MIN*g.d; } }
   else if (r>=g.t-1e-9) return lv(g.t);
-  else if (r===0 && g.be) return lv(g.be)+R_MIN*g.be;
+  else if (g.be && Math.abs(r-(g.bs||0))<1e-9) return lv(g.be)+R_MIN*(g.be-(g.bs||0));
   const last=isFinite(t.best) ? Math.max(0, Math.min(5, t.best)) : 0;
   return (last>0 && isFinite(h[last-1]) ? h[last-1] : R_MIN*2*last)+R_MIN*(last+1);
 }
@@ -673,4 +680,4 @@ function filtClick(b) {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['core.js'] = '2026-11-14.2';
+EB_V['core.js'] = '2026-11-14.3';
