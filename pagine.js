@@ -210,8 +210,9 @@ function noteSetHtml() { const E=rowsOf('EOW');
   let b='<p class="hint" style="margin:0 0 12px">Ottimizza legge il percorso scritto nelle note dell\'EOW («raggiunge 2.4rr, torna a 1.5rr…») per simulare stop a BE, trailing e parziali. Le regole per scriverle sono in un file da dare a Claude quando gli fai scrivere le note.</p>'+
     '<div class="pl-acts"><a class="btn sm" href="'+NOTE_RULES+'" download="regole-note.md">'+ic('book',16,2)+'Scarica le regole (.md)</a><button type="button" class="btn sec sm" data-act="notecopy">'+ic('list',16,2)+'Copia il testo</button></div>';
   if (!E) return b+'<p class="hint" style="margin:12px 0 0">Apri l\'EOW una volta per controllare le sue note.</p>';
-  const ts=E.filter(t=>String(t.raw.Note||'').trim()), bad=ts.filter(t=>!notePath(t.raw.Note));
+  const ts=E.filter(t=>String(t.raw.Note||'').trim()), bad=ts.filter(t=>!notePath(t.raw.Note)), ver=ts.filter(t=>{ const q=notePath(t.raw.Note); return q && q.chk; });
   b+='<div class="nset '+(bad.length?'bad':'ok')+'">'+ic(bad.length?'alert':'check',16,2.4)+'<span>Note dell\'EOW lette: <b>'+(ts.length-bad.length)+' su '+ts.length+'</b>'+(bad.length?' · da correggere:':'')+'</span></div>';
+  if (ver.length) b+='<div class="nset bad">'+ic('alert',16,2.4)+'<span><b>'+ver.length+'</b> '+(ver.length===1?'nota segnata':'note segnate')+' «da verificare» (grafico ed EOW non tornano): '+ver.slice(0,6).map(t=>esc(t.a)+' '+t.d.getDate()+' '+MESI[t.d.getMonth()]).join(', ')+(ver.length>6?'…':'')+'</span></div>';
   if (bad.length) b+='<div class="nbad">'+bad.slice(0,8).map(t=>{ const c=noteCheck(t.raw.Note); return '<div><b>'+esc(t.a)+' · '+t.d.getDate()+' '+MESI[t.d.getMonth()]+' · '+esc(String(t.raw.Ora||'').slice(0,5))+'</b><span>«'+esc((c.bad||'').slice(0,60))+'» · '+esc(c.why)+'</span></div>'; }).join('')+(bad.length>8?'<p class="hint">e altre '+(bad.length-8)+'.</p>':'')+'</div>';
   return b; }
 async function noteCopy() { try { const r=await fetch(NOTE_RULES, { cache:'no-cache' }); if (!r.ok) throw 0; await navigator.clipboard.writeText(await r.text()); toast('Regole delle note copiate: incollale a Claude'); }
@@ -614,4 +615,4 @@ function renderList() {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['pagine.js'] = '2026-11-14.4';
+EB_V['pagine.js'] = '2026-11-14.5';

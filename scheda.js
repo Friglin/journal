@@ -33,7 +33,7 @@ const stagger = () => $('sh-body').querySelectorAll('.fsec').forEach((el,i)=>el.
 // sotto la nota dell'EOW: se l'app la legge (Ottimizza la usa per BE, trailing e parziali) o dove sbaglia, con le regole da scaricare
 function noteChkHtml(v) { const c=noteCheck(v), rl='<a class="lnk" href="'+NOTE_RULES+'" download="regole-note.md">'+ic('ext',13,2.2)+'Regole delle note</a>';
   if (!c) return '<span class="mut">Scrivi il percorso del prezzo in R: Ottimizza lo usa per BE, trailing e parziali.</span> '+rl;
-  return c.ok ? '<span class="pos">'+ic('check',14,2.6)+'Nota letta: '+c.n+' punti, massimo '+fmtN(c.mx,1)+'R'+(c.stop?', finisce allo stop':'')+'.</span>'
+  return c.ok ? '<span class="pos">'+ic('check',14,2.6)+'Nota letta: '+c.n+' punti, massimo '+fmtN(c.mx,1)+'R'+(c.stop?', finisce allo stop':'')+'.</span>'+(c.chk?' <span class="neg">'+ic('alert',14,2.4)+'Segnata «da verificare»: grafico ed EOW non tornano.</span>':'')
     : '<span class="neg">'+ic('alert',14,2.4)+'Ottimizza non la legge: '+(c.bad?'«'+esc(c.bad.slice(0,60))+'» · ':'')+esc(c.why)+'.</span> '+rl; }
 const linksNote = (f, ph) => fld('L5',flbl('L5','Screenshot 5m · link TradingView'),fin('L5','url','https://www.tradingview.com/x/…'))+
   fld('L1',flbl('L1','Screenshot 1m · link TradingView'),fin('L1','url','https://www.tradingview.com/x/…'))+'<div class="thumbs" id="fx-th"></div>'+
@@ -447,4 +447,4 @@ if (!viaScript() && !(store.get('api','') && store.get('key',''))) showSetup(); 
 }
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['scheda.js'] = '2026-11-14.4';
+EB_V['scheda.js'] = '2026-11-14.5';

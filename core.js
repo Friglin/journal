@@ -94,20 +94,22 @@ const PL = () => CFG.piano;
 function notePath(s) {
   s=String(s||'').trim(); if (!s) return null;
   const num=t=>parseFloat(String(t).replace(',','.')), af=s.match(/oltre lo screenshot arriva a\s*(-?\d+(?:[.,]\d+)?)\s*rr/i);
-  const core=s.replace(/\(screenshot fino alle [^)]*\)/gi,'').replace(/,?\s*oltre lo screenshot arriva a [^,]*\(EOW\)/gi,'');
+  // [da verificare: …] lo aggiunge chi scrive le note quando il grafico e l'EOW non tornano: il percorso si usa lo stesso
+  const chk=/\[da verificare[^\]]*\]/i.test(s);
+  const core=s.replace(/,?\s*\[da verificare[^\]]*\]/gi,'').replace(/\(screenshot fino alle [^)]*\)/gi,'').replace(/,?\s*oltre lo screenshot arriva a [^,]*\(EOW\)/gi,'');
   const p=[0]; let stop=false, bad=0;
   core.split(',').map(x=>x.trim()).filter(Boolean).forEach(part=>{ const q=part.replace(/^poi\s+/i,'');
     if (/^(va|torna) allo stop/i.test(q)) { p.push(-1); stop=true; return; }
-    if (/^torna a BE\b/i.test(q)) { p.push(0); return; }
-    const m=q.match(/^(scende a|raggiunge|torna a|arriva a)\s+(-?\d+(?:[.,]\d+)?)\s*rr$/i); if (m) p.push(num(m[2])); else bad++; });
-  return bad || p.length<2 ? null : { p, af:af?num(af[1]):null, stop };
+    if (/^(torna|scende) a BE\b/i.test(q)) { p.push(0); return; }
+    const m=q.match(/^(scende a|raggiunge|torna a|arriva a|risale a)\s+(-?\d+(?:[.,]\d+)?)\s*rr$/i); if (m) p.push(num(m[2])); else bad++; });
+  return bad || p.length<2 ? null : { p, af:af?num(af[1]):null, stop, chk };
 }
 // controllo di una nota per chi la scrive: il primo pezzo che non si legge (con le regole di regole-note.md), oppure i punti letti
 function noteCheck(s) { s=String(s||'').trim(); if (!s) return null;
-  const P=notePath(s); if (P) return { ok:true, n:P.p.length-1, mx:Math.max(...P.p, P.af||0), stop:P.stop };
-  const core=s.replace(/\(screenshot fino alle [^)]*\)/gi,'').replace(/,?\s*oltre lo screenshot arriva a [^,]*\(EOW\)/gi,'');
+  const P=notePath(s); if (P) return { ok:true, n:P.p.length-1, mx:Math.max(...P.p, P.af||0), stop:P.stop, chk:P.chk };
+  const core=s.replace(/,?\s*\[da verificare[^\]]*\]/gi,'').replace(/\(screenshot fino alle [^)]*\)/gi,'').replace(/,?\s*oltre lo screenshot arriva a [^,]*\(EOW\)/gi,'');
   const bad=core.split(',').map(x=>x.trim()).filter(Boolean).find(part=>{ const q=part.replace(/^poi\s+/i,'');
-    return !(/^(va|torna) allo stop/i.test(q) || /^torna a BE\b/i.test(q) || /^(scende a|raggiunge|torna a|arriva a)\s+(-?\d+(?:[.,]\d+)?)\s*rr$/i.test(q)); });
+    return !(/^(va|torna) allo stop/i.test(q) || /^(torna|scende) a BE\b/i.test(q) || /^(scende a|raggiunge|torna a|arriva a|risale a)\s+(-?\d+(?:[.,]\d+)?)\s*rr$/i.test(q)); });
   const why = !bad ? 'manca il percorso' : /\d,\d+\s*rr/i.test(s) && (/\d$/.test(bad) || /^\d/.test(bad)) ? 'i decimali vanno col punto (1.5rr, non 1,5rr)' : /−/.test(bad) ? 'usa il trattino - per i numeri negativi, non −'
     : /\d\s*r(?!r)/i.test(bad) || /\dR\b/.test(bad) ? 'dopo il numero va «rr»' : 'frase non prevista';
   return { ok:false, bad:bad||'', why }; }
@@ -690,4 +692,4 @@ function filtClick(b) {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['core.js'] = '2026-11-14.4';
+EB_V['core.js'] = '2026-11-14.5';
