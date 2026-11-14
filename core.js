@@ -319,7 +319,7 @@ const fmtTick = t => fmtN(t, Number.isInteger(t)?0:1, false);
 let uid=0;
 function lineChart(el, pts, o={}) {
   const W=el.clientWidth||320, H=o.h||190, ax=o.axes!==false, padL=ax?36:0, padR=ax?10:0, padT=14, padB=ax?24:2;
-  const ys=pts.map(p=>p.y); let lo=Math.min(0,...ys), hi=Math.max(0,...ys); if (hi-lo<1) { hi+=.5; lo-=.5; }
+  const ys=pts.map(p=>p.y).concat(o.ref||[]); let lo=Math.min(0,...ys), hi=Math.max(0,...ys); if (hi-lo<1) { hi+=.5; lo-=.5; }
   let tk=[]; if (ax) { tk=ticks(lo,hi,4); lo=Math.min(lo,tk[0]); hi=Math.max(hi,tk[tk.length-1]); } else { const s=hi-lo; lo-=s*.12; hi+=s*.12; }
   const n=pts.length, x=i=> padL + (n<2 ? (W-padL-padR)/2 : i*(W-padL-padR)/(n-1)), y=v=> padT + (hi-v)*(H-padT-padB)/(hi-lo);
   const d=pts.map((p,i)=>(i?'L':'M')+x(i).toFixed(1)+' '+y(p.y).toFixed(1)).join(' ');
@@ -331,6 +331,7 @@ function lineChart(el, pts, o={}) {
   el.innerHTML = '<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(o.aria||'Curva dei risultati in R')+'">'+
     '<defs><linearGradient id="'+id+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--accent);stop-opacity:.24"/><stop offset="1" style="stop-color:var(--accent);stop-opacity:0"/></linearGradient></defs>'+g+
     '<path class="area" fill="url(#'+id+')" d="'+d+' L'+x(n-1).toFixed(1)+' '+base+' L'+x(0).toFixed(1)+' '+base+' Z"/>'+
+    (o.ref ? '<path class="line ref" d="'+o.ref.map((v,i)=>(i?'L':'M')+x(i).toFixed(1)+' '+y(v).toFixed(1)).join(' ')+'"/>' : '')+
     '<path class="line" pathLength="1" d="'+d+'"/><circle class="endpt" r="4.5" cx="'+x(n-1)+'" cy="'+y(pts[n-1].y)+'"/>'+
     '<g class="xh" opacity="0"><line y1="'+padT+'" y2="'+(H-padB)+'"/><circle r="5"/></g></svg><div class="tip"></div>';
   const svg=el.querySelector('svg'), xh=el.querySelector('.xh'), tip=el.querySelector('.tip');
@@ -672,4 +673,4 @@ function filtClick(b) {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['core.js'] = '2026-11-14.1';
+EB_V['core.js'] = '2026-11-14.2';
