@@ -102,6 +102,16 @@ function notePath(s) {
     const m=q.match(/^(scende a|raggiunge|torna a|arriva a)\s+(-?\d+(?:[.,]\d+)?)\s*rr$/i); if (m) p.push(num(m[2])); else bad++; });
   return bad || p.length<2 ? null : { p, af:af?num(af[1]):null, stop };
 }
+// controllo di una nota per chi la scrive: il primo pezzo che non si legge (con le regole di regole-note.md), oppure i punti letti
+function noteCheck(s) { s=String(s||'').trim(); if (!s) return null;
+  const P=notePath(s); if (P) return { ok:true, n:P.p.length-1, mx:Math.max(...P.p, P.af||0), stop:P.stop };
+  const core=s.replace(/\(screenshot fino alle [^)]*\)/gi,'').replace(/,?\s*oltre lo screenshot arriva a [^,]*\(EOW\)/gi,'');
+  const bad=core.split(',').map(x=>x.trim()).filter(Boolean).find(part=>{ const q=part.replace(/^poi\s+/i,'');
+    return !(/^(va|torna) allo stop/i.test(q) || /^torna a BE\b/i.test(q) || /^(scende a|raggiunge|torna a|arriva a)\s+(-?\d+(?:[.,]\d+)?)\s*rr$/i.test(q)); });
+  const why = !bad ? 'manca il percorso' : /\d,\d+\s*rr/i.test(s) && (/\d$/.test(bad) || /^\d/.test(bad)) ? 'i decimali vanno col punto (1.5rr, non 1,5rr)' : /−/.test(bad) ? 'usa il trattino - per i numeri negativi, non −'
+    : /\d\s*r(?!r)/i.test(bad) || /\dR\b/.test(bad) ? 'dopo il numero va «rr»' : 'frase non prevista';
+  return { ok:false, bad:bad||'', why }; }
+const NOTE_RULES = 'regole-note.md';
 const planLoss = () => PL().lossR || NaN;   // limite di perdita giornaliero in R (NaN = nessuno)
 // gestione e regole del giorno in parole
 const fmtX = x => fmtN(x, x%1?1:0);
@@ -680,4 +690,4 @@ function filtClick(b) {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['core.js'] = '2026-11-14.3';
+EB_V['core.js'] = '2026-11-14.4';

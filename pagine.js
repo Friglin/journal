@@ -197,12 +197,25 @@ function renderSet() {
      '<div class="pl-acts"><button type="button" class="btn sm" data-act="planedit">'+ic('gear',16,2)+'Modifica il piano</button><button type="button" class="btn sec sm" data-nav="opt">'+ic('target',16,2)+'Ottimizza</button></div>'+
      '<p class="hint" style="margin:12px 0 8px">L\'EOW si apre con mercati, setup e regole del giorno del piano. Disciplina e riepilogo di oggi usano le sue regole del giorno.</p>'+
      '<button type="button" class="btn sec sm" data-act="cfgapply">Applica subito ai filtri dell\'EOW</button>',100);
+  h+=sec('Note dei trade','come scriverle',noteSetHtml(),130);
   h+=sec('Checklist pre-sessione','una voce per riga',fld2('','<textarea class="inp" rows="6" data-cfg="check">'+esc(C.check.join('\n'))+'</textarea>','Compare nella Panoramica finché la sessione è aperta e si azzera ogni giorno.'),160);
   h+=sec('Collegamento','',(viaScript()?'<p class="mut">L\'app gira dentro Apps Script: nessun indirizzo da impostare.</p>':
      '<p class="mut" style="margin:0 0 12px">Collegata a <b>…'+esc(store.get('api','').slice(-24))+'</b></p><button type="button" class="btn sec sm" data-act="setup">Cambia indirizzo e chiave</button>')+
      ' <button type="button" class="btn sec sm" data-act="cacheclear">Svuota i dati salvati</button>',190);
   enter(el,h);
 }
+// sezione Note dei trade: le regole di scrittura (file .md da scaricare o copiare, per Claude in un'altra sessione) e il controllo
+// delle note dell'EOW: quante si leggono e quali no
+function noteSetHtml() { const E=rowsOf('EOW');
+  let b='<p class="hint" style="margin:0 0 12px">Ottimizza legge il percorso scritto nelle note dell\'EOW («raggiunge 2.4rr, torna a 1.5rr…») per simulare stop a BE, trailing e parziali. Le regole per scriverle sono in un file da dare a Claude quando gli fai scrivere le note.</p>'+
+    '<div class="pl-acts"><a class="btn sm" href="'+NOTE_RULES+'" download="regole-note.md">'+ic('book',16,2)+'Scarica le regole (.md)</a><button type="button" class="btn sec sm" data-act="notecopy">'+ic('list',16,2)+'Copia il testo</button></div>';
+  if (!E) return b+'<p class="hint" style="margin:12px 0 0">Apri l\'EOW una volta per controllare le sue note.</p>';
+  const ts=E.filter(t=>String(t.raw.Note||'').trim()), bad=ts.filter(t=>!notePath(t.raw.Note));
+  b+='<div class="nset '+(bad.length?'bad':'ok')+'">'+ic(bad.length?'alert':'check',16,2.4)+'<span>Note dell\'EOW lette: <b>'+(ts.length-bad.length)+' su '+ts.length+'</b>'+(bad.length?' · da correggere:':'')+'</span></div>';
+  if (bad.length) b+='<div class="nbad">'+bad.slice(0,8).map(t=>{ const c=noteCheck(t.raw.Note); return '<div><b>'+esc(t.a)+' · '+t.d.getDate()+' '+MESI[t.d.getMonth()]+' · '+esc(String(t.raw.Ora||'').slice(0,5))+'</b><span>«'+esc((c.bad||'').slice(0,60))+'» · '+esc(c.why)+'</span></div>'; }).join('')+(bad.length>8?'<p class="hint">e altre '+(bad.length-8)+'.</p>':'')+'</div>';
+  return b; }
+async function noteCopy() { try { const r=await fetch(NOTE_RULES, { cache:'no-cache' }); if (!r.ok) throw 0; await navigator.clipboard.writeText(await r.text()); toast('Regole delle note copiate: incollale a Claude'); }
+  catch(e) { toast('Non riesco a copiarle: usa «Scarica le regole»', true); } }
 // sezione Prop firm: rischio a conto, conti in copy trading con le loro date e i payout ricevuti
 function propSet(fld2) {
   const P=CFG.prop, k=riskUsd(), n=nAcc();
@@ -601,4 +614,4 @@ function renderList() {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['pagine.js'] = '2026-11-14.3';
+EB_V['pagine.js'] = '2026-11-14.4';

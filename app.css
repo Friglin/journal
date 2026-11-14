@@ -1402,7 +1402,7 @@ nav.bar button:active .pill { transform:scale(.88); }
 @media (max-width:520px) { .rvp-w { grid-template-columns:24px minmax(0,1fr); } .rvp-n { grid-column:2; justify-content:flex-start; } }
 
 /* versione del foglio di stile (la scrive tools/build.py): index.html controlla che sia uguale a BUILD */
-:root { --eb-build: "2026-11-14.3"; }
+:root { --eb-build: "2026-11-14.4"; }
 /* Ottimizza · uscita dal trade (dalle note) */
 .op-ex { display:flex; flex-direction:column; gap:14px; }
 .op-xv { display:flex; gap:12px; align-items:flex-start; padding:12px 14px; border-radius:16px; background:var(--sunk); animation:rise 420ms 120ms cubic-bezier(.23,1,.32,1) both; }
@@ -1443,3 +1443,12 @@ nav.bar button:active .pill { transform:scale(.88); }
 .op-pbr small { color:var(--fg3); font-size:11px; margin-left:4px; }
 .op-pbh { font-size:11px; color:var(--fg3); font-weight:600; } .op-pbh span:not(:first-child) { text-align:right; }
 @media (max-width:560px) { .op-xr { grid-template-columns:minmax(0,1fr) 46px 52px 46px; gap:6px; padding:9px 10px; font-size:13px; } .op-x3, .op-xd { display:none; } .op-xb { padding:4px 9px !important; } .op-xr { grid-template-columns:minmax(0,1fr) 42px 50px 44px; } }
+/* note dei trade: controllo sotto il campo e nelle Impostazioni */
+.nchk { font-size:12.5px; line-height:1.45; margin-top:-4px; display:flex; flex-wrap:wrap; gap:4px 10px; align-items:center; }
+.nchk > span { display:inline-flex; gap:5px; align-items:flex-start; } .nchk .ic { flex:none; margin-top:2px; }
+.nchk .pos { color:var(--win); } .nchk .neg { color:var(--loss); }
+.nchk .lnk, .set .pl-acts a.btn { text-decoration:none; }
+.nset { display:flex; gap:8px; align-items:center; margin-top:14px; padding:10px 12px; border-radius:12px; font-size:13.5px; background:var(--sunk); }
+.nset.ok .ic { color:var(--win); } .nset.bad .ic { color:var(--loss); }
+.nbad { display:flex; flex-direction:column; gap:6px; margin-top:8px; font-size:12.5px; }
+.nbad > div { display:flex; flex-direction:column; padding:8px 12px; border-radius:10px; border:1px solid var(--line); } .nbad span { color:var(--fg2); word-break:break-word; }

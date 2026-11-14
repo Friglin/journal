@@ -30,6 +30,11 @@ const fld = (k, lbl, inner) => '<div class="field" data-f="'+k+'">'+lbl+inner+fe
 const flbl = (k, t) => '<label for="fi-'+k+'">'+t+'</label>', fspan = t => '<span class="flabel">'+t+'</span>';
 const fnum = (k, lbl, ph) => fld(k, flbl(k,lbl), fin(k,'text',ph||'',"inputmode='decimal' autocomplete='off' enterkeyhint='next'"));
 const stagger = () => $('sh-body').querySelectorAll('.fsec').forEach((el,i)=>el.style.setProperty('--k', i));
+// sotto la nota dell'EOW: se l'app la legge (Ottimizza la usa per BE, trailing e parziali) o dove sbaglia, con le regole da scaricare
+function noteChkHtml(v) { const c=noteCheck(v), rl='<a class="lnk" href="'+NOTE_RULES+'" download="regole-note.md">'+ic('ext',13,2.2)+'Regole delle note</a>';
+  if (!c) return '<span class="mut">Scrivi il percorso del prezzo in R: Ottimizza lo usa per BE, trailing e parziali.</span> '+rl;
+  return c.ok ? '<span class="pos">'+ic('check',14,2.6)+'Nota letta: '+c.n+' punti, massimo '+fmtN(c.mx,1)+'R'+(c.stop?', finisce allo stop':'')+'.</span>'
+    : '<span class="neg">'+ic('alert',14,2.4)+'Ottimizza non la legge: '+(c.bad?'«'+esc(c.bad.slice(0,60))+'» · ':'')+esc(c.why)+'.</span> '+rl; }
 const linksNote = (f, ph) => fld('L5',flbl('L5','Screenshot 5m · link TradingView'),fin('L5','url','https://www.tradingview.com/x/…'))+
   fld('L1',flbl('L1','Screenshot 1m · link TradingView'),fin('L1','url','https://www.tradingview.com/x/…'))+'<div class="thumbs" id="fx-th"></div>'+
   '<div class="field"><label for="fi-Note">Note (facoltative)</label><textarea class="inp" id="fi-Note" data-k="Note" placeholder="'+esc(ph)+'">'+esc(f.Note||'')+'</textarea></div>';
@@ -62,7 +67,7 @@ function renderForm() {
     h+='<div class="fsec"><div class="fsec-h"><div class="h2">Livelli raggiunti</div><span class="mut" style="font-size:12.5px">ora in cui li hai toccati</span></div><div id="fx-lv" style="display:flex;flex-direction:column;gap:12px"></div></div>';
     h+='<div class="fsec"><div class="fsec-h"><div class="h2">Dettagli</div></div>'+fld('PB',fspan('Candele di pullback'),chips('PB',L.pb,f.PB))+
       (hasCol('2° CC')?fld('CC2',fspan('2° CC'),seg('CC2',[{v:'Si',l:'Sì'},'No'],f.CC2||'No')):'')+
-      linksNote(f, 'Es. raggiunge 2,4R, torna a 1,5R, poi 4R')+'</div>';
+      linksNote(f, 'Es. scende a -0.3rr, raggiunge 2.4rr, torna a 1.5rr, poi raggiunge 4rr (screenshot fino alle 16:44)')+'<div class="nchk" id="fi-NoteChk">'+noteChkHtml(f.Note)+'</div></div>';
   } else {
     h+='<div class="fsec"><div class="fsec-h"><div class="h2">Uscita</div></div><div id="fx-tp"></div>'+
       fld('pnl',flbl('pnl','PnL su un conto ($) · facoltativo'),fin('pnl','text','es. 410 · vuoto = RR × rischio',"inputmode='decimal' autocomplete='off'")+'<div class="hint" id="pnl-x"></div>')+'</div>';
@@ -333,6 +338,7 @@ document.addEventListener('click', e => {
   if (b.closest('[data-seg="pcfg-view"]')) { CFG.prop.view=b.dataset.v; setSeg(b.closest('[data-seg]'),b.dataset.v); propChanged(); return; }
   if (b.dataset.act==='nacc') { CFG.prop.n=Math.min(50, Math.max(1, nAcc()+(+b.dataset.d))); propChanged(true); return; }
   if (b.dataset.act==='cfgapply') { S.filtBy={ EOW:FILT_DEF('EOW'), Journal:FILT_DEF('Journal') }; S.filt=S.filtBy[S.file]; saveFilt(); toast('Filtri aggiornati'); return; }
+  if (b.dataset.act==='notecopy') { noteCopy(); return; }
   if (b.dataset.act==='cacheclear') { Object.keys(localStorage).filter(k=>/^tj\.(data\.|news)/.test(k)).forEach(k=>localStorage.removeItem(k)); toast('Dati salvati cancellati: ricarico'); setTimeout(()=>location.reload(), 900); return; }
   { const sgc=b.closest('[data-seg]');
     if (sgc && sgc.dataset.seg.indexOf('cfg-')===0) { const k=sgc.dataset.seg.slice(4); CFG[k]=b.dataset.v; setSeg(sgc,b.dataset.v); cfgChanged(k); return; } }
@@ -371,7 +377,7 @@ document.addEventListener('click', e => {
 });
 $('sh-body').addEventListener('input', e => {
   const k=e.target.dataset.k, fk=e.target.dataset.fk;
-  if (k && S.sheet==='form') { S.f[k]=e.target.value; if (k==='Data') formNewsAuto(); refresh(); }
+  if (k && S.sheet==='form') { S.f[k]=e.target.value; if (k==='Data') formNewsAuto(); if (k==='Note' && $('fi-NoteChk')) $('fi-NoteChk').innerHTML=noteChkHtml(e.target.value); refresh(); }
   if (fk && S.sheet==='filt') { S.cust[fk]=e.target.value; store.set('cust', JSON.stringify(S.cust)); if (S.per!=='c') { setPer('c'); document.querySelectorAll('#sh-body [data-chips=quick] .chip').forEach(c=>c.classList.toggle('on', c.dataset.v==='c')); } renderCurrent(true); filtFoot(); }
 });
 document.addEventListener('change', e => { const c=e.target.dataset && e.target.dataset.cfg; if (!c) return;
@@ -441,4 +447,4 @@ if (!viaScript() && !(store.get('api','') && store.get('key',''))) showSetup(); 
 }
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['scheda.js'] = '2026-11-14.3';
+EB_V['scheda.js'] = '2026-11-14.4';
