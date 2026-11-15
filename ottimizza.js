@@ -280,6 +280,11 @@ function optGreedy(B, P0, to, ok, simOf, N) {
   for (let k=0;k<4;k++) { let best=null;
     optMoves(B,P).forEach(m=>{ const v=simOf(m.P), c=optCmp(B,base,v,to,N); if (pass(c) && (!best || ord(c)>ord(best.c))) best={ m, v, c }; });
     if (!best) break; steps.push({ l:best.m.l, cat:best.m.cat, c:best.c }); P=best.m.P; base=best.v; }
+  // Dipende dal punto di partenza (caso dell'utente, 15/11/2026: lo stesso piano con o senza «niente SMT a sfavore» dava target 4R
+  // oppure target 3R + togli 14:30–15:30). Provati due rimedi, scartati perché peggiorano la prova sul passato in 4 piani su 5:
+  // chiedere probabilità ≥ 80% anche ai «forte di recente» (attivo da +0,54/+0,46/+0,17/+0,75 a +0,21/+0,08/−0,96/+0,08) e
+  // riscegliere l'uscita alla fine (nessun effetto sul caso, un po' peggio altrove). Il rimedio è dirlo: l'area Target avvisa
+  // quando più target rendono quasi uguale (optRoutine).
   return { P, steps, sim:base }; }
 // tutte le analisi della pagina, rifatte quando cambiano i dati dell'EOW o il piano
 function optAll() {
@@ -466,7 +471,10 @@ function optRoutine(O) { if (O.rt) return O.rt;
     const be=X.be, beLo=be.length ? Math.min(...be.map(x=>x.net)) : 0, beHi=be.length ? Math.max(...be.map(x=>x.net)) : 0;
     const beSay = !be.length || mine ? '' : beHi<0 ? 'Lo stop a BE semplice non conviene: con target '+fmtX(X.Tref)+'R costa da '+fmtN(-beHi,0)+' a '+fmtN(-beLo,0)+' R sullo storico. ' : 'Lo stop a BE semplice rende fino a '+fR(beHi)+' R sullo storico (target '+fmtX(X.Tref)+'R). ';
     let st='ok', say;
-    if (exF===f) { st='change'; say='Per la prossima settimana: '+lng(exG)+'.'; }
+    // altopiano: i target fissi che rendono quasi come il migliore (entro 0,5 R a settimana). Se sono tanti, quale scegli conta poco
+    const Ts=X.grid.filter(v=>v.f==='T'), tMax=Math.max(...Ts.map(v=>v.n[0].rw)), flat=Ts.filter(v=>v.n[0].rw>=tMax-.5), lo=Math.min(...flat.map(v=>v.n[0].rw));
+    const flatSay = id==='tp' && flat.length>=3 ? ' I target da '+fmtX(flat[0].g.t)+'R a '+fmtX(flat[flat.length-1].g.t)+'R rendono quasi uguale ('+fmtN(lo,1)+'–'+fmtN(tMax,1)+' R a settimana): quale scegli tra questi conta poco, e la proposta può cambiare da un weekend all\'altro.' : '';
+    if (exF===f) { st='change'; say='Per la prossima settimana: '+lng(exG)+'.'+(optFamOf(exG)==='T' ? flatSay : ''); }
     else if (J.kind==='go') { st='watch'; say=(id==='be'?beSay:'')+nm+' rende '+dl+' in più della tua uscita e regge alle prove'+(exG ? ', ma per la prossima settimana la proposta è '+lng(exG)+'.' : ': valuta di provarla.'); }
     else if (J.kind==='paper') { st = (J.wfOk || J.hoOk) && d3>0 ? 'watch' : 'ok';   // sotto osservazione solo se ha passato una delle due prove
       say=(id==='be'?beSay:'')+'Sulla carta '+nm+' rende '+dl+' in più, ma le prove sul passato non lo confermano'+(st==='watch'?' del tutto':'')+': non cambiare.'+(st==='watch' ? ' Ha passato una delle due prove e nelle ultime 3 settimane è davanti di '+fR(d3)+' R a settimana.' : ''); }
@@ -754,4 +762,4 @@ function optCtx() { const O=optAll(); if (!O) return 'servono almeno 6 settimane
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['ottimizza.js'] = '2026-11-15.1';
+EB_V['ottimizza.js'] = '2026-11-15.2';
