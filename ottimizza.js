@@ -277,14 +277,18 @@ function optMoves(B, P) {
 function optGreedy(B, P0, to, ok, simOf, N) {
   ok=ok||['si']; const pass=typeof ok==='function' ? ok : c=>ok.includes(c.verdict), ord=c=>(c.verdict==='si'?1e3:0)+c.wm;
   simOf=simOf||(q=>optSim(B,q)); let P=P0, base=simOf(P); const steps=[];
-  for (let k=0;k<4;k++) { let best=null;
-    optMoves(B,P).forEach(m=>{ const v=simOf(m.P), c=optCmp(B,base,v,to,N); if (pass(c) && (!best || ord(c)>ord(best.c))) best={ m, v, c }; });
-    if (!best) break; steps.push({ l:best.m.l, cat:best.m.cat, c:best.c }); P=best.m.P; base=best.v; }
-  // Dipende dal punto di partenza (caso dell'utente, 15/11/2026: lo stesso piano con o senza «niente SMT a sfavore» dava target 4R
-  // oppure target 3R + togli 14:30–15:30). Provati due rimedi, scartati perché peggiorano la prova sul passato in 4 piani su 5:
-  // chiedere probabilità ≥ 80% anche ai «forte di recente» (attivo da +0,54/+0,46/+0,17/+0,75 a +0,21/+0,08/−0,96/+0,08) e
-  // riscegliere l'uscita alla fine (nessun effetto sul caso, un po' peggio altrove). Il rimedio è dirlo: l'area Target avvisa
-  // quando più target rendono quasi uguale (optRoutine).
+  const pick=want=>{ let best=null;
+    optMoves(B,P).forEach(m=>{ if (!want(m)) return; const v=simOf(m.P), c=optCmp(B,base,v,to,N); if (pass(c) && (!best || ord(c)>ord(best.c))) best={ m, v, c }; });
+    if (best) { steps.push({ l:best.m.l, cat:best.m.cat, c:best.c }); P=best.m.P; base=best.v; } return !!best; };
+  // Prima quali trade prendere (condizioni, mercati, setup, orari, giorni, regole del giorno: fino a 3 passi), poi l'uscita, scelta
+  // sul piano già cambiato, poi un eventuale ultimo passo. Prima l'uscita poteva essere scelta per prima e restava quella anche
+  // se i passi dopo cambiavano i trade: lo stesso piano con o senza «niente SMT a sfavore» dava due proposte diverse (caso
+  // dell'utente, 15/11/2026: target 4R, oppure target 3R + niente SMT a sfavore + togli 14:30–15:30). Così le due partenze arrivano
+  // allo stesso piano. Prova sul passato dei cinque piani, modo attivo: da +0,54 / +0,46 / +0,17 / +0,75 / −0,67 a +1,13 / +1,04 /
+  // +0,79 / +1,33 / −0,67 R a settimana rispetto al piano fermo; modo prudente uguale o meglio (+0,13 / +0,04 / −0,17 / +0,42 / −0,25).
+  // Scartati perché peggiorano la prova: probabilità ≥ 80% anche per «forte di recente», e l'uscita senza altri passi dopo.
+  for (let k=0;k<3;k++) if (!pick(m=>m.cat!=='g')) break;
+  pick(m=>m.cat==='g'); while (steps.length<4 && pick(m=>m.cat!=='g'));
   return { P, steps, sim:base }; }
 // tutte le analisi della pagina, rifatte quando cambiano i dati dell'EOW o il piano
 function optAll() {
@@ -315,8 +319,8 @@ function optAll() {
   // dell'utente, ha reso di più nella prova sul passato, e solo se passa la soglia di sempre (≥ +0,1 e più settimane migliori).
   const pass=r=>!!r && r.rw-r.rb>=.1 && r.up>r.dn, mode=(ok,id)=>{ const g=optGreedy(B,P,undefined,ok,simOf), r=g.steps.some(x=>x.c.verdict!=='si') ? optRoll(B,P,base,simOf,ok) : null;
     return { g, r, id, ok:pass(r) }; };
-  const mNow=mode(OPT_NOW,'now'), mAct=mode(OPT_ACT,'act'), same=mNow.g.steps.map(x=>x.l).join('|')===mAct.g.steps.map(x=>x.l).join('|');
-  const mBest = same ? mNow : [mNow, mAct].filter(m=>m.ok).sort((a,b)=>(b.r.rw-b.r.rb)-(a.r.rw-a.r.rb))[0] || null;
+  const mNow=mode(OPT_NOW,'now'), mAct=mode(OPT_ACT,'act');
+  const mBest = [mNow, mAct].filter(m=>m.ok).sort((a,b)=>(b.r.rw-b.r.rb)-(a.r.rw-a.r.rb))[0] || null;
   const now = mBest && mBest.ok ? Object.assign(mBest.g, { nums:nums(mBest.g.sim), roll:mBest.r, mode:mBest.id }) : null;
   // la prova della routine da mostrare anche quando non propone niente (così si vede perché)
   const track = now ? now.roll : [mAct.r, mNow.r].filter(Boolean).sort((a,b)=>(b.rw-b.rb)-(a.rw-a.rb))[0] || null;
@@ -708,7 +712,7 @@ function optHowCard(O) { const p=optRoutine(O).pers, pc=x=>x===null ? 'una quota
     '<li><b>La routine.</b> A settimana chiusa rivedo tutto: '+O.moves.length+' modifiche possibili al piano (una alla volta: orari, setup, giorni, mercati, condizioni, regole del giorno) e oltre 200 uscite (target, stop a BE o in profitto, trailing, parziali). Ogni alternativa si confronta con il tuo piano settimana per settimana, in R a settimana: conta sia quanto rende un trade sia quanti ne fai.</li>'+
     '<li><b>Quanto conta il breve periodo.</b> '+(p.w1===null && p.w3===null ? 'Lo misuro sui tuoi dati (quanto dello scarto recente di un orario, un setup o un giorno si ritrova la settimana dopo): per ora le settimane sono poche per dirlo. ' : 'L\'ho misurato sui tuoi dati: quando un gruppo di trade (un orario, un setup, un giorno) va meglio o peggio del solito, la settimana dopo si ritrova '+pc(p.w1)+' di quello scarto se guardo solo l\'ultima settimana, '+pc(p.w3)+' se guardo le ultime 3. ')+'Per questo l\'ultima settimana si rivede ma da sola non decide; le ultime 3 possono proporre una modifica, ma solo se anche i 3 mesi sono positivi e lo storico non è contrario. Il numero si aggiorna ogni settimana: se il mercato diventa più «a fasi», lo vedi qui.</li>'+
     '<li><b>Gli stati.</b> <b>Conviene</b>: regge su tutto lo storico (probabilità almeno 99% con più peso alle settimane recenti, 95% con tutte uguali), nei 3 mesi e non peggiora nelle ultime 3–4 settimane. <b>Forte di recente</b>: almeno +1 R a settimana nelle ultime 3 su almeno 4 trade, positiva nelle ultime 4 e nei 3 mesi, non negativa sullo storico. <b>Da provare</b>: probabilità almeno 90% e 75%. Su tante alternative qualcuna sembra buona per caso: per questo una segnalazione da sola finisce in «Tieni d\'occhio».</li>'+
-    '<li><b>Cosa entra nella proposta.</b> Metto insieme le modifiche segnalate, una alla volta (al massimo 4), in due modi: prudente (conviene e forte di recente) e attivo (anche da provare). Poi rifaccio la stessa routine ogni weekend del passato con i soli dati di prima: propongo il modo che ha reso di più, e solo se ha battuto il piano fermo di almeno 0,1 R a settimana e in più settimane di quante ha fatto peggio. Se nessuno dei due passa, il piano è confermato. La trovi in «La routine alla prova».</li>'+
+    '<li><b>Cosa entra nella proposta.</b> Metto insieme le modifiche segnalate, una alla volta (al massimo 4): prima quali trade prendere (condizioni, mercati, setup, orari, giorni, regole del giorno), poi l\'uscita, scelta sui trade che restano. Così la proposta non dipende da come è scritto oggi il tuo piano. Lo faccio in due modi: prudente (conviene e forte di recente) e attivo (anche da provare). Poi rifaccio la stessa routine ogni weekend del passato con i soli dati di prima: propongo il modo che ha reso di più, e solo se ha battuto il piano fermo di almeno 0,1 R a settimana e in più settimane di quante ha fatto peggio. Se nessuno dei due passa, il piano è confermato. La trovi in «La routine alla prova».</li>'+
     '<li><b>Uscite.</b> Il target fisso è esatto dal Max Real RR. Stop a BE o in profitto, trailing e parziali seguono il percorso scritto nelle note; se la nota finisce prima, conta il caso peggiore. Ogni uscita conta insieme alle vicine (un passo in più o in meno), perché un picco isolato è quasi sempre fortuna. Un cambio di uscita si propone solo se batte la tua di almeno 0,1 R a settimana, se scegliere così ha pagato nella prova sul passato e se regge sulle ultime settimane non usate per sceglierla.</li>'+
     '<li><b>Niente senno di poi.</b> Le regole del giorno reagiscono solo ai trade già chiusi quando entra il successivo. Contano solo le settimane chiuse.</li>'+
     '<li><b>Cosa sta cambiando.</b> Per il piano e per ogni setup, mercato, orario e condizione confronto i R a trade delle ultime 4, 6, 8 o 13 settimane con quelli di prima, rimescolando l\'ordine dei trade: lo segnalo solo se una differenza così esce per caso al massimo 5 volte su 100.</li>'+
@@ -762,4 +766,4 @@ function optCtx() { const O=optAll(); if (!O) return 'servono almeno 6 settimane
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['ottimizza.js'] = '2026-11-15.2';
+EB_V['ottimizza.js'] = '2026-11-15.3';
