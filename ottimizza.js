@@ -317,13 +317,14 @@ function optAll() {
   // settimana 13) il modo attivo ha reso +0,88 / +0,79 / +0,50 / +1,08 / −0,67 R a settimana rispetto al piano fermo, il prudente
   // +0,13 / +0,04 / −0,17 / +0,25 / −0,25: nessuno dei due vince sempre, quindi si propone quello che, con il piano e i dati
   // dell'utente, ha reso di più nella prova sul passato, e solo se passa la soglia di sempre (≥ +0,1 e più settimane migliori).
-  const pass=r=>!!r && r.rw-r.rb>=.1 && r.up>r.dn, mode=(ok,id)=>{ const g=optGreedy(B,P,undefined,ok,simOf), r=g.steps.some(x=>x.c.verdict!=='si') ? optRoll(B,P,base,simOf,ok) : null;
-    return { g, r, id, ok:pass(r) }; };
-  const mNow=mode(OPT_NOW,'now'), mAct=mode(OPT_ACT,'act');
-  const mBest = [mNow, mAct].filter(m=>m.ok).sort((a,b)=>(b.r.rw-b.r.rb)-(a.r.rw-a.r.rb))[0] || null;
-  const now = mBest && mBest.ok ? Object.assign(mBest.g, { nums:nums(mBest.g.sim), roll:mBest.r, mode:mBest.id }) : null;
-  // la prova della routine da mostrare anche quando non propone niente (così si vede perché)
-  const track = now ? now.roll : [mAct.r, mNow.r].filter(Boolean).sort((a,b)=>(b.rw-b.rb)-(a.rw-a.rb))[0] || null;
+  // Dal 15/11 sera la proposta è una sola e decisa (richiesta dell'utente: «deve dirmi cosa cambiare e cosa no, niente vie di
+  // mezzo»): la ricerca a passi «prima i trade, poi l'uscita» con tutte le modifiche segnalate (OPT_ACT), mostrata solo se rifarla
+  // ogni weekend del passato con i soli dati di prima ha battuto il piano fermo di almeno 0,1 R a settimana e in più settimane di
+  // quante ha fatto peggio; altrimenti «non cambiare niente». Niente più scelta tra modo prudente e attivo (poteva cambiare da un
+  // piano all'altro) e niente cambio di uscita aggiunto a parte. Provato e scartato: tenere solo le modifiche trovate anche con
+  // l'ordine di ricerca di prima (optRobust): da piani di partenza diversi tornava a dare piani finali diversi.
+  const pass=r=>!!r && r.rw-r.rb>=.1 && r.up>r.dn, gAct=optGreedy(B,P,undefined,OPT_ACT,simOf), track=optRoll(B,P,base,simOf,OPT_ACT);
+  const now = gAct.steps.length && pass(track) ? Object.assign(gAct, { nums:nums(gAct.sim), roll:track, mode:'act' }) : null;
   const sugg=moves.filter(m=>m.c.verdict==='si').sort((a,b)=>b.c.wm-a.c.wm), hint=moves.filter(m=>m.c.verdict==='indizio').sort((a,b)=>b.c.p-a.c.p||b.c.wm-a.c.wm);
   // una sola proposta per categoria di gestione, asset e regole (sono alternative tra loro)
   const one=l=>{ const seen=new Set(); return l.filter(m=>{ const k=['g','asset','day'].includes(m.cat)?m.cat:m.l; if (seen.has(k)) return false; seen.add(k); return true; }); };
@@ -349,13 +350,8 @@ function optAll() {
   const O={ B, key, P, base, simOf, nums:nums(base), mkt, moves, sugg:one(sugg).slice(0,6), hint:one([...(sure?[]:sugg), ...hint].filter(m=>!(best && best.steps.some(x=>x.l===m.l)))).slice(0,3), best, now, doubt, drift, recent, mg, groups, greedy, greedyNums:nums(greedy.sim), wf:wfRes, roll, track };
   // la proposta per la settimana dopo: le modifiche del piano per adesso (o del piano migliore) e, se nessuna tocca l'uscita, il
   // cambio di uscita che ha passato le sue due prove (optExit). Ogni passo sa da quanti weekend di fila è segnalato.
-  const X=optExit(O), G=now||best, steps=G ? G.steps.slice() : [];
-  if (X.kind==='go' && !steps.some(x=>x.cat==='g')) { const q=Object.assign({}, steps.length?G.P:P, { g:X.top.g }), b0=steps.length?G.sim:base;
-    steps.push({ l:'uscita: '+mgTxt(X.top.g,true), cat:'g', g:X.top.g, x:true, c:optCmp(B,b0,simOf(q)) }); }
-  const since=(v,b)=>{ let k=1; for (let to=W-1; to>=Math.max(8,W-8); to--) { if (!optFlag(optCmp(B,b||base,v,to,200))) break; k++; } return k; };
-  steps.forEach(x=>{ if (x.x) return; const m=moves.find(m=>m.l===x.l); x.since = m ? since(m.v) : 1; });
-  moves.forEach(m=>{ if (optFlag(m.c)) m.since=since(m.v); });
-  O.prop = steps.length ? { steps, roll: G ? (now ? now.roll : null) : X.roll, mode: now ? now.mode : best ? 'best' : 'exit' } : null;
+  const steps=now ? now.steps.slice() : [];
+  O.prop = steps.length ? { steps, roll:now.roll, mode:'act' } : null;
   O.ms=performance.now()-t0; return (S._opt=O); }
 // prova del metodo sul passato: ogni settimana (dalla metà dello storico) rifà la ricerca con i soli dati di prima, come se
 // usassi Ottimizza quel giorno, e tiene il piano proposto per la settimana dopo. Confronto con il piano fisso.
@@ -448,7 +444,7 @@ function optGroups(B, P) {
 //  · scegliere l'uscita con le sole ultime 1–4 settimane ha reso meno che tenerla ferma.
 // Per questo lo stato di ogni area è: «Cambia» (modifica nella proposta, che ha passato la prova sul passato), «Tieni d'occhio»
 // (segnalata ma non ancora provata, con il numero di weekend di fila da cui lo è) o «Confermato».
-const OPT_ST = { change:['Cambia',''], watch:['Tieni d\'occhio','rk'], ok:['Confermato','rec'] };
+const OPT_ST = { change:['Cambia',''], ok:['Non cambiare','rec'] };   // due soli stati: niente vie di mezzo (richiesta dell'utente)
 const OPT_AREAS = [['tp','Target','target'], ['be','Stop a BE o in profitto','shield'], ['tr','Trailing stop','trendUp'], ['pz','Uscita a parziali','grid'],
   ['bande','Orari','clock'], ['idee','Setup','spark'], ['giorni','Giorni','cal'], ['asset','Mercati','chart'], ['ctx','Condizioni','filter'], ['day','Regole del giorno','list']];
 const OPT_XA = { tp:'T', be:'B', tr:'L', pz:'P' }, OPT_GA = { bande:['bande'], idee:['idee'], giorni:['giorni'], asset:['asset'], ctx:['news','smt','lvn','clean','cc2','dir','pb'], day:[] };
@@ -467,21 +463,19 @@ function optPersist(B, P) { const W=B.weeks.length, { dims }=optDims(B,P), NS=[1
 function optRoutine(O) { if (O.rt) return O.rt;
   const B=O.B, P=O.P, W=B.weeks.length, X=optExit(O), base=O.base, me=X.me, steps=O.prop ? O.prop.steps : [], inStep=m=>steps.some(x=>x.l===m.l);
   const fR=x=>fmtN(x,1,true), fT=x=>fmtN(x,2,true), low=low1, lng=g=>mgTxt(g), mvL=m=>m.cat==='asset' ? 'tradare '+m.l : low(optLbl(m));
-  const wk3=v=>{ let a=0; for (let i=Math.max(0,W-3);i<W;i++) a+=v.sim.wR[i]; return a/Math.min(3,W); };
   // l'uscita nella proposta (dalla ricerca a passi o dalla carta delle uscite) e il suo tipo
   const exStep=steps.find(x=>x.cat==='g'), exG = exStep ? (exStep.g || OPT_GS().find(g=>'gestione: '+mgTxt(g)===exStep.l) || null) : null, exF = exG ? optFamOf(exG) : '', meF=optFamOf(P.g);
-  const xArea=id=>{ const f=OPT_XA[id], J=X.fam[f], b=J.best, mine=meF===f, d3=wk3(b)-wk3(me), nm='«'+(f==='T' ? 'target '+fmtX(b.g.t)+'R' : low(mgTxt(b.g,true)))+'»', dl=fR(J.gain)+' R a settimana';
+  const xArea=id=>{ const f=OPT_XA[id], J=X.fam[f], b=J.best, mine=meF===f, nm='«'+(f==='T' ? 'target '+fmtX(b.g.t)+'R' : low(mgTxt(b.g,true)))+'»', dl=fR(J.gain)+' R a settimana';
     const rows=(id==='tp' ? X.grid.filter(v=>v.f==='T') : J.top3.slice()); if (!rows.includes(me)) rows.unshift(me);
     const be=X.be, beLo=be.length ? Math.min(...be.map(x=>x.net)) : 0, beHi=be.length ? Math.max(...be.map(x=>x.net)) : 0;
-    const beSay = !be.length || mine ? '' : beHi<0 ? 'Lo stop a BE semplice non conviene: con target '+fmtX(X.Tref)+'R costa da '+fmtN(-beHi,0)+' a '+fmtN(-beLo,0)+' R sullo storico. ' : 'Lo stop a BE semplice rende fino a '+fR(beHi)+' R sullo storico (target '+fmtX(X.Tref)+'R). ';
+    const beSay = !be.length || mine ? '' : beHi<0 ? 'Lo stop a BE semplice non conviene: con target '+fmtX(X.Tref)+'R costa da '+fmtN(-beHi,0)+' a '+fmtN(-beLo,0)+' R sullo storico. ' : '';
     let st='ok', say;
     // altopiano: i target fissi che rendono quasi come il migliore (entro 0,5 R a settimana). Se sono tanti, quale scegli conta poco
     const Ts=X.grid.filter(v=>v.f==='T'), tMax=Math.max(...Ts.map(v=>v.n[0].rw)), flat=Ts.filter(v=>v.n[0].rw>=tMax-.5), lo=Math.min(...flat.map(v=>v.n[0].rw));
-    const flatSay = id==='tp' && flat.length>=3 ? ' I target da '+fmtX(flat[0].g.t)+'R a '+fmtX(flat[flat.length-1].g.t)+'R rendono quasi uguale ('+fmtN(lo,1)+'–'+fmtN(tMax,1)+' R a settimana): quale scegli tra questi conta poco, e la proposta può cambiare da un weekend all\'altro.' : '';
-    if (exF===f) { st='change'; say='Per la prossima settimana: '+lng(exG)+'.'+(optFamOf(exG)==='T' ? flatSay : ''); }
-    else if (J.kind==='go') { st='watch'; say=(id==='be'?beSay:'')+nm+' rende '+dl+' in più della tua uscita e regge alle prove'+(exG ? ', ma per la prossima settimana la proposta è '+lng(exG)+'.' : ': valuta di provarla.'); }
-    else if (J.kind==='paper') { st = (J.wfOk || J.hoOk) && d3>0 ? 'watch' : 'ok';   // sotto osservazione solo se ha passato una delle due prove
-      say=(id==='be'?beSay:'')+'Sulla carta '+nm+' rende '+dl+' in più, ma le prove sul passato non lo confermano'+(st==='watch'?' del tutto':'')+': non cambiare.'+(st==='watch' ? ' Ha passato una delle due prove e nelle ultime 3 settimane è davanti di '+fR(d3)+' R a settimana.' : ''); }
+    const flatSay = id==='tp' && flat.length>=3 ? ' I target da '+fmtX(flat[0].g.t)+'R a '+fmtX(flat[flat.length-1].g.t)+'R rendono quasi uguale ('+fmtN(lo,1)+'–'+fmtN(tMax,1)+' R a settimana): tra questi la differenza è piccola, più alto è il target più profondi sono i cali.' : '';
+    if (exF===f) { st='change'; say='Cambia: '+lng(exG)+'.'+(optFamOf(exG)==='T' ? flatSay : ''); }
+    else if (J.kind==='go') say=(id==='be'?beSay:'')+(exG ? 'Non cambiare qui: l\'uscita da usare è '+lng(exG)+'.' : 'Non cambiare per ora: '+nm+' rende '+dl+' in più della tua uscita, ma la routine intera non ha battuto il piano fermo nella prova sul passato.');
+    else if (J.kind==='paper') say=(id==='be'?beSay:'')+'Non cambiare: sulla carta '+nm+' rende '+dl+' in più, ma le prove sul passato non lo confermano.';
     else if (id==='tp') say = mine ? 'Target '+fmtX(P.g.t)+'R confermato: nessun altro target fisso rende almeno 0,1 R a settimana in più.' : 'Nessun target fisso batte la tua uscita: il migliore è '+fmtX(b.g.t)+'R, '+fR(b.n[0].rw)+' R a settimana contro '+fR(me.n[0].rw)+'.';
     else if (id==='be') say = mine ? 'Il tuo stop spostato è confermato: nessuna variante rende almeno 0,1 R a settimana in più.'
         : be.length && beHi<0 ? 'Non conviene: con target '+fmtX(X.Tref)+'R lo stop a BE costa da '+fmtN(-beHi,0)+' a '+fmtN(-beLo,0)+' R sullo storico, perché chiude a zero trade che poi arrivano al target.'
@@ -495,16 +489,15 @@ function optRoutine(O) { if (O.rt) return O.rt;
     const ch=steps.filter(x=>x.cat===id), fl=ms.filter(m=>optFlag(m.c) && !inStep(m)).sort((a,b)=>b.c.p-a.c.p);
     const dr=O.drift.filter(d=>(OPT_GA[id].includes(d.id)) && (d.on ? d.mr<d.mb : d.mr>d.mb));
     const inp=gs.flatMap(g=>g.rows).filter(r=>r.on && r.w[0].n>=8), neg=inp.filter(r=>r.w[0].rt<0 && r.w[0].n>=12).sort((a,b)=>a.w[0].rt-b.w[0].rt);
-    const M=O.mkt; let st='ok', say;
-    if (ch.length) { st='change'; say='Per la prossima settimana: '+ch.map(x=>mvL(x)).join(', ')+'.'; }
-    else if (fl.length) { st='watch'; const m=fl[0]; say=optCap(mvL(m))+': '+low(OPT_V[m.c.verdict][1])+' ('+fR(m.c.all)+' R a settimana sullo storico, '+fR(m.c.w3)+' nelle ultime 3)'+(m.since>1 ? ', segnalata da '+m.since+' weekend di fila.' : ', novità di questo weekend.'); }
-    else if (id==='asset' && M && M.kind==='go') { st='watch'; say=M.lead+' è il mercato più in forma nelle ultime 4 settimane ('+fR(M.l4.lead)+' R a settimana contro '+fR(M.l4.cur)+'), e in passato seguire il mercato più in forma ha pagato.'; }
-    else if (dr.length) { st='watch'; const d=dr[0]; say=d.k+(d.on ? ' sta rendendo meno' : ', fuori dal piano, sta rendendo di più')+': da '+fT(d.mb)+' a '+fT(d.mr)+' R a trade nelle ultime '+d.win+' settimane. Se continua così, va '+(d.on?'tolto dal':'aggiunto al')+' piano.'; }
-    else if (neg.length) { st='watch'; const r=neg[0]; say=r.k+' è in perdita sullo storico ('+fT(r.w[0].rt)+' R a trade su '+r.w[0].n+' trade), ma toglierlo non cambia ancora il risultato in modo affidabile.'; }
-    else if (id==='day') say='Le regole del giorno del piano sono confermate: nessuna alternativa rende di più in modo affidabile.';
-    else if (id==='ctx') say='Nessuna condizione da aggiungere o togliere: nessuna cambia il risultato in modo affidabile.';
+    let st='ok', say;
+    if (ch.length) { st='change'; say='Cambia: '+ch.map(x=>mvL(x)).join(', ')+'.'; }
+    else if (fl.length) { const m=fl[0]; say='Non cambiare: «'+mvL(m)+'» sulla carta rende '+fR(m.c.all)+' R a settimana in più, ma non ha passato tutti i controlli.'; }
+    else if (dr.length) { const d=dr[0]; say='Non cambiare per ora: '+d.k+(d.on ? ' sta rendendo meno' : ', fuori dal piano, sta rendendo di più')+' (da '+fT(d.mb)+' a '+fT(d.mr)+' R a trade nelle ultime '+d.win+' settimane), ma '+(d.on?'toglierlo':'aggiungerlo')+' non migliora ancora il risultato.'; }
+    else if (neg.length) { const r=neg[0]; say='Non cambiare: '+r.k+' è in perdita sullo storico ('+fT(r.w[0].rt)+' R a trade su '+r.w[0].n+' trade), ma toglierlo non migliora il risultato in modo affidabile.'; }
+    else if (id==='day') say='Non cambiare: nessun\'altra regola del giorno rende di più in modo affidabile.';
+    else if (id==='ctx') say='Non cambiare: nessuna condizione da aggiungere o togliere migliora il risultato in modo affidabile.';
     else { const s=inp.slice().sort((a,b)=>b.w[0].rt-a.w[0].rt), weak=inp.filter(r=>r.w[2].n>=4 && r.w[2].rt<-.2 && r.w[0].rt>0).sort((a,b)=>a.w[2].rt-b.w[2].rt)[0];
-      say = s.length>1 ? 'Confermati. Il migliore: '+s[0].k+' ('+fT(s[0].w[0].rt)+' R a trade), il più debole: '+s[s.length-1].k+' ('+fT(s[s.length-1].w[0].rt)+').' : 'Niente da cambiare.';
+      say = s.length>1 ? 'Non cambiare. Il migliore: '+s[0].k+' ('+fT(s[0].w[0].rt)+' R a trade), il più debole: '+s[s.length-1].k+' ('+fT(s[s.length-1].w[0].rt)+').' : 'Non cambiare.';
       if (weak) say+=' Nelle ultime 3 settimane '+weak.k+' ha perso ('+fT(weak.w[2].rt)+' R a trade su '+weak.w[2].n+' trade): troppo poco per toglierlo, sullo storico fa '+fT(weak.w[0].rt)+'.'; }
     return { gs, ms, ch, fl, dr, st, say }; };
   const areas=OPT_AREAS.map(([id,name,icon])=>Object.assign({ id, name, icon }, OPT_XA[id] ? xArea(id) : gArea(id)));
@@ -516,9 +509,9 @@ function optRoutine(O) { if (O.rt) return O.rt;
   // la lezione della settimana: la modifica che avrebbe reso di più proprio questa settimana, e come era andata nelle 4 prima
   const lm=O.moves.filter(m=>m.c.w1>=1).sort((a,b)=>b.c.w1-a.c.w1)[0]; let lesson=null;
   if (lm) { let up=0, dn=0; for (let i=Math.max(0,lw-4);i<lw;i++) { const d=lm.v.wR[i]-base.wR[i]; if (d>1e-9) up++; else if (d<-1e-9) dn++; }
-    lesson={ m:lm, up, dn, kind: inStep(lm) ? 'prop' : optFlag(lm.c) ? 'watch' : lm.c.all<=0 ? 'caso' : 'poco' }; }
+    lesson={ m:lm, up, dn, kind: inStep(lm) ? 'prop' : lm.c.all<=0 ? 'caso' : 'poco' }; }
   const last={ wk:B.weeks[lw], n:optNums(B,base,1), rank:W>1 ? wRs.filter(x=>x<wRs[lw]-1e-9).length/(W-1) : .5, days, took, out, outR, streak:streak*s0, lesson, drift:O.drift.find(d=>d.id==='piano') || null };
-  return (O.rt={ areas, last, next:iso(addDays(pdIso(B.weeks[lw]),7)), pers:optPersist(B,P), nC:areas.filter(a=>a.st==='change').length, nW:areas.filter(a=>a.st==='watch').length }); }
+  return (O.rt={ areas, last, next:iso(addDays(pdIso(B.cut),7)), cur:weekOf(iso(new Date()))>=iso(addDays(pdIso(B.cut),7)), pers:optPersist(B,P), nC:areas.filter(a=>a.st==='change').length }); }
 
 // ── pagina ──
 const OPT_V = { si:['check','Conviene','ok'], indizio:['spark','Da provare','try'], recente:['trendUp','Forte di recente','up'], calo:['trendDn','Funzionava, ora meno','down'] };
@@ -586,15 +579,12 @@ function optTable(rows, key, fmt, o={}) {
 // (una risposta per area), la prova della routine sul passato.
 const optWkLbl = w => { const d=pdIso(w); return d.getDate()+' '+MESI[d.getMonth()]; };
 // testata: cosa cambiare per la settimana dopo (modifiche da accendere o spegnere, con il confronto), oppure piano confermato
-function optHero(O, still) { const n=O.nums, G=O.prop, w=O.wf, K=G ? optPick(O) : null, gn=K ? K.nums : null, R=optRoutine(O), nx=optWkLbl(R.next);
+function optHero(O, still) { const n=O.nums, G=O.prop, K=G ? optPick(O) : null, gn=K ? K.nums : null, R=optRoutine(O), nd=pdIso(R.next), ne=addDays(nd,4), nx=(R.cur?'Questa settimana':'La prossima settimana')+' ('+nd.getDate()+(nd.getMonth()!==ne.getMonth()?' '+MESI[nd.getMonth()]:'')+'–'+ne.getDate()+' '+MESI[ne.getMonth()]+')';
   const why={ poche:'Qualcosa sembra migliore, ma le settimane sono ancora poche per confermarlo.', recenti:'Qualcosa sembra migliore, ma solo grazie alle ultime settimane.',
     retto:'Qualcosa sembrava migliore, ma non ha retto sulle settimane più recenti.', metodo:'Qualcosa sembra migliore, ma in passato seguire questi consigli non ha pagato.' }[O.doubt] || 'Ho rivisto '+O.moves.length+' alternative e oltre 200 uscite: nessuna ha passato le prove.';
-  const tagOf=x=>x.x ? ['uscita','s'] : x.c.verdict==='si' ? ['storico','s'] : x.c.verdict==='indizio' ? ['da provare','r'] : ['recente','r'];
   // il numero grande è quello onesto: quanto ha reso in più seguire questa ricerca settimana per settimana con i soli dati di prima
   const rl = G ? G.roll : null, d = !G ? 0 : rl ? rl.rw-rl.rb : gn[0].rw-n[0].rw;
-  const cnt=(k,one,many)=>{ const c=G.steps.filter(x=>tagOf(x)[0]===k).length; return c ? [c+' '+(c===1?one:many)] : []; };
-  const sub = !G ? esc(why)+(R.nW ? ' '+(R.nW===1?'Una cosa':R.nW+' cose')+' da tenere d\'occhio nella checklist.' : '')
-    : [...cnt('storico','confermata dallo storico','confermate dallo storico'), ...cnt('recente','forte nelle ultime settimane','forti nelle ultime settimane'), ...cnt('da provare','da provare','da provare'), ...cnt('uscita','cambio di uscita','cambi di uscita')].join(', ')+'.';
+  const sub = !G ? 'Tieni il piano com\'è. '+esc(why) : 'Il resto del piano resta com\'è.';
   // fase negativa: niente da proporre, ultime 4 settimane in perdita e calo dal massimo già oltre metà del peggiore di sempre.
   // In una fase così si abbassa il rischio per trade, non si cambiano le regole (cambiarle in drawdown è inseguire il rumore).
   const cold = !G && n[2].rw<0 && n[0].dd<0 && n[0].cur<=.5*n[0].dd;
@@ -603,20 +593,17 @@ function optHero(O, still) { const n=O.nums, G=O.prop, w=O.wf, K=G ? optPick(O) 
   let h='<div class="card wide op-hero'+(still?' still':' rise')+(G?' go':cold?' cold':'')+'"><div class="op-glow"></div>'+
     '<div class="op-hh"><div class="eyebrow">Routine del weekend · chiusa la settimana del '+optWkLbl(R.last.wk)+'</div><button type="button" class="op-edit" data-act="planedit">'+ic('gear',15,2.2)+'Modifica</button></div>'+
     '<div class="op-pt">'+esc(optPlanLine(O.P))+'</div>'+
-    '<div class="op-vb"><span class="op-vi">'+ic(G?'trendUp':cold?'shield':'check',22,2.4)+'</span><div class="op-vt"><b>'+(G ? 'Per la settimana del '+nx+': '+(G.steps.length===1?'una modifica':G.steps.length+' modifiche') : cold ? 'Resta sul piano, riduci il rischio' : 'Piano confermato per la settimana del '+nx)+'</b><span>'+
+    '<div class="op-vb"><span class="op-vi">'+ic(G?'trendUp':cold?'shield':'check',22,2.4)+'</span><div class="op-vt"><b>'+(G ? nx+': cambia '+(G.steps.length===1?'una cosa':G.steps.length+' cose') : cold ? nx+': non cambiare niente, riduci il rischio' : nx+': non cambiare niente')+'</b><span>'+
       (cold ? 'Sei a '+fmtN(n[0].cur,1)+' R dal massimo (il calo peggiore finora: '+fmtN(n[0].dd,1)+' R) e nessuna alternativa è più affidabile del tuo piano. In una fase così si abbassa il rischio per trade, non si cambiano le regole.' : sub)+'</span></div>'+
       (G ? '<div class="op-up'+(K.all?'':' dim')+'"><b class="'+sgn(d)+'">'+numEl(d,1,true)+'</b><span>R a settimana'+(rl?' nella prova sul passato':' sullo storico')+(K.all?'':' · con tutte le modifiche')+'</span></div>' : '')+'</div>';
   if (G) {   // scegli le modifiche (tocca per togliere o rimettere) e guarda subito il confronto con il tuo piano
-    const k=K.on.length, ex=G.steps.some(x=>x.x);
-    h+='<div class="op-pk"><div class="op-pkh"><b>Le modifiche proposte</b><span>Tocca per togliere o rimettere: i numeri sotto cambiano</span></div><div class="op-picks">'+
-      G.steps.map((x,i)=>{ const on=K.on.includes(i), t=tagOf(x); return '<button type="button" class="op-pick'+(on?' on':'')+'" data-act="optstep" data-i="'+i+'" aria-pressed="'+on+'" style="--k:'+i+'"'+(x.since>1?' title="Segnalata da '+x.since+' weekend di fila"':'')+'><i>'+(on?ic('check',13,3):'')+'</i>'+esc(optLbl(x))+
-        '<em class="'+t[1]+'">'+t[0]+'</em></button>'; }).join('')+'</div></div>'+
+    const k=K.on.length;
+    h+='<div class="op-pk"><div class="op-pkh"><b>Cosa cambiare</b><span>Tocca per togliere o rimettere: i numeri sotto cambiano</span></div><div class="op-picks">'+
+      G.steps.map((x,i)=>{ const on=K.on.includes(i); return '<button type="button" class="op-pick'+(on?' on':'')+'" data-act="optstep" data-i="'+i+'" aria-pressed="'+on+'" style="--k:'+i+'"'+'><i>'+(on?ic('check',13,3):'')+'</i>'+esc(optLbl(x))+'</button>'; }).join('')+'</div></div>'+
       (k ? optCmpHtml(n, gn, k) : '<p class="op-none">Nessuna modifica scelta: resta il tuo piano.</p>')+
       '<div class="chart" id="c-opt"></div>'+(k?'<div class="op-lgd"><span><i></i>Con le modifiche</span><span><i class="r"></i>Il tuo piano</span></div>':'')+
-      '<button type="button" class="btn op-best" data-act="optall"'+(k?'':' disabled')+'>'+ic('check',18,2.2)+(K.all?'Usa questo piano la prossima settimana':k?'Usa '+(k===1?'questa modifica':'queste '+k+' modifiche'):'Scegli almeno una modifica')+'</button>'+
-      '<p class="op-leg">'+(G.mode==='exit' ? 'Il cambio di uscita ha passato le sue due prove: le trovi nella checklist, sotto il tipo di uscita. '
-        : rl ? 'Prova sul passato: rifacendo questa routine ogni weekend con i soli dati di prima (ultime '+rl.n+' settimane), seguirla ha reso '+fRw(rl.rw)+' R a settimana contro '+fRw(rl.rb)+' del tuo piano'+(rl.up+rl.dn ? ' (meglio in '+rl.up+' settiman'+(rl.up===1?'a':'e')+', peggio in '+rl.dn+')' : '')+'. '+(ex?'Il cambio di uscita ha passato a parte le sue due prove (nella checklist). ':'')
-        : 'Nelle '+w.H+' settimane non usate per trovarle, le modifiche hanno fatto '+fmtN(w.held,1,true)+' R contro '+fmtN(w.plan.R,1,true)+' R del tuo piano. ')+
+      '<button type="button" class="btn op-best" data-act="optall"'+(k?'':' disabled')+'>'+ic('check',18,2.2)+(K.all?'Applica al piano':k?'Usa '+(k===1?'questa modifica':'queste '+k+' modifiche'):'Scegli almeno una modifica')+'</button>'+
+      '<p class="op-leg">Prova sul passato: rifacendo questa routine ogni weekend con i soli dati di prima (ultime '+rl.n+' settimane), seguirla ha reso '+fRw(rl.rw)+' R a settimana contro '+fRw(rl.rb)+' del tuo piano'+(rl.up+rl.dn ? ' (meglio in '+rl.up+' settiman'+(rl.up===1?'a':'e')+', peggio in '+rl.dn+')' : '')+'. '+
         'Il confronto sopra è un conto fatto a posteriori sui trade passati: vale meno della prova. Rifai la routine ogni weekend.</p>';
     if (S._planPrev) h+='<button type="button" class="link" data-act="planundo">'+ic('refresh',15,2)+'Annulla l\'ultima modifica al piano</button>';
     return h+'</div>'; }
@@ -639,9 +626,9 @@ function optWeekCard(O) { const R=optRoutine(O), w=R.last, a=w.n, d0=pdIso(w.wk)
   if (w.out) li.push(['filter','Le regole del piano hanno lasciato fuori <b>'+w.out+' trade su '+(w.took+w.out)+'</b>: con la tua uscita avrebbero fatto <b class="'+sgn(w.outR)+'">'+fR(w.outR)+' R</b>'+(w.outR<-1e-9?', quindi questa settimana ti hanno protetto.':w.outR>1e-9?', quindi questa settimana ti sono costate.':'.')]);
   const ls=w.lesson;
   if (ls) li.push(['spark','Con «'+esc(low1(optLbl(ls.m)))+'» questa settimana avresti fatto <b class="pos">'+fR(ls.m.c.w1)+' R</b> in più. '+(
-    ls.kind==='prop' ? 'È già tra le modifiche proposte qui sopra.' : ls.kind==='watch' ? 'È tra le cose da tenere d\'occhio nella checklist.'
+    ls.kind==='prop' ? 'È già tra le cose da cambiare qui sopra.'
     : ls.kind==='caso' ? 'Sullo storico però rende meno del tuo piano ('+fR(ls.m.c.all)+' R a settimana): è il caso di una settimana, non una regola.'
-    : 'Nelle 4 settimane prima ha fatto meglio in '+ls.up+' e peggio in '+ls.dn+': una settimana sola non basta per cambiare.')]);
+    : 'Nelle 4 settimane prima ha fatto meglio in '+ls.up+' e peggio in '+ls.dn+': una settimana sola non basta, non cambiare per questo.')]);
   if (Math.abs(w.streak)>=2) li.push([w.streak>0?'trendUp':'trendDn', '<b>'+Math.abs(w.streak)+'ª settimana '+(w.streak>0?'positiva':'negativa')+' di fila.</b> '+(w.streak>0 ? 'Non alzare il rischio per questo: una serie positiva non dice nulla sulla prossima.' : 'Non cambiare le regole per questo: da sola una serie negativa non dice nulla sulla prossima.')]);
   const c=O.nums[0]; li.push(['shield', c.cur<-.5 ? 'Sei a <b>'+fmtN(c.cur,1)+' R</b> dal massimo (il calo peggiore finora: '+fmtN(c.dd,1)+' R).' : 'Sei sui massimi del piano.']);
   if (w.drift) { const d=w.drift, up=d.mr>d.mb; li.push([up?'trendUp':'alert', 'Il piano sta rendendo <b>'+(up?'di più':'di meno')+'</b> di prima: da '+fmtN(d.mb,2,true)+' a '+fmtN(d.mr,2,true)+' R a trade nelle ultime '+d.win+' settimane.'+(up?'':' Controlla la disciplina nel Journal.')]); }
@@ -651,12 +638,12 @@ function optWeekCard(O) { const R=optRoutine(O), w=R.last, a=w.n, d0=pdIso(w.wk)
       '<div class="rc-days op-wd" style="--z:'+z+'%">'+wd.map((l,i)=>'<div style="--k:'+i+'"><div class="rc-col">'+(w.days[i]?'<i class="'+sgn(w.days[i])+'" style="--h:'+Math.abs(w.days[i])*k+'%"></i>':'')+'</div><b class="'+sgn(w.days[i])+'">'+(w.days[i]?fR(w.days[i]):'–')+'</b><span>'+l+'</span></div>').join('')+'</div></div>'+
     '<ul class="op-wl">'+li.map((x,i)=>'<li style="--k:'+i+'">'+ic(x[0],16,2.2)+'<span>'+x[1]+'</span></li>').join('')+'</ul></div>'; }
 // la checklist: una riga per area con lo stato e la risposta; si apre per vedere i numeri
-function optCheckCard(O) { const R=optRoutine(O), nOk=R.areas.length-R.nC-R.nW, sec={ tp:'Come esci dal trade', bande:'Quando e cosa tradi', day:'Durante la giornata' }, open=S.optOpen||[];
-  let h='<div class="card wide rise op-ck"><div class="card-h"><h2 class="h2">La checklist del weekend</h2><span class="sub">'+[R.nC?R.nC+' da cambiare':'', R.nW?R.nW+' da tenere d\'occhio':'', nOk+' confermat'+(nOk===1?'o':'i')].filter(Boolean).join(' · ')+'</span></div>';
+function optCheckCard(O) { const R=optRoutine(O), nOk=R.areas.length-R.nC, sec={ tp:'Come esci dal trade', bande:'Quando e cosa tradi', day:'Durante la giornata' }, open=S.optOpen||[];
+  let h='<div class="card wide rise op-ck"><div class="card-h"><h2 class="h2">La checklist del weekend</h2><span class="sub">'+[R.nC?R.nC+' da cambiare':'', nOk+' da non cambiare'].filter(Boolean).join(' · ')+'</span></div>';
   R.areas.forEach((a,i)=>{ const st=OPT_ST[a.st]; if (sec[a.id]) h+='<div class="op-cs">'+sec[a.id]+'</div>';
     h+='<details class="op-ar '+a.st+'" data-ar="'+a.id+'" style="--k:'+i+'"'+(open.includes(a.id)?' open':'')+'><summary><span class="op-ari">'+ic(a.icon,17,2.2)+'</span><div class="op-art"><b>'+a.name+'<span class="op-chip '+st[1]+'">'+st[0]+'</span></b><small>'+esc(a.say)+'</small></div>'+ic('chev',15,2.4)+'</summary>'+
       '<div class="op-arb">'+(a.x ? optXBody(O,a) : optGBody(O,a))+'</div></details>'; });
-  return h+'<p class="op-leg">«Cambia»: è nella proposta in alto. «Tieni d\'occhio»: i numeri la segnalano ma non ha ancora passato le prove; se resta segnalata per più weekend di fila lo vedi scritto. Tocca una riga per i numeri: Tutto, 3 mesi, ultime 3 settimane e ultima settimana.</p></div>'; }
+  return h+'<p class="op-leg">«Cambia»: è tra le cose da cambiare in alto. Tutto il resto resta com\'è. Tocca una riga per i numeri: Tutto, 3 mesi, ultime 3 settimane e ultima settimana.</p></div>'; }
 // dentro un'area di uscita: le uscite di quel tipo contro la tua (R a settimana) e cosa dicono le note
 function optXBody(O, a) { const X=optExit(O), W=O.B.weeks.length, J=a.J, me=X.me, fR=x=>fmtN(x,1,true), cap=g=>optCap(mgTxt(g,true)), td=(v,c)=>'<td class="num '+(c||'')+' '+sgn(v)+'">'+fR(v)+'</td>';
   let h='<div class="tbl-wrap"><table class="ex-t op-t"><tr><th>R a settimana</th><th>Tutto</th><th class="op-c3">3 mesi</th><th>3 sett.</th><th>Ultima</th><th></th></tr>'+
@@ -675,15 +662,12 @@ function optXBody(O, a) { const X=optExit(O), W=O.B.weeks.length, J=a.J, me=X.me
     (ho && ho.v!==me ? 'Senza le ultime '+ho.H+' settimane la scelta era '+esc(low1(cap(ho.v.g)))+', che proprio in quelle ha fatto '+fmtN(ho.R,1,true)+' R contro '+fmtN(ho.Rme,1,true)+' della tua. ' : '')+
     'Stop spostato, trailing e parziali seguono il percorso scritto nelle note; se la nota finisce prima, conta il caso peggiore.</p>'; }
 // dentro un'area del piano: le modifiche proposte o segnalate, poi ogni valore con i suoi R a trade
-function optGBody(O, a) { const mx=Math.max(.5, ...a.fl.map(m=>m.c).concat(a.ch.map(x=>x.c)).flatMap(c=>[c.all, c.m3, c.w3, c.w1].map(Math.abs)));
+function optGBody(O, a) { const mx=Math.max(.5, ...a.ch.map(x=>x.c).flatMap(c=>[c.all, c.m3, c.w3, c.w1].map(Math.abs)));
   const bar=(l,v)=>'<div class="op-br"><span>'+l+'</span><i><b class="'+sgn(v)+'" style="--w:'+Math.max(4,Math.abs(v)/mx*100)+'%"></b></i><em class="num '+sgn(v)+'">'+fRw(v)+'</em></div>';
-  const mv=(m,go,i,sc)=>{ const c=sc||m.c, v=OPT_V[c.verdict];
-    return '<div class="op-a" style="--k:'+i+'"><div class="op-at"><b>'+esc(optLbl(m))+'</b><span class="op-chip '+(go?'':'rk')+'">'+(go?'Nella proposta':v?v[1]:'Segnalata')+'</span></div>'+
+  const mv=(m,c,i)=>'<div class="op-a" style="--k:'+i+'"><div class="op-at"><b>'+esc(optLbl(m))+'</b><span class="op-chip">Da cambiare</span></div>'+
       '<div class="op-bars">'+bar('Tutto',c.all)+bar('3 mesi',c.m3)+bar('3 sett.',c.w3)+bar('Ultima',c.w1)+'</div>'+
-      '<div class="op-af">'+optDots(c.p)+'<small>'+c.aff+' trade cambiano · '+(m.since>1?'segnalata da '+m.since+' weekend':'novità di questo weekend')+'</small>'+
-      (go?'':'<button type="button" class="btn sec sm" data-act="optapply" data-mv="'+O.moves.indexOf(m)+'">Applica</button>')+'</div></div>'; };
-  const list=[...a.ch.map(x=>[O.moves.find(m=>m.l===x.l), true, x.c]).filter(x=>x[0]), ...a.fl.slice(0,3).map(m=>[m,false])];   // per i passi della proposta: il confronto fatto dopo i passi prima
-  let h = list.length ? '<div class="op-sub">R a settimana in più del tuo piano'+(a.ch.length?' (per quelle nella proposta: dopo le modifiche che vengono prima)':'')+'</div><div class="op-al">'+list.map((x,i)=>mv(x[0],x[1],i,x[2])).join('')+'</div>' : '';
+      '<div class="op-af">'+optDots(c.p)+'<small>'+c.aff+' trade cambiano</small></div></div>';
+  let h = a.ch.length ? '<div class="op-sub">R a settimana in più, dopo le modifiche che vengono prima</div><div class="op-al">'+a.ch.map((x,i)=>mv(x,x.c,i)).join('')+'</div>' : '';
   a.dr.forEach(d=>{ h+='<p class="op-calm op-dr">'+ic(d.mr>d.mb?'trendUp':'trendDn',16,2.4)+'<span><b>'+esc(d.k)+'</b>'+(d.on?'':' (fuori dal piano)')+': da '+fmtN(d.mb,2,true)+' a '+fmtN(d.mr,2,true)+' R a trade nelle ultime '+d.win+' settimane ('+d.c+' trade). Per caso succede '+(d.p<.01?'meno di 1 volta':Math.round(d.p*100)+' volte')+' su 100.</span></p>'; });
   if (a.id==='asset' && O.mkt) h+=optMktBody(O);
   if (a.id==='day') { const ms=a.ms.slice().sort((x,y)=>y.c.all-x.c.all), td=v=>'<td class="num '+(Math.abs(v)<.05?'':sgn(v))+'">'+(Math.abs(v)<.05?'=':fRw(v))+'</td>';
@@ -702,7 +686,7 @@ function optMktBody(O) { const M=O.mkt, T=M.T, d=pdIso(T.from);
 function optTrackCard(O) { const T=O.track; if (!T) return '';
   const d=T.rw-T.rb, on=!!(O.prop && O.prop.roll===T);
   return '<details class="card wide rise op-det"'+(S.optDet?' open':'')+'><summary><span class="op-ds">'+ic('chev',15,2.4)+'<b>La routine alla prova</b></span><span class="sub"><b class="'+(Math.abs(d)<.05?'':sgn(d))+'">'+fRw(d)+' R a settimana</b> rispetto al piano fermo, in '+T.n+' settimane</span></summary>'+
-    '<p class="op-leg">Ogni weekend, dalla metà dello storico, ho rifatto la routine con i soli dati di prima e ho tenuto le modifiche per la settimana dopo. Meglio del piano fermo in '+T.up+' settiman'+(T.up===1?'a':'e')+', peggio in '+T.dn+'. '+(on ? 'È la prova che sta dietro alla proposta in alto.' : 'Non abbastanza per proporre modifiche oggi: servono almeno +0,1 R a settimana e più settimane migliori che peggiori.')+'</p>'+
+    '<p class="op-leg">Ogni weekend, dalla metà dello storico, ho rifatto la routine con i soli dati di prima e ho tenuto le modifiche per la settimana dopo. Meglio del piano fermo in '+T.up+' settiman'+(T.up===1?'a':'e')+', peggio in '+T.dn+'. '+(on ? 'È la prova che sta dietro alle modifiche in alto.' : 'Non basta per cambiare il piano: servono almeno +0,1 R a settimana e più settimane migliori che peggiori. Per questo oggi la risposta è non cambiare niente.')+'</p>'+
     '<div class="op-tk">'+T.log.slice(-8).reverse().map((x,i)=>'<div style="--k:'+i+'"><span>'+optWkLbl(x.wk)+'</span><small>'+(x.steps.length ? esc(x.steps.map(l=>l.replace(/^gestione: /,'')).join(' · ')) : 'nessuna modifica')+'</small><b class="num '+(Math.abs(x.d)<1e-9?'':sgn(x.d))+'">'+(Math.abs(x.d)<1e-9?'=':fmtN(x.d,1,true)+' R')+'</b></div>').join('')+'</div></details>'; }
 function optAiCard() {
   return '<div class="card wide rise op-ai"><span class="op-ic">'+ic('spark',18,2.2)+'</span><div class="op-ai-t"><b>Chiedi a Claude</b><span>Vede il tuo piano, la settimana e tutta la checklist.</span></div>'+
@@ -711,8 +695,9 @@ function optHowCard(O) { const p=optRoutine(O).pers, pc=x=>x===null ? 'una quota
   return '<details class="card wide rr-how rise op-how"><summary>'+ic('chev',15,2.2)+'Come funziona</summary><ul>'+
     '<li><b>La routine.</b> A settimana chiusa rivedo tutto: '+O.moves.length+' modifiche possibili al piano (una alla volta: orari, setup, giorni, mercati, condizioni, regole del giorno) e oltre 200 uscite (target, stop a BE o in profitto, trailing, parziali). Ogni alternativa si confronta con il tuo piano settimana per settimana, in R a settimana: conta sia quanto rende un trade sia quanti ne fai.</li>'+
     '<li><b>Quanto conta il breve periodo.</b> '+(p.w1===null && p.w3===null ? 'Lo misuro sui tuoi dati (quanto dello scarto recente di un orario, un setup o un giorno si ritrova la settimana dopo): per ora le settimane sono poche per dirlo. ' : 'L\'ho misurato sui tuoi dati: quando un gruppo di trade (un orario, un setup, un giorno) va meglio o peggio del solito, la settimana dopo si ritrova '+pc(p.w1)+' di quello scarto se guardo solo l\'ultima settimana, '+pc(p.w3)+' se guardo le ultime 3. ')+'Per questo l\'ultima settimana si rivede ma da sola non decide; le ultime 3 possono proporre una modifica, ma solo se anche i 3 mesi sono positivi e lo storico non è contrario. Il numero si aggiorna ogni settimana: se il mercato diventa più «a fasi», lo vedi qui.</li>'+
-    '<li><b>Gli stati.</b> <b>Conviene</b>: regge su tutto lo storico (probabilità almeno 99% con più peso alle settimane recenti, 95% con tutte uguali), nei 3 mesi e non peggiora nelle ultime 3–4 settimane. <b>Forte di recente</b>: almeno +1 R a settimana nelle ultime 3 su almeno 4 trade, positiva nelle ultime 4 e nei 3 mesi, non negativa sullo storico. <b>Da provare</b>: probabilità almeno 90% e 75%. Su tante alternative qualcuna sembra buona per caso: per questo una segnalazione da sola finisce in «Tieni d\'occhio».</li>'+
-    '<li><b>Cosa entra nella proposta.</b> Metto insieme le modifiche segnalate, una alla volta (al massimo 4): prima quali trade prendere (condizioni, mercati, setup, orari, giorni, regole del giorno), poi l\'uscita, scelta sui trade che restano. Così la proposta non dipende da come è scritto oggi il tuo piano. Lo faccio in due modi: prudente (conviene e forte di recente) e attivo (anche da provare). Poi rifaccio la stessa routine ogni weekend del passato con i soli dati di prima: propongo il modo che ha reso di più, e solo se ha battuto il piano fermo di almeno 0,1 R a settimana e in più settimane di quante ha fatto peggio. Se nessuno dei due passa, il piano è confermato. La trovi in «La routine alla prova».</li>'+
+    '<li><b>Cosa cambiare.</b> Una modifica è candidata se regge sullo storico (ricampionando le settimane mille volte resta positiva quasi sempre) oppure è forte nelle ultime 3 settimane con i 3 mesi positivi e lo storico non contrario. Le metto insieme una alla volta (al massimo 4): prima quali trade prendere (condizioni, mercati, setup, orari, giorni, regole del giorno), poi l\'uscita, scelta sui trade che restano. Così la risposta non dipende da come è scritto oggi il tuo piano.</li>'+
+    '<li><b>Cambia o non cambiare.</b> Rifaccio la stessa routine ogni weekend del passato con i soli dati di prima. Se seguirla ha battuto il piano fermo di almeno 0,1 R a settimana, e in più settimane di quante ha fatto peggio, ti dico cosa cambiare. Altrimenti la risposta è: non cambiare niente. La prova è in «La routine alla prova».</li>'+
+    '<li><b>Quando leggerla.</b> Conta solo le settimane chiuse. Da venerdì a fine sessione e nel weekend vale per la settimana che viene; se la apri a metà settimana vale per quella in corso.</li>'+
     '<li><b>Uscite.</b> Il target fisso è esatto dal Max Real RR. Stop a BE o in profitto, trailing e parziali seguono il percorso scritto nelle note; se la nota finisce prima, conta il caso peggiore. Ogni uscita conta insieme alle vicine (un passo in più o in meno), perché un picco isolato è quasi sempre fortuna. Un cambio di uscita si propone solo se batte la tua di almeno 0,1 R a settimana, se scegliere così ha pagato nella prova sul passato e se regge sulle ultime settimane non usate per sceglierla.</li>'+
     '<li><b>Niente senno di poi.</b> Le regole del giorno reagiscono solo ai trade già chiusi quando entra il successivo. Contano solo le settimane chiuse.</li>'+
     '<li><b>Cosa sta cambiando.</b> Per il piano e per ogni setup, mercato, orario e condizione confronto i R a trade delle ultime 4, 6, 8 o 13 settimane con quelli di prima, rimescolando l\'ordine dei trade: lo segnalo solo se una differenza così esce per caso al massimo 5 volte su 100.</li>'+
@@ -749,10 +734,10 @@ function optCtx() { const O=optAll(); if (!O) return 'servono almeno 6 settimane
         la_sua:f(X.me), migliori_per_tipo:X.fams.map(f), prova_sul_passato:X.roll?{ scegliendo_ogni_settimana:r2(X.roll.rw), tenendo_la_sua:r2(X.roll.rb), settimane_meglio:X.roll.up, settimane_peggio:X.roll.dn }:null,
         R_a_trade_per_target_fisso:X.tp.reduce((o,x)=>(o[fmtX(x.t)+'R']=r2(x.e),o),{}), stop_a_BE:X.be.map(b=>({ livello:b.a, perdite_salvate:b.sv, vincenti_chiusi_a_zero:b.kl, R_netti:r2(b.net), con_target:X.Tref })),
         ritracciamenti:X.pb.map(q=>({ dopo_R:q.L, mediana_R:r2(q.med), otto_su_dieci_entro_R:r2(q.p8), trade:q.n })) }; })(), routine_del_weekend:(()=>{ const R=optRoutine(O), w=R.last, G=O.prop, T=O.track;
-      return { nota:'la pagina è una routine da fare a settimana chiusa: revisione della settimana, checklist con uno stato per area (Cambia = nella proposta, Tieni d\'occhio = segnalata ma non provata, Confermato) e proposta per la settimana dopo. L\'ultima settimana da sola non decide mai.',
+      return { nota:'la pagina è una routine da fare a settimana chiusa: revisione della settimana, checklist con due soli stati per area (Cambia / Non cambiare) e in alto cosa cambiare per la settimana. La pagina è decisa: niente vie di mezzo. L\'ultima settimana da sola non decide mai.',
         settimana_chiusa:{ lunedi:w.wk, R_col_piano:r2(w.n.R), trade:w.n.n, vinti:r2(w.n.wr), rispetto_alle_altre_settimane:w.rank>=.8?'tra le migliori':w.rank<=.2?'tra le peggiori':'nella norma', R_per_giorno_lun_ven:w.days.map(r2), trade_lasciati_fuori_dalle_regole:w.out, R_che_avrebbero_fatto:r2(w.outR), settimane_di_fila_dello_stesso_segno:w.streak,
           modifica_migliore_col_senno_di_poi:w.lesson ? { modifica:w.lesson.m.l, R_in_piu_questa_settimana:r2(w.lesson.m.c.w1), R_a_settimana_sullo_storico:r2(w.lesson.m.c.all), nelle_4_settimane_prima:{ meglio:w.lesson.up, peggio:w.lesson.dn } } : null },
-        proposta_per_la_settimana_dopo: G ? { modifiche:G.steps.map(x=>({ modifica:x.l, tipo:x.x?'cambio di uscita (ha passato prova sul passato e controprova)':x.c.verdict==='si'?'confermata dallo storico':x.c.verdict==='indizio'?'da provare':'forte nelle ultime 3 settimane', weekend_di_fila_segnalata:x.since||1 })), modo:{ now:'prudente (conviene + forte di recente)', act:'attivo (anche da provare)', best:'solo conviene, confermato senza le ultime settimane', exit:'solo cambio di uscita' }[G.mode] } : 'nessuna: piano confermato',
+        cosa_cambiare: G ? G.steps.map(x=>x.l) : 'niente: il piano resta com\'è', per:R.cur?'questa settimana':'la prossima settimana',
         checklist:R.areas.map(a=>({ area:a.name, stato:OPT_ST[a.st][0], risposta:a.say })),
         prova_sul_passato_della_routine:T ? { settimane:T.n, R_a_settimana_seguendola:r2(T.rw), R_a_settimana_piano_fermo:r2(T.rb), settimane_meglio:T.up, settimane_peggio:T.dn, ultime:T.log.slice(-6).map(x=>({ settimana:x.wk, modifiche:x.steps, R_rispetto_al_piano:r2(x.d) })) } : null,
         quanto_dura_una_fase:{ nota:'quota dello scarto recente di un gruppo dalla sua media che si ritrova la settimana dopo (1 = tutto, 0 = niente)', ultima_settimana:R.pers.w1===null?null:r2(R.pers.w1), ultime_3_settimane:R.pers.w3===null?null:r2(R.pers.w3) } }; })(), piano_migliore:{ sicuro:!!O.best, nota:'si propone solo se trovato con i «conviene», trovato uguale anche senza le ultime settimane e migliore del piano proprio in quelle', modifiche:O.greedy.steps.map(s=>s.l), risultati:w(O.greedyNums) },
@@ -766,4 +751,4 @@ function optCtx() { const O=optAll(); if (!O) return 'servono almeno 6 settimane
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['ottimizza.js'] = '2026-11-15.3';
+EB_V['ottimizza.js'] = '2026-11-15.4';
