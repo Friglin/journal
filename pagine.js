@@ -615,4 +615,4 @@ function renderList() {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['pagine.js'] = '2026-11-14.5';
+EB_V['pagine.js'] = '2026-11-15.1';
