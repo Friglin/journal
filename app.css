@@ -763,7 +763,7 @@ nav.bar { background:color-mix(in srgb,var(--surface) 76%,transparent); -webkit-
 /* ───── regole comuni: accessibilità e prestazioni ───── */
 :focus-visible { outline:2.5px solid var(--accent); outline-offset:2px; border-radius:10px; }
 button:focus:not(:focus-visible) { outline:none; }
-.dayg, .nday { content-visibility:auto; contain-intrinsic-size:auto 260px; }
+.tl, .nday { content-visibility:auto; contain-intrinsic-size:auto 260px; }
 /* animazioni ridotte: solo se scelto nelle Impostazioni (o «Come il sistema» con «riduci movimento» attivo) → classe .rm */
 :root.rm *, :root.rm *::before, :root.rm *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; scroll-behavior:auto !important; }
 
@@ -1232,6 +1232,29 @@ nav.bar button:active .pill { transform:scale(.88); }
 .rv-mc .chip.hi.on { background:var(--loss); border-color:var(--loss); color:#fff; } .rv-mc .chip.md.on { background:var(--warn); border-color:var(--warn); color:#fff; }
 .rv-back { display:flex; align-items:center; gap:12px; text-align:left; color:var(--fg); font:inherit; cursor:pointer; padding:14px 16px; }
 .rv-back > span { flex:1; display:flex; flex-direction:column; } .rv-back em { font-style:normal; font-size:12.5px; color:var(--fg2); } .rv-back > .ic:first-child { color:var(--accent); }
+/* Elenco dei trade (pagina Trade e fondo dell'Analisi): settimana → giorno → trade, una sola colonna; su PC righe con colonne allineate */
+.tl { display:flex; flex-direction:column; gap:8px; }
+.tl-wk { display:flex; align-items:baseline; gap:10px; padding:6px 4px 0; } .tl-wk b { font-family:var(--display); font-size:17px; font-weight:650; letter-spacing:-.02em; }
+.tl-wk span { flex:1; min-width:0; font-size:12.5px; color:var(--fg3); } .tl-wk em { font-style:normal; font-family:var(--display); font-size:17px; font-weight:650; white-space:nowrap; }
+.tl-wk em.pos { color:var(--win); } .tl-wk em.neg { color:var(--loss); } .tl-wk em small { font-family:var(--sans); font-size:12px; font-weight:500; color:var(--fg3); margin-left:8px; }
+.tl-card { background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:0 14px; overflow:hidden; }
+.tl-day { display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin:0 -14px; padding:8px 14px; background:var(--sunk); font-size:12.5px; font-weight:650; color:var(--fg2); border-top:1px solid var(--line); }
+.tl-day b { font-family:var(--display); font-size:13.5px; font-weight:600; } .tl-day b.pos { color:var(--win); } .tl-day b.neg { color:var(--loss); }
+.tl-head + .tl-day, .tl-card > .tl-day:first-child { border-top:0; } .tl-day + .trow { border-top:0; }
+.tl-head, .tc { display:none; }
+.tl-sec { margin-top:14px; } .st-jump { display:inline-flex; align-items:center; gap:4px; font-size:13.5px; white-space:nowrap; } .st-jump .ic { transform:rotate(90deg); }
+@media (min-width:1000px) {
+  .tl { --tlc:58px 34px minmax(170px,1.6fr) 84px minmax(96px,.8fr) 88px 78px 78px 84px 16px; }
+  .tl-card { padding:0 18px; } .tl-day { margin:0 -18px; padding:7px 18px; }
+  .tl-head, .tl .trow { display:grid; grid-template-columns:var(--tlc); align-items:center; gap:14px; }
+  .tl-head { padding:10px 0 8px; font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--fg3); }
+  .tl-head span:nth-child(n+8) { text-align:right; }
+  .tl .trow { padding-block:9px; } .tl .trow .t2, .tl .trow .tres span { display:none; }
+  .tl .tc { display:block; min-width:0; font-size:13.5px; color:var(--fg2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .tl .tc i { font-style:normal; color:var(--fg3); opacity:.6; }
+  .tl .c-ora { color:var(--fg); font-weight:600; } .tl .c-num { text-align:right; font-variant-numeric:tabular-nums; }
+  .tl .badge { width:34px; height:28px; border-radius:9px; font-size:11.5px; } .tl .badge::after { display:none; }
+  .tl .t1 { font-size:14.5px; } .tl .tres b { font-size:15.5px !important; }
+}
 /* il mio piano (Impostazioni) e pagina Ottimizza */
 .pl-sum { display:flex; flex-direction:column; }
 .pl-r { display:grid; grid-template-columns:18px minmax(96px,150px) minmax(0,1fr); gap:10px; align-items:baseline; padding:9px 0; border-top:1px solid var(--line); font-size:13.5px; }
@@ -1345,7 +1368,7 @@ nav.bar button:active .pill { transform:scale(.88); }
 @media (max-width:520px) { .rvp-w { grid-template-columns:24px minmax(0,1fr); } .rvp-n { grid-column:2; justify-content:flex-start; } }
 
 /* versione del foglio di stile (la scrive tools/build.py): index.html controlla che sia uguale a BUILD */
-:root { --eb-build: "2026-11-16.2"; }
+:root { --eb-build: "2026-11-16.3"; }
 /* Ottimizza · uscita dal trade (dalle note) */
 .op-xb { justify-self:end; padding:5px 12px !important; font-size:12.5px !important; }
 .op-xc { display:flex; flex-direction:column; gap:8px; padding:12px 14px; border-radius:16px; background:var(--sunk); min-width:0; animation:rise 420ms calc(350ms + var(--k,0) * 80ms) cubic-bezier(.23,1,.32,1) both; }

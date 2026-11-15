@@ -518,7 +518,7 @@ function blkMark(b, k, k0) {
 }
 // Su PC le card consecutive vanno in due colonne di altezza simile (senza buchi); sul telefono resta una colonna
 function masonry(el, after) {
-  const isC = n => n.nodeType===1 && (n.classList.contains('card') || n.classList.contains('dayg')) && !n.classList.contains('wide');
+  const isC = n => n.nodeType===1 && n.classList.contains('card') && !n.classList.contains('wide');
   const runs=[]; if (innerWidth>=1000) { let cur=[]; [...el.children].forEach(n=>{ if (isC(n)) cur.push(n); else { if (cur.length>1) runs.push(cur); cur=[]; } }); if (cur.length>1) runs.push(cur); }
   const W=runs.map(r=>{ const w=document.createElement('div'); w.className='mcols'; const a=document.createElement('div'), b=document.createElement('div'); a.className=b.className='mcol';
     w.append(a,b); r[0].before(w); r.forEach(n=>a.appendChild(n)); return w; });
@@ -692,4 +692,4 @@ function filtClick(b) {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['core.js'] = '2026-11-16.2';
+EB_V['core.js'] = '2026-11-16.3';

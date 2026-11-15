@@ -367,6 +367,8 @@ document.addEventListener('click', e => {
   if (b.dataset.act==='setup') { showSetup(); return; }
   if (b.dataset.act==='filters') { openFilters(); return; }
   if (b.dataset.act==='more') { S.lmore+=60; renderList(); return; }
+  if (b.dataset.act==='stmore') { const y=scrollY; S.stMore=(S.stMore||10)+40; renderStats(); scrollTo(0,y); return; }
+  if (b.dataset.act==='stjump') { const e=$('st-trades'); if (e) e.scrollIntoView({ behavior:reduceMotion()?'auto':'smooth', block:'start' }); return; }
   if (b.classList.contains('trow')) { if (b.dataset.row) openForm(+b.dataset.row); return; }
   const sg=b.closest('[data-seg]');
   if (b.closest('[data-seg=dper]')) { S.dper=b.dataset.v; store.set('dper',S.dper); renderCurrent(true); return; }
@@ -447,4 +449,4 @@ if (!viaScript() && !(store.get('api','') && store.get('key',''))) showSetup(); 
 }
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['scheda.js'] = '2026-11-16.2';
+EB_V['scheda.js'] = '2026-11-16.3';

@@ -43,7 +43,7 @@ const kpi = (lbl, v, hint, d, cls) => '<div class="kpi rise" style="--d:'+(d||0)
 function renderStats() {
   const el=$('v-stats'); if (!S.loaded) { el.innerHTML=skeleton(); return; }
   const E=S.type==='EOW', T=tgt(), m=curModel(), ts=filtered(m);
-  let html='<div class="stat-h rise"><div><h1>'+words('Analisi')+'</h1></div><span class="mut num">'+ts.length+' trade</span></div>'+fbar(20);
+  let html='<div class="stat-h rise"><div><h1>'+words('Analisi')+'</h1></div><button type="button" class="link st-jump" data-act="stjump">Vedi i '+ts.length+' trade'+ic('chev',14,2.2)+'</button></div>'+fbar(20);
   if (!ts.length) { enter(el, html+emptyState('Nessun trade', 'Nessun trade corrisponde ai filtri scelti. Allarga il periodo o togli qualche filtro.')); return; }
   const a=agg(ts,m), ringOff=94.25*(1-(a.wr||0)), U=usdOn(), uT=U?usdSum(ts,m):0;
   html+='<div class="kgrid">'+
@@ -84,6 +84,10 @@ function renderStats() {
   }
   const order = E ? ['eq','mo','tg','cv','fo','gn','id','smt','lvn','sp','as','dir','cc'] : ['eq','mo','pr','fo','id','smt','gn','lvn','as','dir'];
   html+=rows2(order.filter(k=>C[k]).map(k=>C[k]));
+  // i trade analizzati: lo stesso elenco della pagina Trade, dal più recente (richiesta dell'utente: l'Analisi mostrava i numeri ma non i trade)
+  const lim=S.stMore||10, rv=ts.slice().reverse();
+  html+='<div class="stat-h tl-sec rise" id="st-trades"><div><div class="eyebrow">Con i filtri scelti</div><h2 class="h2">I trade analizzati</h2></div><span class="mut num">'+Math.min(lim,rv.length)+' di '+rv.length+'</span></div>'+tradeList(rv.slice(0,lim), m, { open:S.file })+
+    (rv.length>lim ? '<button type="button" class="btn sec more" data-act="stmore">Mostra altri '+Math.min(40,rv.length-lim)+'</button>' : '');
   enter(el, html, ()=>{ lineChart($('c-eq'), equityPts(ts,m), { h:200 }); barChart($('c-mo'), monthItems(ts,m), { h:170 }); });
 }
 
@@ -294,4 +298,4 @@ async function delTrade() {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['analisi.js'] = '2026-11-16.2';
+EB_V['analisi.js'] = '2026-11-16.3';

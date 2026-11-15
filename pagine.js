@@ -581,15 +581,35 @@ const NEWS_S = { 'No News Day':'No news', 'Red News':'Red news', 'Orange News':'
 function tline(t, f, o) {
   const E=f==='EOW', r=o.r, when=(o.date?t.d.getDate()+' '+MESI[t.d.getMonth()]+' · ':'')+String(t.raw.Ora).slice(0,5);
   const sub = t.raw._pending ? 'Salvo…' : E ? 'max '+fmtN(t.max,1)+' R' : usdOn(false) ? fmtU(usdT(t,r), isEst(t)) : '';
-  return '<span class="badge '+(o.w?'w':o.l?'l':'')+'">'+esc(t.a)+'</span>'+
+  const cell=(c,v)=>'<span class="tc '+c+'">'+(v?esc(v):'<i>–</i>')+'</span>';
+  const pc = !o.cols ? '' : cell('c-news', NEWS_S[t.news]||t.news)+(E ? cell('c-x1', t.smt==='SMT a favore'?'a favore':t.smt==='SMT a sfavore'?'a sfavore':'')+cell('c-x2', t.lvn==='Si'?'da LVN':'')+cell('c-num', isFinite(t.max)?fmtN(t.max,1)+' R':'')
+    : cell('c-x1', isFinite(t.hold)?hhmm(t.hold):'')+cell('c-x2', t.tp||'')+cell('c-num', usdOn(false)?fmtU(usdT(t,r), isEst(t)):''));
+  return (o.cols?'<span class="tc c-ora num">'+esc(when)+'</span>':'')+'<span class="badge '+(o.w?'w':o.l?'l':'')+'">'+esc(t.a)+'</span>'+
     '<span class="tmain"><span class="t1"><span class="tt">'+esc(t.idea||t.dir||'Trade')+'</span>'+(o.tag?'<em class="ftag '+f+'">'+(E?'EOW':'Journal')+'</em>':'')+'</span>'+
-    '<span class="t2">'+esc([when, t.dir, NEWS_S[t.news]||t.news].filter(Boolean).join(' · '))+'</span></span>'+
+    '<span class="t2">'+esc([when, t.dir, NEWS_S[t.news]||t.news].filter(Boolean).join(' · '))+'</span></span>'+(o.cols?cell('c-dir', t.dir):'')+pc+
     '<span class="tres"><b class="'+(t.raw._pending?'mut':sgn(r))+'">'+fmtRc(r, E?0:2)+'</b>'+(sub?'<span>'+sub+'</span>':'')+'</span>'+ic('chev',16,2);
 }
-function trow(t, m, noDate) {
-  return '<button type="button" class="trow'+(t.raw._pending?' pend':'')+(isFlash(t)?' new" style="animation-delay:-'+Math.round(performance.now()-S.flashT)+'ms':'')+'" data-row="'+(t.row||'')+'">'+
-    tline(t, S.file, { r:m.rOf(t), w:m.isWin(t), l:m.isLoss(t), date:!noDate })+'</button>';
+function trow(t, m, noDate, open) {
+  return '<button type="button" class="trow'+(t.raw._pending?' pend':'')+(isFlash(t)?' new" style="animation-delay:-'+Math.round(performance.now()-S.flashT)+'ms':'')+'" '+(open?'data-open="'+open+':'+(t.row||'')+'"':'data-row="'+(t.row||'')+'"')+'>'+
+    tline(t, S.file, { r:m.rOf(t), w:m.isWin(t), l:m.isLoss(t), date:!noDate, cols:!!open||noDate==='cols' })+'</button>';
 }
+// Elenco dei trade (pagina Trade e fondo dell'Analisi). Regole di disposizione (16/11/2026, l'utente: «disposti in modo
+// confusionario soprattutto da PC»):
+//  1. una sola direzione di lettura, dall'alto in basso, dal più recente: mai due colonne di giorni affiancate (prima su PC la
+//     funzione masonry li metteva su due colonne e l'ordine saltava a zig-zag);
+//  2. tre livelli: settimana (intervallo, numero di trade, vinti, R) → giorno (nome e R del giorno) → trade;
+//  3. su PC ogni trade è una riga con colonne allineate e intestate una volta per settimana: ora, mercato, setup, direzione, news,
+//     poi SMT, LVN e max (EOW) oppure durata, TP e dollari (Journal), e l'esito sempre a destra;
+//  4. numeri allineati a destra con cifre tabellari; il colore solo sull'esito; i campi vuoti sono un trattino;
+//  5. sul telefono resta la riga compatta di prima (due righe di testo, esito a destra).
+function tradeList(ts, m, o) { o=o||{}; const E=S.type==='EOW', wd=d=>GIORNI[d.getDay()].replace(/^./,c=>c.toUpperCase())+' '+d.getDate()+' '+MESI_F[d.getMonth()], yr=new Date().getFullYear();
+  const weeks=[]; ts.forEach(t=>{ const wk=weekOf(iso(t.d)); let w=weeks[weeks.length-1]; if (!w || w.wk!==wk) weeks.push(w={ wk, days:[], ts:[] });
+    const k=iso(t.d); let d=w.days[w.days.length-1]; if (!d || d.k!==k) w.days.push(d={ k, ts:[] }); d.ts.push(t); w.ts.push(t); });
+  const head='<div class="tl-head"><span>Ora</span><span></span><span>Setup</span><span>Direzione</span><span>News</span>'+(E?'<span>SMT</span><span>LVN</span><span>Max</span>':'<span>Durata</span><span>TP</span><span>'+(usdOn(false)?'Dollari':'')+'</span>')+'<span>Esito</span><span></span></div>';
+  return weeks.map((w,i)=>{ const a=agg(w.ts,m), d0=pdIso(w.wk);
+    return '<div class="tl wide rise" style="--d:'+Math.min(60+i*40,400)+'ms"><div class="tl-wk"><b>Settimana '+wkLbl2(w.wk)+(d0.getFullYear()!==yr?' '+d0.getFullYear():'')+'</b><span>'+a.n+' trade · '+a.w+' vint'+(a.w===1?'o':'i')+'</span><em class="num '+sgn(a.R)+'">'+fmtRc(a.R,E?0:2)+(usdOn()&&!E?'<small>'+fmtU(usdSum(w.ts,m))+'</small>':'')+'</em></div>'+
+      '<div class="tl-card">'+head+w.days.map(d=>{ const R=d.ts.reduce((s,t)=>s+m.rOf(t),0);
+        return '<div class="tl-day"><span>'+wd(d.ts[0].d)+'</span><b class="num '+sgn(R)+'">'+fmtRc(R,E?0:2)+'</b></div>'+d.ts.map(t=>trow(t,m,'cols',o.open)).join(''); }).join('')+'</div></div>'; }).join(''); }
 function renderList() {
   const el=$('v-list'); if (!S.loaded) { el.innerHTML=skeleton(); return; }
   if (S.file==='EOW' && S.revShow) { renderRevShow(); return; }
@@ -605,14 +625,11 @@ function renderList() {
   if (S.file==='EOW' && !(rv && revDue())) html+='<button type="button" class="card rv-back rise" data-act="rvpick">'+ic('cal',18,2.2)+'<span><b>Backtest di settimane passate</b><em>Scegli le settimane e i mercati da aggiungere all\'EOW</em></span>'+ic('chev',16,2)+'</button>';
   html+='<div class="toolbar rise" style="--d:40ms" data-lf="1">'+oo.map(o=>'<button type="button" class="chip'+(S.lo===o.v?' on':'')+'" data-k="lo" data-v="'+o.v+'">'+o.l+'</button>').join('')+'</div>';
   if (!ts.length) html+=emptyState('Nessun trade', S.rows.length?'Nessun trade con questi filtri.':'Il foglio '+S.file+' è vuoto: inserisci il primo trade.', S.rows.length?null:'Nuovo trade');
-  const shown=ts.slice(0,S.lmore); let day='', grp=[], i=0;
-  const flush=()=>{ if (!grp.length) return; const R=grp.reduce((s,t)=>s+m.rOf(t),0), d=grp[0].d;
-    html+='<div class="rise dayg" style="--d:'+Math.min(60+i*30,400)+'ms"><div class="dayh"><span>'+GIORNI[d.getDay()].replace(/^./,c=>c.toUpperCase())+' '+d.getDate()+' '+MESI_F[d.getMonth()]+(d.getFullYear()!==new Date().getFullYear()?' '+d.getFullYear():'')+'</span>'+(grp.length?'<span class="dtot"><b class="num '+sgn(R)+'">'+fmtRc(R,E?0:2)+'</b>'+(usdOn()&&!E?'<span class="num">'+fmtU(usdSum(grp,m))+'</span>':'')+'</span>':'')+'</div><div class="dayc">'+grp.map(t=>trow(t,m,true)).join('')+'</div></div>'; grp=[]; i++; };
-  shown.forEach(t=>{ const k=t.d.toDateString(); if (k!==day) { flush(); day=k; } grp.push(t); }); flush();
+  html+=tradeList(ts.slice(0,S.lmore), m);
   if (ts.length>S.lmore) html+='<button type="button" class="btn sec more" data-act="more">Mostra altri '+Math.min(60,ts.length-S.lmore)+'</button>';
   enter(el, html);
 }
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['pagine.js'] = '2026-11-16.2';
+EB_V['pagine.js'] = '2026-11-16.3';
