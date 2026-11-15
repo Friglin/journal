@@ -626,10 +626,10 @@ function renderList() {
   html+='<div class="toolbar rise" style="--d:40ms" data-lf="1">'+oo.map(o=>'<button type="button" class="chip'+(S.lo===o.v?' on':'')+'" data-k="lo" data-v="'+o.v+'">'+o.l+'</button>').join('')+'</div>';
   if (!ts.length) html+=emptyState('Nessun trade', S.rows.length?'Nessun trade con questi filtri.':'Il foglio '+S.file+' è vuoto: inserisci il primo trade.', S.rows.length?null:'Nuovo trade');
   html+=tradeList(ts.slice(0,S.lmore), m);
-  if (ts.length>S.lmore) html+='<button type="button" class="btn sec more" data-act="more">Mostra altri '+Math.min(60,ts.length-S.lmore)+'</button>';
+  if (ts.length>S.lmore) html+='<button type="button" class="tl-more" data-act="more">'+ic('chev',15,2.4)+'<span>Mostra altri '+Math.min(60,ts.length-S.lmore)+' trade</span></button>';
   enter(el, html);
 }
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['pagine.js'] = '2026-11-16.3';
+EB_V['pagine.js'] = '2026-11-16.4';

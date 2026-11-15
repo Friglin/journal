@@ -87,7 +87,7 @@ function renderStats() {
   // i trade analizzati: lo stesso elenco della pagina Trade, dal più recente (richiesta dell'utente: l'Analisi mostrava i numeri ma non i trade)
   const lim=S.stMore||10, rv=ts.slice().reverse();
   html+='<div class="stat-h tl-sec rise" id="st-trades"><div><div class="eyebrow">Con i filtri scelti</div><h2 class="h2">I trade analizzati</h2></div><span class="mut num">'+Math.min(lim,rv.length)+' di '+rv.length+'</span></div>'+tradeList(rv.slice(0,lim), m, { open:S.file })+
-    (rv.length>lim ? '<button type="button" class="btn sec more" data-act="stmore">Mostra altri '+Math.min(40,rv.length-lim)+'</button>' : '');
+    (rv.length>lim ? '<button type="button" class="tl-more" data-act="stmore">'+ic('chev',15,2.4)+'<span>Mostra altri '+Math.min(40,rv.length-lim)+' trade</span></button>' : '');
   enter(el, html, ()=>{ lineChart($('c-eq'), equityPts(ts,m), { h:200 }); barChart($('c-mo'), monthItems(ts,m), { h:170 }); });
 }
 
@@ -298,4 +298,4 @@ async function delTrade() {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['analisi.js'] = '2026-11-16.3';
+EB_V['analisi.js'] = '2026-11-16.4';

@@ -1242,6 +1242,9 @@ nav.bar button:active .pill { transform:scale(.88); }
 .tl-day b { font-family:var(--display); font-size:13.5px; font-weight:600; } .tl-day b.pos { color:var(--win); } .tl-day b.neg { color:var(--loss); }
 .tl-head + .tl-day, .tl-card > .tl-day:first-child { border-top:0; } .tl-day + .trow { border-top:0; }
 .tl-head, .tc { display:none; }
+.tl-more { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:13px 16px; border-radius:16px; border:1px dashed var(--line); background:transparent; color:var(--fg2); font:inherit; font-size:14px; font-weight:600; cursor:pointer; transition:background 180ms, color 180ms, border-color 180ms, transform 160ms cubic-bezier(.23,1,.32,1); }
+.tl-more .ic { transform:rotate(90deg); color:var(--fg3); transition:transform 220ms cubic-bezier(.23,1,.32,1); }
+.tl-more:active { transform:scale(.985); } @media (hover:hover) { .tl-more:hover { background:var(--surface); color:var(--fg); border-style:solid; } .tl-more:hover .ic { transform:rotate(90deg) translateX(2px); } }
 .tl-sec { margin-top:14px; } .st-jump { display:inline-flex; align-items:center; gap:4px; font-size:13.5px; white-space:nowrap; } .st-jump .ic { transform:rotate(90deg); }
 @media (min-width:1000px) {
   .tl { --tlc:58px 34px minmax(170px,1.6fr) 84px minmax(96px,.8fr) 88px 78px 78px 84px 16px; }
@@ -1368,7 +1371,7 @@ nav.bar button:active .pill { transform:scale(.88); }
 @media (max-width:520px) { .rvp-w { grid-template-columns:24px minmax(0,1fr); } .rvp-n { grid-column:2; justify-content:flex-start; } }
 
 /* versione del foglio di stile (la scrive tools/build.py): index.html controlla che sia uguale a BUILD */
-:root { --eb-build: "2026-11-16.3"; }
+:root { --eb-build: "2026-11-16.4"; }
 /* Ottimizza · uscita dal trade (dalle note) */
 .op-xb { justify-self:end; padding:5px 12px !important; font-size:12.5px !important; }
 .op-xc { display:flex; flex-direction:column; gap:8px; padding:12px 14px; border-radius:16px; background:var(--sunk); min-width:0; animation:rise 420ms calc(350ms + var(--k,0) * 80ms) cubic-bezier(.23,1,.32,1) both; }
