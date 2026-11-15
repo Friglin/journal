@@ -692,4 +692,4 @@ function filtClick(b) {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['core.js'] = '2026-11-15.4';
+EB_V['core.js'] = '2026-11-16.1';

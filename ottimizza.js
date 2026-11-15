@@ -288,7 +288,16 @@ function optGreedy(B, P0, to, ok, simOf, N) {
   // +0,79 / +1,33 / −0,67 R a settimana rispetto al piano fermo; modo prudente uguale o meglio (+0,13 / +0,04 / −0,17 / +0,42 / −0,25).
   // Scartati perché peggiorano la prova: probabilità ≥ 80% anche per «forte di recente», e l'uscita senza altri passi dopo.
   for (let k=0;k<3;k++) if (!pick(m=>m.cat!=='g')) break;
-  pick(m=>m.cat==='g'); while (steps.length<4 && pick(m=>m.cat!=='g'));
+  // L'uscita: tra quelle che passano, conta lo storico di ognuna insieme ai target vicini (mezzo R in più o in meno), come nella
+  // tabella dei target; tra quelle entro 0,25 R a settimana dalla migliore si prende il target più basso, che ha cali meno
+  // profondi (caso dell'utente, 16/11/2026: la tabella diceva «4R migliore» e la proposta era 5R, scelto per 0,05 R di differenza
+  // nella media pesata sulle settimane recenti e con un calo massimo di −10 R contro −7).
+  { const to2=to??B.weeks.length, rw=g=>{ const v=simOf(Object.assign({}, P, { g })); let a=0; for (let i=0;i<to2;i++) a+=v.wR[i]; return to2?a/to2:0; };
+    const sc=g=>{ if (g.k!=='T' || g.be) return rw(g)-.1; const T=PLAN_MG.T, i=T.indexOf(g.t), nb=[T[i-1],g.t,T[i+1]].filter(x=>x!==undefined); return nb.reduce((s,t)=>s+rw({ k:'T', t }),0)/nb.length; };
+    const ok=[]; optMoves(B,P).forEach(m=>{ if (m.cat!=='g') return; const v=simOf(m.P), c=optCmp(B,base,v,to,N); if (pass(c)) ok.push({ m, v, c, s:sc(m.P.g), t:m.P.g.k==='T' && !m.P.g.be ? m.P.g.t : 99 }); });
+    if (ok.length) { const top=Math.max(...ok.map(x=>x.s)), best=ok.filter(x=>x.s>=top-.25).sort((a,b)=>a.t-b.t || b.s-a.s)[0];
+      steps.push({ l:best.m.l, cat:'g', c:best.c }); P=best.m.P; base=best.v; } }
+  while (steps.length<4 && pick(m=>m.cat!=='g'));
   return { P, steps, sim:base }; }
 // tutte le analisi della pagina, rifatte quando cambiano i dati dell'EOW o il piano
 function optAll() {
@@ -351,7 +360,7 @@ function optAll() {
   // la proposta per la settimana dopo: le modifiche del piano per adesso (o del piano migliore) e, se nessuna tocca l'uscita, il
   // cambio di uscita che ha passato le sue due prove (optExit). Ogni passo sa da quanti weekend di fila è segnalato.
   const steps=now ? now.steps.slice() : [];
-  O.prop = steps.length ? { steps, roll:now.roll, mode:'act' } : null;
+  O.prop = steps.length ? { steps, roll:now.roll, mode:'act', P:now.P } : null;
   O.ms=performance.now()-t0; return (S._opt=O); }
 // prova del metodo sul passato: ogni settimana (dalla metà dello storico) rifà la ricerca con i soli dati di prima, come se
 // usassi Ottimizza quel giorno, e tiene il piano proposto per la settimana dopo. Confronto con il piano fisso.
@@ -466,13 +475,17 @@ function optRoutine(O) { if (O.rt) return O.rt;
   // l'uscita nella proposta (dalla ricerca a passi o dalla carta delle uscite) e il suo tipo
   const exStep=steps.find(x=>x.cat==='g'), exG = exStep ? (exStep.g || OPT_GS().find(g=>'gestione: '+mgTxt(g)===exStep.l) || null) : null, exF = exG ? optFamOf(exG) : '', meF=optFamOf(P.g);
   const xArea=id=>{ const f=OPT_XA[id], J=X.fam[f], b=J.best, mine=meF===f, nm='«'+(f==='T' ? 'target '+fmtX(b.g.t)+'R' : low(mgTxt(b.g,true)))+'»', dl=fR(J.gain)+' R a settimana';
-    const rows=(id==='tp' ? X.grid.filter(v=>v.f==='T') : J.top3.slice()); if (!rows.includes(me)) rows.unshift(me);
+    // con un target nella proposta la tabella dei target è fatta sul piano con le altre modifiche già applicate: è lì che è stato scelto
+    const onQ = id==='tp' && exF==='T' && steps.length>1, key=g=>JSON.stringify(g), nq=v=>OPT_WIN.map(w=>optNums(B,v,w.k));
+    const rows = onQ ? PLAN_MG.T.map(t=>{ const g={ k:'T', t }, sim=O.simOf(Object.assign({}, O.prop.P, { g })); return { g, sim, n:nq(sim), use:t===exG.t, mine:key(g)===key(P.g), gi:X.grid.findIndex(v=>key(v.g)===key(g)) }; })
+      : (id==='tp' ? X.grid.filter(v=>v.f==='T') : J.top3.slice()); if (!onQ && !rows.includes(me)) rows.unshift(me);
+    if (!onQ && exF===f) rows.forEach(v=>{ if (key(v.g)===key(exG)) v.use=true; });
     const be=X.be, beLo=be.length ? Math.min(...be.map(x=>x.net)) : 0, beHi=be.length ? Math.max(...be.map(x=>x.net)) : 0;
     const beSay = !be.length || mine ? '' : beHi<0 ? 'Lo stop a BE semplice non conviene: con target '+fmtX(X.Tref)+'R costa da '+fmtN(-beHi,0)+' a '+fmtN(-beLo,0)+' R sullo storico. ' : '';
     let st='ok', say;
     // altopiano: i target fissi che rendono quasi come il migliore (entro 0,5 R a settimana). Se sono tanti, quale scegli conta poco
-    const Ts=X.grid.filter(v=>v.f==='T'), tMax=Math.max(...Ts.map(v=>v.n[0].rw)), flat=Ts.filter(v=>v.n[0].rw>=tMax-.5), lo=Math.min(...flat.map(v=>v.n[0].rw));
-    const flatSay = id==='tp' && flat.length>=3 ? ' I target da '+fmtX(flat[0].g.t)+'R a '+fmtX(flat[flat.length-1].g.t)+'R rendono quasi uguale ('+fmtN(lo,1)+'–'+fmtN(tMax,1)+' R a settimana): tra questi la differenza è piccola, più alto è il target più profondi sono i cali.' : '';
+    const Ts=onQ ? rows : X.grid.filter(v=>v.f==='T'), tMax=Math.max(...Ts.map(v=>v.n[0].rw)), flat=Ts.filter(v=>v.n[0].rw>=tMax-.5), lo=Math.min(...flat.map(v=>v.n[0].rw));
+    const flatSay = id==='tp' && flat.length>=3 ? ' I target da '+fmtX(flat[0].g.t)+'R a '+fmtX(flat[flat.length-1].g.t)+'R rendono quasi uguale ('+fmtN(lo,1)+'–'+fmtN(tMax,1)+' R a settimana): tra questi prendo il più basso tra i migliori, perché più alto è il target più profondi sono i cali.' : '';
     if (exF===f) { st='change'; say='Cambia: '+lng(exG)+'.'+(optFamOf(exG)==='T' ? flatSay : ''); }
     else if (J.kind==='go') say=(id==='be'?beSay:'')+(exG ? 'Non cambiare qui: l\'uscita da usare è '+lng(exG)+'.' : 'Non cambiare per ora: '+nm+' rende '+dl+' in più della tua uscita, ma la routine intera non ha battuto il piano fermo nella prova sul passato.');
     else if (J.kind==='paper') say=(id==='be'?beSay:'')+'Non cambiare: sulla carta '+nm+' rende '+dl+' in più, ma le prove sul passato non lo confermano.';
@@ -484,7 +497,7 @@ function optRoutine(O) { if (O.rt) return O.rt;
       say = mine ? 'Il tuo trailing è confermato: nessun altro rende almeno 0,1 R a settimana in più.'
         : 'Non conviene per ora: il trailing migliore ('+nm+') fa '+dl+' rispetto alla tua uscita.'+(q ? ' Dopo '+fmtX(q.L)+'R i trade tornano indietro di '+fmtN(q.med,1)+' R in metà dei casi.' : ''); }
     else say = mine ? 'Le tue parziali sono confermate: nessun\'altra combinazione rende almeno 0,1 R a settimana in più.' : 'Uscire a parziali non batte la tua uscita: la combinazione migliore ('+nm+') fa '+dl+'.';
-    return { x:true, f, J, rows, st, say }; };
+    return { x:true, f, J, rows, st, say, onQ }; };
   const gArea=id=>{ const gs=OPT_GA[id].map(k=>O.groups.find(g=>g.id===k)).filter(Boolean), ms=O.moves.filter(m=>m.cat===id);
     const ch=steps.filter(x=>x.cat===id), fl=ms.filter(m=>optFlag(m.c) && !inStep(m)).sort((a,b)=>b.c.p-a.c.p);
     const dr=O.drift.filter(d=>(OPT_GA[id].includes(d.id)) && (d.on ? d.mr<d.mb : d.mr>d.mb));
@@ -647,8 +660,9 @@ function optCheckCard(O) { const R=optRoutine(O), nOk=R.areas.length-R.nC, sec={
 // dentro un'area di uscita: le uscite di quel tipo contro la tua (R a settimana) e cosa dicono le note
 function optXBody(O, a) { const X=optExit(O), W=O.B.weeks.length, J=a.J, me=X.me, fR=x=>fmtN(x,1,true), cap=g=>optCap(mgTxt(g,true)), td=(v,c)=>'<td class="num '+(c||'')+' '+sgn(v)+'">'+fR(v)+'</td>';
   let h='<div class="tbl-wrap"><table class="ex-t op-t"><tr><th>R a settimana</th><th>Tutto</th><th class="op-c3">3 mesi</th><th>3 sett.</th><th>Ultima</th><th></th></tr>'+
-    a.rows.map(v=>'<tr class="'+(v===me?'cur':'')+'"><td>'+esc(cap(v.g))+(v===me?' <em class="tag">la tua</em>':v===J.best?' <em class="tag">migliore</em>':'')+'</td>'+td(v.n[0].rw)+td(v.n[1].rw,'op-c3')+td(v.n[3].rw)+td(v.sim.wR[W-1])+
-      '<td class="op-tb">'+(v===me?'':'<button type="button" class="chip op-xb" data-act="optexit" data-gi="'+X.grid.indexOf(v)+'">Usa</button>')+'</td></tr>').join('')+'</table></div>';
+    a.rows.map(v=>'<tr class="'+(v===me||v.mine?'cur':'')+'"><td>'+esc(cap(v.g))+(v===me||v.mine?' <em class="tag">la tua</em>':v.use?' <em class="tag">da usare</em>':v===J.best&&a.st!=='change'?' <em class="tag">migliore</em>':'')+'</td>'+td(v.n[0].rw)+td(v.n[1].rw,'op-c3')+td(v.n[3].rw)+td(v.sim.wR[W-1])+
+      '<td class="op-tb">'+(v===me||v.mine?'':'<button type="button" class="chip op-xb" data-act="optexit" data-gi="'+(v.gi??X.grid.indexOf(v))+'">Usa</button>')+'</td></tr>').join('')+'</table></div>'+
+    (a.onQ ? '<p class="op-leg">La tabella conta anche le altre modifiche da fare: il target è scelto sui trade che prenderai. Tra i target che rendono simile si prende il più basso, che ha cali meno profondi.</p>' : '');
   if (a.id==='tp') { const tm=Math.max(.01, ...X.tp.map(x=>Math.abs(x.e)));
     h+='<div class="op-xc"><b>R a trade per target <small>sui '+X.N+' trade che rispettano le condizioni del piano</small></b><div class="op-tp">'+X.tp.map((x,i)=>'<div class="'+(x===X.tBest?'best':'')+'" style="--k:'+i+'" title="Arriva a '+fmtX(x.t)+'R il '+pct(x.p)+' dei trade"><em class="'+sgn(x.e)+'">'+fmtN(x.e,2,true)+'</em><i class="'+sgn(x.e)+'" style="--h:'+Math.max(3,Math.abs(x.e)/tm*100)+'%"></i><span>'+fmtX(x.t)+'</span></div>').join('')+'</div>'+
       '<small>Il migliore a trade: <b>'+fmtX(X.tBest.t)+'R</b> ('+fmtN(X.tBest.e,2,true)+' R a trade, ci arriva il '+pct(X.tBest.p)+'). La tabella sopra conta anche le regole del giorno.</small></div>'; }
@@ -751,4 +765,4 @@ function optCtx() { const O=optAll(); if (!O) return 'servono almeno 6 settimane
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['ottimizza.js'] = '2026-11-15.4';
+EB_V['ottimizza.js'] = '2026-11-16.1';
