@@ -274,7 +274,7 @@ function optMoves(B, P) {
   opt('day','lossR',[1,2,3,0],v=>v?'perdita massima −'+v+' R al giorno':'nessun limite di perdita al giorno');
   return out; }
 // ricerca a passi: dal piano, una modifica alla volta (la migliore tra quelle che passano il test), al massimo 4
-// Ricerca del piano per la settimana dopo. Regole (16/11/2026, dopo il controllo di coerenza su 22 piani, `audit2.js`):
+// Ricerca del piano per la settimana dopo. Regole (16/11/2026, dopo il controllo di coerenza su 22 piani, ora `tools/test/coerenza.js`):
 //  · prima quali trade prendere (condizioni, mercati, setup, orari, giorni, regole del giorno), una modifica alla volta finché ce n'è
 //    una che passa; poi l'uscita, scelta sui trade che restano; poi le eventuali modifiche ai trade che passano solo con l'uscita
 //    nuova (rifare tutto il giro più volte dava più incoerenze: 21 su 22 piani);
@@ -284,7 +284,7 @@ function optMoves(B, P) {
 //    0,25 R a settimana dalla migliore, vince il target più basso, che ha cali meno profondi;
 //  · alla fine i passi sono riscritti come differenze nette tra il piano di partenza e quello finale (un campo cambiato due volte
 //    diventa una modifica sola), ognuno con le simulazioni prima e dopo (b, v) per spiegarlo a parole.
-function optGreedy(B, P0, to, ok, simOf, N) {
+function optGreedy(B, P0, to, ok, simOf, N, solo) {   // solo: serve solo il piano finale (controllo dell'ordine dei passi)
   ok=ok||['si']; const pass=typeof ok==='function' ? ok : c=>ok.includes(c.verdict), ord=c=>(c.verdict==='si'?1e3:0)+c.wm;
   simOf=simOf||(q=>optSim(B,q)); let P=P0, base=simOf(P); const raw=[], put=x=>{ raw.push({ l:x.m.l, cat:x.m.cat, c:x.c, b:base, v:x.v, g2:x.m.cat==='g'?x.m.P.g:null, P:x.m.P }); P=x.m.P; base=x.v; };
   const pick=()=>{ let best=null;
@@ -296,15 +296,25 @@ function optGreedy(B, P0, to, ok, simOf, N) {
     if (!ok.length) return false; const top=Math.max(...ok.map(x=>x.s)), best=ok.filter(x=>x.s>=top-.25).sort((a,b)=>a.t-b.t || b.s-a.s)[0];
     put(best); return true; };
   const run=()=>{ for (let k=0;k<12;k++) if (!pick()) break; };   // al massimo 12 modifiche ai trade per giro (non succede mai: è una sicurezza)
-  run(); if (exit()) run();
+  run(); if (exit()) { const n=raw.length; run(); if (raw.length>n && exit()) run(); }   // la coda ha cambiato i trade: l'uscita si risceglie una volta
   // i passi netti dal piano di partenza a quello finale, nell'ordine: prima i trade, poi l'uscita
   const F=P, J=JSON.stringify, fld=(a,b)=>Object.keys(F).filter(f=>J(a[f])!==J(b[f])), seen=[]; let dup=false, prev=P0;
-  raw.forEach(x=>{ const k=fld(x.P,prev)[0]; if (k && !['idee','bande','giorni'].includes(k) && seen.includes(k)) dup=true; seen.push(k); prev=x.P; });
+  if (solo) return { P:F };
+  // un campo cambiato due volte; per setup, orari e giorni conta la singola voce (tolta e poi rimessa, o il contrario)
+  raw.forEach(x=>{ const k=fld(x.P,prev)[0]; if (!k) return; const a=prev[k], b=x.P[k];
+    const ks=['idee','bande','giorni'].includes(k) ? [...a.filter(v=>!b.includes(v)), ...b.filter(v=>!a.includes(v))].map(v=>k+':'+v) : [k];
+    ks.forEach(q=>{ if (seen.includes(q)) dup=true; seen.push(q); }); prev=x.P; });
   if (!dup) return { P:F, steps:raw, sim:base };   // di solito i passi della ricerca sono già netti: restano nel loro ordine
+  // Passi netti. L'ordine conta: chi applica solo i primi deve ritrovarsi proposti gli altri (15/11/2026: su tre piani a caso,
+  // applicate le prime modifiche, le altre cambiavano o sparivano). Per ogni posto si prende la prima modifica dopo la quale la
+  // ricerca, rifatta da lì, arriva allo stesso piano finale; se non ce n'è nessuna, la prima. Nelle prove sul passato (to) basta
+  // il piano finale: lì l'ordine non si controlla.
+  const same=q=>J(optGreedy(B,q,to,ok,simOf,N,true).P)===J(F);
   const steps=[], diff=(a,b)=>Array.isArray(a) ? a.filter(x=>!b.includes(x)).length+b.filter(x=>!a.includes(x)).length : (J(a)===J(b)?0:1);
   let Q=P0, bq=simOf(Q);
   for (let k=0;k<20 && J(Q)!==J(F);k++) { const ms=optMoves(B,Q).filter(m=>{ const ks=Object.keys(F).filter(f=>J(m.P[f])!==J(Q[f])); return ks.length===1 && diff(m.P[ks[0]],F[ks[0]])<diff(Q[ks[0]],F[ks[0]]) && (!['asset','pb'].includes(ks[0]) || J(m.P[ks[0]])===J(F[ks[0]])); });
-    const m=ms.find(m=>m.cat!=='g') || ms[0]; if (!m) break; const v=simOf(m.P);
+    const cs=[...ms.filter(m=>m.cat!=='g'), ...ms.filter(m=>m.cat==='g')], last=cs.some(m=>J(m.P)===J(F));
+    const m=(to===undefined && !last && cs.length>1 && cs.find(m=>same(m.P))) || cs[0]; if (!m) break; const v=simOf(m.P);
     steps.push({ l:m.l, cat:m.cat, c:optCmp(B,bq,v,to,N), b:bq, v, g2:m.cat==='g'?m.P.g:null }); Q=m.P; bq=v; }
   return J(Q)===J(F) ? { P:F, steps, sim:base } : { P:P0, steps:[], sim:simOf(P0) }; }
 // tutte le analisi della pagina, rifatte quando cambiano i dati dell'EOW o il piano
@@ -767,4 +777,4 @@ function optCtx() { const O=optAll(); if (!O) return 'servono almeno 6 settimane
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['ottimizza.js'] = '2026-11-16.4';
+EB_V['ottimizza.js'] = '2026-11-16.5';
