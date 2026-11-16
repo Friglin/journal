@@ -699,12 +699,13 @@ function optCatBE(O, a, vw) { const B=O.B, P=O.P, W=B.weeks.length, X=optExit(O)
   const T=TS.includes(S.optBeT) ? S.optBeT : Td, own=T===Td, qb=own && optPureBE(Q.g) ? Q.g.be : 0, exCh=JSON.stringify(Q.g)!==JSON.stringify(P.g), v=r=>w3?r.r:r.a;
   const sim=g=>O.simOf(Object.assign({}, Q, { g })), num=sm=>({ a:optNums(B,sm,'all').rw, r:optNums(B,sm,3).rw }), s0=sim({ k:'T', t:T });
   const none=Object.assign({ l:'Senza BE', lv:0 }, num(s0)), lv=PLAN_MG.BE.filter(b=>b<T).map(b=>{ const sm=sim({ k:'T', t:T, be:b }); let sv=0, kl=0;
-    s0.rs.forEach((r0,i)=>{ const r1=sm.rs.get(i); if (r1===undefined) return; if (r1>r0+1e-9) sv++; else if (r1<r0-1e-9) kl++; });
-    return Object.assign({ l:'BE da '+fmtX(b)+'R', lv:b, sv, kl, sub:'salva '+sv+' loss · chiude a zero '+kl+' win' }, num(sm)); });
+    // loss salvati e win chiusi a zero si contano nel periodo della vista (storico, oppure le ultime 3 settimane) e la riga lo dice
+    s0.rs.forEach((r0,i)=>{ const r1=sm.rs.get(i); if (r1===undefined || (w3 && B.wi[B.ts[i].wk]<W-3)) return; if (r1>r0+1e-9) sv++; else if (r1<r0-1e-9) kl++; });
+    return Object.assign({ l:'BE da '+fmtX(b)+'R', lv:b, sv, kl, sub:(w3?'in 3 settimane':'sullo storico')+' salva '+sv+' loss, chiude a zero '+kl+' win' }, num(sm)); });
   const rows=[none, ...lv], ref=rows.find(r=>r.lv===qb) || none; if (own) ref.tag=exCh ? 'da usare' : 'la tua';
   const top=rows.reduce((p,q)=>v(q)>v(p)?q:p), bl=lv.length ? lv.reduce((p,q)=>v(q)>v(p)?q:p) : null; top.hi=true; if (!top.tag) top.tag='il migliore';
   const rec=chg ? 'Stop a BE da '+fmtX(qb)+'R' : qb ? 'Tieni lo stop a BE da '+fmtX(qb)+'R' : 'Non mettere lo stop a BE', per=w3?'nelle ultime 3 settimane':'sullo storico';
-  const cost=r=>'salva '+r.sv+' loss ma chiude a zero '+r.kl+' trade che poi arrivano al target';
+  const cost=r=>'sullo storico salva '+r.sv+' loss ma chiude a zero '+r.kl+' trade che poi arrivano al target';
   let head=rec, txt;
   // per ogni target: senza BE e il livello migliore
   const sumr=TS.map(t=>{ const n0=num(sim({ k:'T', t })), bs=PLAN_MG.BE.filter(b=>b<t).map(b=>({ b, x:num(sim({ k:'T', t, be:b })) })), bb=bs.length ? bs.reduce((p,q)=>v(q.x)>v(p.x)?q:p) : null; return { t, n:v(n0), b:bb ? bb.b : 0, x:bb ? v(bb.x) : NaN }; });
@@ -917,4 +918,4 @@ function optCtx() { const O=optAll(); if (!O) return 'servono almeno 6 settimane
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['ottimizza.js'] = '2026-11-16.12';
+EB_V['ottimizza.js'] = '2026-11-16.13';
