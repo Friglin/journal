@@ -727,8 +727,19 @@ function optCatBE(O, a, vw) { const B=O.B, P=O.P, W=B.weeks.length, X=optExit(O)
     '<p class="op-cdsc">'+OPT_DESC.be0+'</p><h3 class="op-cd">'+esc(head)+'</h3><p class="op-cwn">'+esc(txt)+'</p>'+
     (w3 || !own ? '<p class="op-crec '+a.st+'">'+ic(chg?'trendUp':'check',14,2.6)+'<span>Ottimizza consiglia: <b>'+esc(low1(rec))+(own?'':', con target '+fmtX(Td)+'R')+'</b></span></p>' : '')+
     '<div class="op-sub">Scegli il target</div>'+pick+(bl ? optRank(rows, OPT_UNIT.x, fRw, w3) : '')+sumt+
-    '<p class="op-cp">'+ic('cal',14,2.2)+'<span>Con target '+fmtX(T)+'R'+(O.prop ? ', sul piano con le modifiche da fare' : '')+'. Misurato dal '+dt(d0)+' al '+dt(d1)+' ('+(w3?'le ultime 3 settimane chiuse':W+' settimane chiuse')+').</span></p></section>'; }
+    optCatFoot(O, null, w3, 'Con target '+fmtX(T)+'R'+(O.prop ? ', sul piano con le modifiche da fare' : ''))+'</section>'; }
 const optCatBody = (O, a) => !a.x ? optGBody(O,a) : a.alt ? '<div class="op-sub">Stop a BE o in profitto</div>'+optXBody(O,a)+'<div class="op-sub">Trailing stop</div>'+optXBody(O,a.alt) : optXBody(O,a);
+// Piede di ogni carta: una riga sola con il periodo misurato (e l'eventuale nota), e a destra «Tutti i numeri» che apre le
+// tabelle complete. Prima erano tre righe di testo ripetute uguali su dieci carte.
+function optCatFoot(O, a, w3, note) { const B=O.B, W=B.weeks.length, d0=w3 ? pdIso(B.weeks[Math.max(0,W-3)]) : B.ts[0].t.d, d1=addDays(pdIso(B.cut),4), dt=d=>d.getDate()+' '+MESI[d.getMonth()];
+  const per='<span class="op-cpm">'+ic('cal',13,2.2)+'<span>'+dt(d0)+' – '+dt(d1)+' · '+(w3?'ultime 3 settimane':W+' settimane')+(note?' · '+note:'')+'</span></span>';
+  if (!a) return '<div class="op-ft">'+per+'</div>';
+  return '<details class="op-ar" data-ar="'+a.id+'"'+((S.optOpen||[]).includes(a.id)?' open':'')+'><summary>'+per+'<span class="op-arl">Tutti i numeri'+ic('chev',13,2.6)+'</span></summary><div class="op-arb">'+optCatBody(O,a)+'</div></details>'; }
+// In breve: tutte le categorie in un colpo d'occhio (stato e decisione), ognuna porta alla sua carta. La pagina è lunga: prima
+// la risposta, poi i dettagli.
+function optIndex(O, AR) { const P=O.P, Q=O.prop ? O.prop.P : P;
+  const head=a=>a.be0 ? (a.st==='change' ? 'Stop a BE da '+fmtX(Q.g.be)+'R' : optPureBE(P.g) ? 'Tieni lo stop a BE da '+fmtX(P.g.be)+'R' : 'Non mettere lo stop a BE') : optCatHead(O,a);
+  return '<nav class="card wide rise op-ix" aria-label="Le categorie in breve">'+AR.map((a,k)=>'<button type="button" class="op-ixr '+a.st+'" data-act="optgo" data-cat="'+a.id+'" style="--k:'+k+'"><span class="op-ixi">'+ic(a.icon,15,2.2)+'</span><span class="op-ixt"><small>'+a.name+'</small><b>'+esc(head(a))+'</b></span>'+(a.st==='change'?'<em class="op-chip">Cambia</em>':'')+ic('chev',14,2.4)+'</button>').join('')+'</nav>'; }
 // la classifica di una carta: barra e primo numero sul periodo scelto (storico, oppure ultime 3 settimane), l'altro accanto
 function optRank(rows, unit, f, w3) { const v=r=>w3?r.r:r.a, o=r=>w3?r.a:r.r, mx=Math.max(.2, ...rows.map(r=>Math.abs(v(r))).filter(isFinite));
   return '<div class="op-rk"><div class="op-rkh"><span>'+unit+'</span><span>'+(w3?'3 sett.':'Storico')+'</span><span>'+(w3?'Storico':'3 sett.')+'</span></div>'+
@@ -765,8 +776,7 @@ function optCatView(O, a, mode) { const B=O.B, P=O.P, W=B.weeks.length, w3=mode=
   return '<section class="card rise op-cat view" data-cat="'+a.id+'"><div class="op-ch"><span class="op-ci">'+ic(a.icon,17,2.2)+'</span><b>'+a.name+'</b><span class="op-chip q">'+(w3?'Ultime 3 sett.':'Storico')+'</span></div>'+
     (OPT_DESC[a.id]?'<p class="op-cdsc">'+OPT_DESC[a.id]+'</p>':'')+'<h3 class="op-cd">'+esc(head)+'</h3><p class="op-cwn">'+esc(txt)+'</p>'+
     '<p class="op-crec '+a.st+'">'+ic(a.st==='change'?'trendUp':'check',14,2.6)+'<span>Ottimizza consiglia: <b>'+esc(low1(optCatHead(O,a)))+'</b></span></p>'+rank+
-    '<p class="op-cp">'+ic('cal',14,2.2)+'<span>Misurato dal '+dt(d0)+' al '+dt(d1)+' ('+(w3?'le ultime 3 settimane chiuse':W+' settimane chiuse')+').'+(a.x && O.prop && O.prop.steps.some(x=>x.cat!=='g') ? ' La classifica conta anche le altre modifiche consigliate.' : '')+'</span></p>'+
-    '<details class="op-ar" data-ar="'+a.id+'"'+((S.optOpen||[]).includes(a.id)?' open':'')+'><summary>'+ic('chev',14,2.4)+'Tutti i numeri</summary><div class="op-arb">'+optCatBody(O,a)+'</div></details></section>'; }
+    optCatFoot(O, a, w3, a.x && O.prop && O.prop.steps.some(x=>x.cat!=='g') ? 'Conta anche le altre modifiche consigliate' : '')+'</section>'; }
 function optCat(O, a) { const B=O.B, P=O.P, W=B.weeks.length, steps=O.prop ? O.prop.steps : [], X=optExit(O), me=X.me, mine=v=>v===me || v.mine;
   const st=a.x ? steps.filter(x=>x.cat==='g' && a.st==='change') : a.ch, chg=a.st==='change';
   const head=optCatHead(O,a);
@@ -802,8 +812,7 @@ function optCat(O, a) { const B=O.B, P=O.P, W=B.weeks.length, steps=O.prop ? O.p
   const d0=B.ts[0].t.d, d1=addDays(pdIso(B.cut),4), dt=d=>d.getDate()+' '+MESI[d.getMonth()];
   return '<section class="card rise op-cat '+a.st+'" data-cat="'+a.id+'"><div class="op-ch"><span class="op-ci">'+ic(a.icon,17,2.2)+'</span><b>'+a.name+'</b><span class="op-chip '+OPT_ST[a.st][1]+'">'+OPT_ST[a.st][0]+'</span></div>'+
     (OPT_DESC[a.id]?'<p class="op-cdsc">'+OPT_DESC[a.id]+'</p>':'')+'<h3 class="op-cd">'+esc(head)+'</h3>'+why+rank+
-    '<p class="op-cp">'+ic('cal',14,2.2)+'<span>Misurato dal '+dt(d0)+' al '+dt(d1)+' ('+W+' settimane chiuse). Scelta rifatta con i dati fino a venerdì '+dt(d1)+'.'+(a.x && O.prop && O.prop.steps.some(x=>x.cat!=='g') ? ' La classifica conta anche le altre modifiche da fare.' : '')+'</span></p>'+
-    '<details class="op-ar" data-ar="'+a.id+'"'+((S.optOpen||[]).includes(a.id)?' open':'')+'><summary>'+ic('chev',14,2.4)+'Tutti i numeri</summary><div class="op-arb">'+optCatBody(O,a)+'</div></details></section>'; }
+    optCatFoot(O, a, false, a.x && O.prop && O.prop.steps.some(x=>x.cat!=='g') ? 'Conta anche le altre modifiche da fare' : '')+'</section>'; }
 // la fila dei target nella carta BE: il target scelto deve essere visibile (sul telefono la fila scorre)
 function optBtShow(root, keep) { const w=(root||document).querySelector('.op-bt'), on=w && w.querySelector('.on'); if (!on) return; if (keep!==undefined) w.scrollLeft=keep;
   const a=on.offsetLeft-w.offsetLeft, z=a+on.offsetWidth; if (a<w.scrollLeft+8) w.scrollLeft=Math.max(0,a-40); else if (z>w.scrollLeft+w.clientWidth-36) w.scrollLeft=z-w.clientWidth+56; }
@@ -814,7 +823,7 @@ function optCheckCard(O) { const R=optRoutine(O), AR=optCatAreas(R,O), nC=AR.fil
   let h='<div class="op-cth rise"><h2 class="h2">Il piano, categoria per categoria</h2><span class="sub">'+[nC?nC+' da cambiare':'', nOk+' da non cambiare'].filter(Boolean).join(' · ')+'</span></div>'+
     '<div class="op-vw rise"><div class="seg" style="--n:'+OPT_VW.length+';--i:'+vi+'">'+OPT_VW.map((x,k)=>'<button type="button" data-act="optview" data-v="'+x[0]+'" class="'+(k===vi?'on':'')+'" aria-pressed="'+(k===vi)+'">'+x[1]+'</button>').join('')+'</div>'+
     '<p>'+(vw==='rec' ? 'Cosa conviene fare, categoria per categoria: decide lo storico, controllato sugli ultimi 3 mesi e sulle ultime 3 settimane.'
-      : 'Cosa ha reso di più nelle ultime 3 settimane. Sono pochi trade: da sole tre settimane non bastano per decidere, per questo ogni carta dice anche cosa consiglia Ottimizza.')+'</p></div>';
+      : 'Cosa ha reso di più nelle ultime 3 settimane. Sono pochi trade: da sole tre settimane non bastano per decidere, per questo ogni carta dice anche cosa consiglia Ottimizza.')+'</p></div>'+optIndex(O, AR);
   AR.forEach(a=>{ if (sec[a.id]) h+='<div class="op-cs rise">'+sec[a.id]+'</div>'; h+=a.be0 ? optCatBE(O,a,vw) : vw==='rec' ? optCat(O,a) : optCatView(O,a,vw); });
   return h; }
 // dentro un'area di uscita: le uscite di quel tipo contro la tua (R a settimana) e cosa dicono le note
@@ -872,6 +881,10 @@ function optClick(b) {
   if (S.sheet==='plan' && b.closest('#sh-body')) return planClick(b);
   const a=b.dataset.act;
   if (a==='planedit') { openPlan(); return true; }
+  if (a==='optgo') { const el=document.querySelector('.op-cat[data-cat="'+b.dataset.cat+'"]'); if (!el) return true; el.scrollIntoView({ behavior:reduceMotion()?'auto':'smooth', block:'start' });
+    // le carte fuori schermo hanno un'altezza stimata finché non si disegnano: a scorrimento finito si controlla di essere arrivati
+    const fix=n=>setTimeout(()=>{ if (!el.isConnected) return; const d=el.getBoundingClientRect().top-84; if (Math.abs(d)>24) { el.scrollIntoView({ behavior:'auto', block:'start' }); if (n) fix(n-1); } }, 650); fix(2);
+    el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); setTimeout(()=>el.classList.remove('flash'), 1900); return true; }
   if (a==='optbet') { const O=S._opt, el=document.querySelector('.op-cat[data-cat=be0]'); if (!O || !el) return true; S.optBeT=+b.dataset.t;
     const ar=optCatAreas(optRoutine(O),O).find(x=>x.be0), t=document.createElement('div'); t.innerHTML=optCatBE(O, ar, S.optView||'rec'); const ne=t.firstElementChild, sl=el.querySelector('.op-bt') ? el.querySelector('.op-bt').scrollLeft : 0; ne.classList.remove('rise'); ne.classList.add('swap'); el.replaceWith(ne); optBtShow(ne, sl); return true; }
   if (a==='optview') { if (S.optView===b.dataset.v) return true; const old=OPT_VW.findIndex(x=>x[0]===S.optView); S.optView=b.dataset.v; store.set('optView', S.optView); const y=window.scrollY; renderCurrent(true); window.scrollTo(0, y);
@@ -920,4 +933,4 @@ function optCtx() { const O=optAll(); if (!O) return 'servono almeno 6 settimane
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['ottimizza.js'] = '2026-11-16.15';
+EB_V['ottimizza.js'] = '2026-11-16.16';
