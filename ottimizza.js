@@ -750,14 +750,14 @@ function optCat(O, a) { const B=O.B, P=O.P, W=B.weeks.length, steps=O.prop ? O.p
     '<h3 class="op-cd">'+esc(head)+'</h3>'+why+rank+
     '<p class="op-cp">'+ic('cal',14,2.2)+'<span>Misurato dal '+dt(d0)+' al '+dt(d1)+' ('+W+' settimane chiuse). Scelta rifatta con i dati fino a venerdì '+dt(d1)+'.'+(a.x && O.prop && O.prop.steps.some(x=>x.cat!=='g') ? ' La classifica conta anche le altre modifiche da fare.' : '')+'</span></p>'+
     '<details class="op-ar" data-ar="'+a.id+'"'+((S.optOpen||[]).includes(a.id)?' open':'')+'><summary>'+ic('chev',14,2.4)+'Tutti i numeri</summary><div class="op-arb">'+(a.x ? optXBody(O,a) : optGBody(O,a))+'</div></details></section>'; }
-const OPT_VW = [['rec','Consigliato'], ['w3','Ultime 3 sett.'], ['all','Storico']];
+const OPT_VW = [['rec','Consigliato'], ['w3','Ultime 3 sett.']];   // «Storico» tolto il 16/11: dava quasi sempre le stesse risposte di «Consigliato»
 function optCheckCard(O) { const R=optRoutine(O), nOk=R.areas.length-R.nC, sec={ tp:'Come esci dal trade', bande:'Quando e cosa tradi', day:'Durante la giornata' };
-  const vw=OPT_VW.some(x=>x[0]===S.optView) ? S.optView : (S.optView=store.get('optView','rec')), vi=Math.max(0, OPT_VW.findIndex(x=>x[0]===vw));
+  if (!S.optView) S.optView=store.get('optView','rec'); if (!OPT_VW.some(x=>x[0]===S.optView)) S.optView='rec';
+  const vw=S.optView, vi=OPT_VW.findIndex(x=>x[0]===vw);
   let h='<div class="op-cth rise"><h2 class="h2">Il piano, categoria per categoria</h2><span class="sub">'+[R.nC?R.nC+' da cambiare':'', nOk+' da non cambiare'].filter(Boolean).join(' · ')+'</span></div>'+
-    '<div class="op-vw rise"><div class="seg" style="--n:3;--i:'+vi+'">'+OPT_VW.map((x,k)=>'<button type="button" data-act="optview" data-v="'+x[0]+'" class="'+(k===vi?'on':'')+'" aria-pressed="'+(k===vi)+'">'+x[1]+'</button>').join('')+'</div>'+
+    '<div class="op-vw rise"><div class="seg" style="--n:'+OPT_VW.length+';--i:'+vi+'">'+OPT_VW.map((x,k)=>'<button type="button" data-act="optview" data-v="'+x[0]+'" class="'+(k===vi?'on':'')+'" aria-pressed="'+(k===vi)+'">'+x[1]+'</button>').join('')+'</div>'+
     '<p>'+(vw==='rec' ? 'Cosa conviene fare, categoria per categoria: decide lo storico, controllato sugli ultimi 3 mesi e sulle ultime 3 settimane.'
-      : vw==='w3' ? 'Cosa ha reso di più nelle ultime 3 settimane. Sono pochi trade: da sole tre settimane non bastano per decidere, per questo ogni carta dice anche cosa consiglia Ottimizza.'
-      : 'Cosa ha reso di più su tutto lo storico, senza gli altri controlli. Ogni carta dice anche cosa consiglia Ottimizza.')+'</p></div>';
+      : 'Cosa ha reso di più nelle ultime 3 settimane. Sono pochi trade: da sole tre settimane non bastano per decidere, per questo ogni carta dice anche cosa consiglia Ottimizza.')+'</p></div>';
   R.areas.forEach(a=>{ if (sec[a.id]) h+='<div class="op-cs rise">'+sec[a.id]+'</div>'; h+=vw==='rec' ? optCat(O,a) : optCatView(O,a,vw); });
   return h; }
 // dentro un'area di uscita: le uscite di quel tipo contro la tua (R a settimana) e cosa dicono le note
@@ -860,4 +860,4 @@ function optCtx() { const O=optAll(); if (!O) return 'servono almeno 6 settimane
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['ottimizza.js'] = '2026-11-16.7';
+EB_V['ottimizza.js'] = '2026-11-16.8';
