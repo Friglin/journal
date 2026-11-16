@@ -664,7 +664,7 @@ nav.bar { background:color-mix(in srgb,var(--surface) 76%,transparent); -webkit-
 .chk-bar { height:6px; border-radius:99px; background:var(--sunk); overflow:hidden; margin:-4px 0 8px; }
 .chk-bar i { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,var(--accent),var(--glow2)); transition:width .5s cubic-bezier(.23,1,.32,1); }
 .chk { display:flex; align-items:center; gap:12px; width:100%; padding:10px 2px; border:0; border-top:1px solid var(--line); background:none; font:inherit; font-size:14px; color:var(--fg); text-align:left; cursor:pointer; }
-.chk .box { width:24px; height:24px; flex:none; border-radius:8px; border:1.5px solid var(--fg3); display:grid; place-items:center; color:transparent; transition:all .3s cubic-bezier(.23,1,.32,1); }
+.chk .box { width:24px; height:24px; flex:none; border-radius:8px; border:1.5px solid var(--fg3); display:grid; place-items:center; color:transparent; transition:background-color .3s cubic-bezier(.23,1,.32,1), border-color .3s cubic-bezier(.23,1,.32,1), color .3s cubic-bezier(.23,1,.32,1), transform .3s cubic-bezier(.23,1,.32,1); }
 .chk.on { color:var(--fg3); } .chk.on .box { background:var(--win); border-color:var(--win); color:#fff; transform:scale(1.08); }
 .bchk.ok .chk-bar i { background:var(--win); }
 
@@ -1371,7 +1371,7 @@ nav.bar button:active .pill { transform:scale(.88); }
 @media (max-width:520px) { .rvp-w { grid-template-columns:24px minmax(0,1fr); } .rvp-n { grid-column:2; justify-content:flex-start; } }
 
 /* versione del foglio di stile (la scrive tools/build.py): index.html controlla che sia uguale a BUILD */
-:root { --eb-build: "2026-11-16.11"; }
+:root { --eb-build: "2026-11-16.12"; }
 /* Ottimizza · uscita dal trade (dalle note) */
 .op-xb { justify-self:end; padding:5px 12px !important; font-size:12.5px !important; }
 .op-xc { display:flex; flex-direction:column; gap:8px; padding:12px 14px; border-radius:16px; background:var(--sunk); min-width:0; animation:rise 420ms calc(350ms + var(--k,0) * 80ms) cubic-bezier(.23,1,.32,1) both; }
@@ -1465,8 +1465,10 @@ nav.bar button:active .pill { transform:scale(.88); }
 .op-rl { display:flex; flex-wrap:wrap; align-items:center; gap:2px 6px; min-width:0; } .op-rl > b { font-weight:600; } .op-rl > small { flex-basis:100%; font-size:11.5px; color:var(--fg3); }
 .op-rr.hi .op-rl > b { font-weight:700; } .op-rl > .tag.q { background:var(--sunk); color:var(--fg2); } .op-rr.off .op-rl > b { color:var(--fg3); font-weight:500; }
 .op-rb { display:block; height:6px; border-radius:99px; background:var(--sunk); overflow:hidden; }
-.op-rb > b { display:block; height:100%; width:var(--w); border-radius:99px; background:var(--fg3); transform-origin:left; animation:opGrow 600ms calc(160ms + var(--k,0) * 35ms) cubic-bezier(.23,1,.32,1) both; }
-.op-rb > b.pos { background:var(--win); } .op-rb > b.neg { background:var(--loss); } @keyframes opGrow { from { transform:scaleX(0); } }
+.op-rb > b { display:block; height:100%; width:var(--w); border-radius:99px; background:var(--fg3); transform-origin:left; animation:opGrow 520ms calc(140ms + var(--k,0) * 35ms) cubic-bezier(.23,1,.32,1) both; }
+/* solo la riga che conta (da usare, il migliore, la tua se resta) ha la barra piena di colore: le altre sono attenuate */
+.op-rb > b.pos { background:color-mix(in srgb,var(--win) 38%,var(--sunk)); } .op-rb > b.neg { background:color-mix(in srgb,var(--loss) 45%,var(--sunk)); } .op-rr.hi .op-rb > b.pos { background:var(--win); } .op-rr.hi .op-rb > b.neg { background:var(--loss); }
+@keyframes opGrow { from { transform:scaleX(.04); } }
 .op-rr > b.num, .op-rr > em.num { text-align:right; font-style:normal; font-weight:650; white-space:nowrap; } .op-rr > em.num { font-weight:500; color:var(--fg3); }
 .op-rr > b.pos, .op-rr > em.pos { color:var(--win); } .op-rr > b.neg, .op-rr > em.neg { color:var(--loss); }
 .op-cx .op-rkh, .op-cxr { grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr) minmax(0,1.2fr); } .op-cx .op-rkh > span:nth-child(1) { grid-column:auto; } .op-cx .op-rkh > span:nth-child(n+2) { text-align:left; white-space:normal; }
@@ -1488,6 +1490,17 @@ nav.bar button:active .pill { transform:scale(.88); }
 .op-crec > .ic { flex:none; margin-top:2px; color:var(--win); } .op-crec b { color:var(--fg); font-weight:650; }
 .op-crec.change { background:var(--accent-soft); } .op-crec.change > .ic { color:var(--accent); }
 .op-cdsc { margin:-6px 0 -2px; font-size:12.5px; line-height:1.45; color:var(--fg3); text-wrap:pretty; }
-.op-bt { display:flex; gap:6px; overflow-x:auto; margin:-4px -2px 0; padding:2px; scrollbar-width:none; } .op-bt::-webkit-scrollbar { display:none; }
+.op-bt { display:flex; gap:6px; overflow-x:auto; margin:-4px -2px 0; padding:2px 30px 2px 2px; scrollbar-width:none; scroll-behavior:smooth; -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 34px),transparent); mask-image:linear-gradient(90deg,#000 calc(100% - 34px),transparent); } .op-bt::-webkit-scrollbar { display:none; }
 .op-bt > .chip { padding:6px 12px; font-size:13px; } .op-bt > .chip.on { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:650; }
 .op-bes td, .op-bes th { white-space:nowrap; padding-left:4px; padding-right:4px; } .op-bes td:first-child { min-width:0; } .op-bes .tag { margin-left:2px; } .op-bes tr.cur td { background:var(--accent-soft); } .op-bes tr.cur td:first-child { border-radius:8px 0 0 8px; } .op-bes tr.cur td:last-child { border-radius:0 8px 8px 0; }
+/* Ottimizza, rifiniture del movimento (16/11/2026). Entrata (la prima volta): righe in sequenza e barre che crescono. Cambio di
+   vista o di target (azioni ripetute): niente entrata delle righe, solo le barre (più veloci) e una dissolvenza breve. */
+.quiet .op-rr, .op-cat.swap .op-rr { animation:none; }
+.quiet .op-rb > b, .op-cat.swap .op-rb > b { animation-duration:300ms; animation-delay:0s; }
+.quiet .op-cat, .quiet .op-vw > p { animation:fade 200ms ease-out both; }
+.op-cat.swap > :not(.op-ch):not(.op-cdsc):not(.op-bt):not(.op-sub) { animation:fade 180ms ease-out both; }
+.op-ar > summary { transition:opacity 160ms ease-out; -webkit-tap-highlight-color:transparent; } .op-ar > summary:active { opacity:.55; }
+.op-bt > .chip { transition:background-color 160ms ease-out, border-color 160ms ease-out, color 160ms ease-out, transform 160ms ease-out; }
+.op-vw .seg button { transition:color 200ms ease-out, transform 160ms ease-out; } .op-vw .seg button:active { transform:scale(.97); }
+.op-bes tr.cur td { transition:background-color 200ms ease-out; }
+@media (prefers-reduced-motion: reduce) { .quiet .op-cat, .op-cat.swap > *, .quiet .op-vw > p { animation:none; } }

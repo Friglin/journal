@@ -556,6 +556,7 @@ function renderOpt() {
   const h=head('EOW · '+O.B.ts.length+' trade · '+optDates(O.B).replace(/ \d{4}$/,''))+optHero(O)+optWeekCard(O)+optCheckCard(O)+optTrackCard(O)+optAiCard()+optHowCard(O);
   enter(el, h, ()=>{ const c=$('c-opt'); if (c) optChart(c, O); });
   countUp(el.querySelector('.op-hero'), 250); countUp(el.querySelector('.op-wk'), 350);
+  optBtShow(el);
   const dt=el.querySelector('.op-det'); if (dt) dt.addEventListener('toggle', ()=>{ S.optDet=dt.open; });
   // la checklist ricorda quali aree sono aperte
   el.querySelectorAll('.op-ar').forEach(d=>d.addEventListener('toggle', ()=>{ S.optOpen=(S.optOpen||[]).filter(x=>x!==d.dataset.ar); if (d.open) S.optOpen.push(d.dataset.ar); }));
@@ -800,6 +801,9 @@ function optCat(O, a) { const B=O.B, P=O.P, W=B.weeks.length, steps=O.prop ? O.p
     (OPT_DESC[a.id]?'<p class="op-cdsc">'+OPT_DESC[a.id]+'</p>':'')+'<h3 class="op-cd">'+esc(head)+'</h3>'+why+rank+
     '<p class="op-cp">'+ic('cal',14,2.2)+'<span>Misurato dal '+dt(d0)+' al '+dt(d1)+' ('+W+' settimane chiuse). Scelta rifatta con i dati fino a venerdì '+dt(d1)+'.'+(a.x && O.prop && O.prop.steps.some(x=>x.cat!=='g') ? ' La classifica conta anche le altre modifiche da fare.' : '')+'</span></p>'+
     '<details class="op-ar" data-ar="'+a.id+'"'+((S.optOpen||[]).includes(a.id)?' open':'')+'><summary>'+ic('chev',14,2.4)+'Tutti i numeri</summary><div class="op-arb">'+optCatBody(O,a)+'</div></details></section>'; }
+// la fila dei target nella carta BE: il target scelto deve essere visibile (sul telefono la fila scorre)
+function optBtShow(root, keep) { const w=(root||document).querySelector('.op-bt'), on=w && w.querySelector('.on'); if (!on) return; if (keep!==undefined) w.scrollLeft=keep;
+  const a=on.offsetLeft-w.offsetLeft, z=a+on.offsetWidth; if (a<w.scrollLeft+8) w.scrollLeft=Math.max(0,a-40); else if (z>w.scrollLeft+w.clientWidth-36) w.scrollLeft=z-w.clientWidth+56; }
 const OPT_VW = [['rec','Consigliato'], ['w3','Ultime 3 sett.']];   // «Storico» tolto il 16/11: dava quasi sempre le stesse risposte di «Consigliato»
 function optCheckCard(O) { const R=optRoutine(O), AR=optCatAreas(R,O), nC=AR.filter(a=>a.st==='change').length, nOk=AR.length-nC, sec={ tp:'Come esci dal trade', bande:'Quando e cosa tradi', day:'Durante la giornata' };
   if (!S.optView) S.optView=store.get('optView','rec'); if (!OPT_VW.some(x=>x[0]===S.optView)) S.optView='rec';
@@ -866,8 +870,9 @@ function optClick(b) {
   const a=b.dataset.act;
   if (a==='planedit') { openPlan(); return true; }
   if (a==='optbet') { const O=S._opt, el=document.querySelector('.op-cat[data-cat=be0]'); if (!O || !el) return true; S.optBeT=+b.dataset.t;
-    const ar=optCatAreas(optRoutine(O),O).find(x=>x.be0), t=document.createElement('div'); t.innerHTML=optCatBE(O, ar, S.optView||'rec'); const ne=t.firstElementChild; ne.classList.remove('rise'); el.replaceWith(ne); return true; }
-  if (a==='optview') { if (S.optView===b.dataset.v) return true; S.optView=b.dataset.v; store.set('optView', S.optView); const y=window.scrollY; renderCurrent(true); window.scrollTo(0, y); return true; }
+    const ar=optCatAreas(optRoutine(O),O).find(x=>x.be0), t=document.createElement('div'); t.innerHTML=optCatBE(O, ar, S.optView||'rec'); const ne=t.firstElementChild, sl=el.querySelector('.op-bt') ? el.querySelector('.op-bt').scrollLeft : 0; ne.classList.remove('rise'); ne.classList.add('swap'); el.replaceWith(ne); optBtShow(ne, sl); return true; }
+  if (a==='optview') { if (S.optView===b.dataset.v) return true; const old=OPT_VW.findIndex(x=>x[0]===S.optView); S.optView=b.dataset.v; store.set('optView', S.optView); const y=window.scrollY; renderCurrent(true); window.scrollTo(0, y);
+    const sg=document.querySelector('.op-vw .seg'); if (sg && old>=0) { const to=sg.style.getPropertyValue('--i'); sg.style.setProperty('--i', old); void sg.offsetWidth; sg.style.setProperty('--i', to); } return true; }
   if (a==='planundo') { if (S._planPrev) { CFG.piano=S._planPrev; S._planPrev=null; planSaved(); toast('Piano com\'era prima'); renderCurrent(true); } return true; }
   if (a==='optstep') { const O=S._opt, G=O && O.prop; if (!G) return true; optPick(O); const l=G.steps[+b.dataset.i].l;
     S.optOff = S.optOff.includes(l) ? S.optOff.filter(x=>x!==l) : S.optOff.concat(l);
@@ -912,4 +917,4 @@ function optCtx() { const O=optAll(); if (!O) return 'servono almeno 6 settimane
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['ottimizza.js'] = '2026-11-16.11';
+EB_V['ottimizza.js'] = '2026-11-16.12';
