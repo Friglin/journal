@@ -693,26 +693,36 @@ function optCatAreas(R, O) { const tr=R.areas.find(a=>a.id==='tr'), gs=O.prop &&
 // Stop a break even: senza BE e ogni livello (1R, 1,5R, 2R…) con il target da usare, sui trade che prenderai. Per ogni livello le
 // perdite salvate e i vincenti chiusi a zero.
 function optCatBE(O, a, vw) { const B=O.B, P=O.P, W=B.weeks.length, X=optExit(O), Q=O.prop ? O.prop.P : P, w3=vw==='w3', chg=a.st==='change';
-  const T=Q.g.k==='T' ? Q.g.t : X.Tref, qb=optPureBE(Q.g) && Q.g.t===T ? Q.g.be : 0, exCh=JSON.stringify(Q.g)!==JSON.stringify(P.g), v=r=>w3?r.r:r.a;
+  // il livello di BE dipende dal target: si parte da quello da usare, e toccando un altro target la carta si rifà su quello
+  const Td=Q.g.k==='T' ? Q.g.t : X.Tref, TS=PLAN_MG.T.filter(t=>t>=1.5); if (S.optBeKey!==O.key) { S.optBeKey=O.key; S.optBeT=0; }
+  const T=TS.includes(S.optBeT) ? S.optBeT : Td, own=T===Td, qb=own && optPureBE(Q.g) ? Q.g.be : 0, exCh=JSON.stringify(Q.g)!==JSON.stringify(P.g), v=r=>w3?r.r:r.a;
   const sim=g=>O.simOf(Object.assign({}, Q, { g })), num=sm=>({ a:optNums(B,sm,'all').rw, r:optNums(B,sm,3).rw }), s0=sim({ k:'T', t:T });
   const none=Object.assign({ l:'Senza BE', lv:0 }, num(s0)), lv=PLAN_MG.BE.filter(b=>b<T).map(b=>{ const sm=sim({ k:'T', t:T, be:b }); let sv=0, kl=0;
     s0.rs.forEach((r0,i)=>{ const r1=sm.rs.get(i); if (r1===undefined) return; if (r1>r0+1e-9) sv++; else if (r1<r0-1e-9) kl++; });
     return Object.assign({ l:'BE da '+fmtX(b)+'R', lv:b, sv, kl, sub:'salva '+sv+' loss · chiude a zero '+kl+' win' }, num(sm)); });
-  const rows=[none, ...lv], ref=rows.find(r=>r.lv===qb) || none; ref.tag=exCh ? 'da usare' : 'la tua';
+  const rows=[none, ...lv], ref=rows.find(r=>r.lv===qb) || none; if (own) ref.tag=exCh ? 'da usare' : 'la tua';
   const top=rows.reduce((p,q)=>v(q)>v(p)?q:p), bl=lv.length ? lv.reduce((p,q)=>v(q)>v(p)?q:p) : null; top.hi=true; if (!top.tag) top.tag='il migliore';
   const rec=chg ? 'Stop a BE da '+fmtX(qb)+'R' : qb ? 'Tieni lo stop a BE da '+fmtX(qb)+'R' : 'Non mettere lo stop a BE', per=w3?'nelle ultime 3 settimane':'sullo storico';
   const cost=r=>'salva '+r.sv+' loss ma chiude a zero '+r.kl+' trade che poi arrivano al target';
   let head=rec, txt;
-  if (!bl) txt='Con target '+fmtX(T)+'R non c\'è un livello a cui spostare lo stop a BE.';
-  else if (w3) { head=top.l; txt=fRw(top.r)+' R a settimana nelle ultime 3 settimane; sullo storico '+fRw(top.a)+'.'+(top.lv ? ' Rispetto a senza BE: '+fRw(top.r-none.r)+' nelle ultime 3 settimane, '+fRw(top.a-none.a)+' sullo storico.' : ' Nessun livello di BE ha reso di più.'); }
+  // per ogni target: senza BE e il livello migliore
+  const sumr=TS.map(t=>{ const n0=num(sim({ k:'T', t })), bs=PLAN_MG.BE.filter(b=>b<t).map(b=>({ b, x:num(sim({ k:'T', t, be:b })) })), bb=bs.length ? bs.reduce((p,q)=>v(q.x)>v(p.x)?q:p) : null; return { t, n:v(n0), b:bb ? bb.b : 0, x:bb ? v(bb.x) : NaN }; });
+  const sumt='<div class="op-sub">Per ogni target, il livello di BE migliore · '+(w3?'ultime 3 settimane':'storico')+'</div><div class="tbl-wrap"><table class="ex-t op-t op-bes"><tr><th>Target</th><th>Senza BE</th><th>BE migliore</th><th>Diff.</th></tr>'+
+    sumr.map(r=>'<tr class="'+(r.t===T?'cur':'')+'"><td>'+fmtX(r.t)+'R'+(r.t===Td?' <em class="tag'+(exCh?'':' q')+'">'+(exCh?'da usare':'il tuo')+'</em>':'')+'</td><td class="num '+sgn(r.n)+'">'+fRw(r.n)+'</td><td class="num">'+(r.b?fmtX(r.b)+'R · '+fRw(r.x):'–')+'</td><td class="num '+(r.b?sgn(r.x-r.n):'')+'">'+(r.b?fRw(r.x-r.n):'–')+'</td></tr>').join('')+'</table></div>';
+  const pick='<div class="op-bt" role="group" aria-label="Target">'+TS.map(t=>'<button type="button" class="chip'+(t===T?' on':'')+'" data-act="optbet" data-t="'+t+'" aria-pressed="'+(t===T)+'">'+fmtX(t)+'R</button>').join('')+'</div>';
+  if (!own && bl && !w3) { head='Con target '+fmtX(T)+'R: '+(bl.a>none.a+.05 ? 'BE da '+fmtX(bl.lv)+'R' : 'meglio senza BE');
+    txt = bl.a>none.a+.05 ? 'Il BE da '+fmtX(bl.lv)+'R '+cost(bl)+': '+fRw(bl.a-none.a)+' R a settimana rispetto a senza BE. È un conto sullo storico, non una modifica consigliata.'
+      : 'A ogni livello il BE rende meno che lasciare lo stop fermo. Quello che costa meno è da '+fmtX(bl.lv)+'R: '+cost(bl)+' ('+fRw(bl.a-none.a)+' R a settimana).'; }
+  else if (!bl) txt='Con target '+fmtX(T)+'R non c\'è un livello a cui spostare lo stop a BE.';
+  else if (w3) { head=(own?'':'Con target '+fmtX(T)+'R: ')+top.l; txt=fRw(top.r)+' R a settimana nelle ultime 3 settimane; sullo storico '+fRw(top.a)+'.'+(top.lv ? ' Rispetto a senza BE: '+fRw(top.r-none.r)+' nelle ultime 3 settimane, '+fRw(top.a-none.a)+' sullo storico.' : ' Nessun livello di BE ha reso di più.'); }
   else if (chg || qb) txt='Il BE da '+fmtX(qb)+'R '+cost(ref)+': '+fRw(ref.a-none.a)+' R a settimana rispetto a senza BE.';
   else txt = bl.a>none.a+.05 ? 'Sulla carta il BE da '+fmtX(bl.lv)+'R rende '+fRw(bl.a-none.a)+' R a settimana in più ('+cost(bl)+'), ma non ha passato tutti i controlli: resta fuori.'
     : 'A ogni livello il BE rende meno che lasciare lo stop fermo. Quello che costa meno è da '+fmtX(bl.lv)+'R: '+cost(bl)+' ('+fRw(bl.a-none.a)+' R a settimana).';
   const d0=w3 ? pdIso(B.weeks[Math.max(0,W-3)]) : B.ts[0].t.d, d1=addDays(pdIso(B.cut),4), dt=d=>d.getDate()+' '+MESI[d.getMonth()];
   return '<section class="card rise op-cat '+(w3?'view':a.st)+'" data-cat="be0"><div class="op-ch"><span class="op-ci">'+ic(a.icon,17,2.2)+'</span><b>'+a.name+'</b><span class="op-chip '+(w3?'q':OPT_ST[a.st][1])+'">'+(w3?'Ultime 3 sett.':OPT_ST[a.st][0])+'</span></div>'+
     '<p class="op-cdsc">'+OPT_DESC.be0+'</p><h3 class="op-cd">'+esc(head)+'</h3><p class="op-cwn">'+esc(txt)+'</p>'+
-    (w3 ? '<p class="op-crec '+a.st+'">'+ic(chg?'trendUp':'check',14,2.6)+'<span>Ottimizza consiglia: <b>'+esc(low1(rec))+'</b></span></p>' : '')+
-    (bl ? optRank(rows, OPT_UNIT.x, fRw, w3) : '')+
+    (w3 || !own ? '<p class="op-crec '+a.st+'">'+ic(chg?'trendUp':'check',14,2.6)+'<span>Ottimizza consiglia: <b>'+esc(low1(rec))+(own?'':', con target '+fmtX(Td)+'R')+'</b></span></p>' : '')+
+    '<div class="op-sub">Scegli il target</div>'+pick+(bl ? optRank(rows, OPT_UNIT.x, fRw, w3) : '')+sumt+
     '<p class="op-cp">'+ic('cal',14,2.2)+'<span>Con target '+fmtX(T)+'R'+(O.prop ? ', sul piano con le modifiche da fare' : '')+'. Misurato dal '+dt(d0)+' al '+dt(d1)+' ('+(w3?'le ultime 3 settimane chiuse':W+' settimane chiuse')+').</span></p></section>'; }
 const optCatBody = (O, a) => !a.x ? optGBody(O,a) : a.alt ? '<div class="op-sub">Stop a BE o in profitto</div>'+optXBody(O,a)+'<div class="op-sub">Trailing stop</div>'+optXBody(O,a.alt) : optXBody(O,a);
 // la classifica di una carta: barra e primo numero sul periodo scelto (storico, oppure ultime 3 settimane), l'altro accanto
@@ -855,6 +865,8 @@ function optClick(b) {
   if (S.sheet==='plan' && b.closest('#sh-body')) return planClick(b);
   const a=b.dataset.act;
   if (a==='planedit') { openPlan(); return true; }
+  if (a==='optbet') { const O=S._opt, el=document.querySelector('.op-cat[data-cat=be0]'); if (!O || !el) return true; S.optBeT=+b.dataset.t;
+    const ar=optCatAreas(optRoutine(O),O).find(x=>x.be0), t=document.createElement('div'); t.innerHTML=optCatBE(O, ar, S.optView||'rec'); const ne=t.firstElementChild; ne.classList.remove('rise'); el.replaceWith(ne); return true; }
   if (a==='optview') { if (S.optView===b.dataset.v) return true; S.optView=b.dataset.v; store.set('optView', S.optView); const y=window.scrollY; renderCurrent(true); window.scrollTo(0, y); return true; }
   if (a==='planundo') { if (S._planPrev) { CFG.piano=S._planPrev; S._planPrev=null; planSaved(); toast('Piano com\'era prima'); renderCurrent(true); } return true; }
   if (a==='optstep') { const O=S._opt, G=O && O.prop; if (!G) return true; optPick(O); const l=G.steps[+b.dataset.i].l;
@@ -900,4 +912,4 @@ function optCtx() { const O=optAll(); if (!O) return 'servono almeno 6 settimane
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['ottimizza.js'] = '2026-11-16.10';
+EB_V['ottimizza.js'] = '2026-11-16.11';
