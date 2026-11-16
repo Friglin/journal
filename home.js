@@ -317,10 +317,15 @@ function trumpCard(ev) {
     const when = nx.tbd ? (nx.ann?'annunciato alle '+hmOf(nx.ann)+', orario non indicato':'orario da definire') : now<nx.t ? (nx.day===t?'Oggi':dayLbl(nx.day))+' alle '+hmOf(nx.t) : 'Iniziato alle '+hmOf(nx.t);
     st={ cls:'sched', chip:chip('md', nx.day===t?'Parla oggi':'In programma'), lab:nx.tbd?dayLbl(nx.day):when, big:nx.lbl, sub:(nx.tbd?when+' · ':now<nx.t?'':'la fine non viene annunciata · ')+'fonte: '+nx.src,
       side: !nx.tbd && now<nx.t ? '<div class="nt-cd hi" data-cd="'+nx.t+'">'+cdTxt(nx.t-now)+'</div>' : '' }; }
-  else if (T) st={ cls:'off', chip:chip('ok','Non parla'), lab:'In questo momento', big:'Trump non sta parlando',
-      sub:pastToday.length ? 'Oggi ha già parlato: '+pastToday.map(p=>hmOf(p.from)+'–'+hmOf(p.to)).join(' · ') : 'Nessun intervento in programma. Quando inizia a parlare lo vedi qui, con il link alla diretta.', side:'' };
+  else if (T) st={ cls:'off'+(pastToday.length?' spoke':''), chip:pastToday.length ? chip('md','Ha parlato oggi') : chip('ok','Non parla'), lab:'In questo momento', big:'Trump non sta parlando',
+      sub:pastToday.length ? '' : 'Nessun intervento in programma. Quando inizia a parlare lo vedi qui, con il link alla diretta.', side:'' };
   let h='<div class="card wide trump rise trs-'+(st?st.cls:'wait')+'" id="trump" style="--d:90ms"><div class="nt-h"><div class="eyebrow tr-eb">'+ic('mic',15,2.2)+'Trump</div>'+(st?st.chip:'')+'</div>';
-  if (st) h+='<div class="nt-next tr-hero"><div><span>'+st.lab+'</span><b>'+esc(st.big)+'</b><em>'+st.sub+'</em></div>'+st.side+'</div>';
+  if (st) h+='<div class="nt-next tr-hero"><div><span>'+st.lab+'</span><b>'+esc(st.big)+'</b>'+(st.sub?'<em>'+st.sub+'</em>':'')+'</div>'+st.side+'</div>';
+  // ha già parlato oggi: in evidenza (16/11/2026, richiesta dell'utente: prima era una riga grigia sotto il titolo), con gli orari,
+  // la durata e da quanto ha finito
+  if (pastToday.length && !live) { const lastTo=Math.max(...pastToday.map(p=>p.to));
+    h+='<div class="tr-spoke">'+ic('mic',18,2.2)+'<div><b>Oggi ha già parlato'+(pastToday.length>1?' '+pastToday.length+' volte':'')+'</b><div class="tr-spk">'+pastToday.map(p=>'<span class="num">'+hmOf(p.from)+'–'+hmOf(p.to)+'<small>'+Math.max(1,Math.round((p.to-p.from)/60000))+' min</small></span>').join('')+'</div>'+
+      (now>lastTo ? '<em>Ha finito '+agoTxt(now-lastTo)+'</em>' : '')+'</div></div>'; }
   if (live) h+='<div class="tr-l tr-act">'+(live.url?'<a class="btn tr-go" href="'+esc(live.url)+'" target="_blank" rel="noopener">'+ic('play',16,2)+'Guarda la diretta</a>':'<a class="btn tr-go" href="'+TRUMP_LINKS[0][1]+'" target="_blank" rel="noopener">'+ic('play',16,2)+TRUMP_LINKS[0][0]+'</a>')+
     '<a class="lnk" href="'+TRUMP_LINKS[1][1]+'" target="_blank" rel="noopener">'+ic('ext',14,2)+TRUMP_LINKS[1][0]+'</a></div>';
   else if (nx) h+='<div class="tr-where"><span>Dove vederlo</span>'+(nx.url?'<div class="tr-l"><a class="btn tr-go sm" href="'+esc(nx.url)+'" target="_blank" rel="noopener">'+ic('play',15,2)+'Apri su YouTube</a></div>':trLinks())+'</div>';
@@ -330,7 +335,7 @@ function trumpCard(ev) {
   if (!T) h+= trErr==='OLD' ? '<div class="tr-none ko">'+ic('alert',16,2.2)+'<span>Aggiorna Code.gs per sapere quando Trump parla.</span></div>'
     : trErr && !trP ? '<div class="tr-none ko">'+ic('alert',16,2.2)+'<span>Non riesco a controllare se Trump parla: '+esc(trErr==='NETWORK'?'lo script non ha risposto in tempo':trErr)+'.</span><button type="button" class="btn sec sm" data-act="trretry">'+ic('refresh',15,2)+'Riprova</button></div>'
     : '<div class="tr-none">'+ic('clock',16,2.2)+'<span>Controllo se Trump sta parlando…</span></div>';
-  const pastOld=past.filter(p=>!(st && st.cls==='off' && pastToday.includes(p)));
+  const pastOld=past.filter(p=>live || !pastToday.includes(p));
   if (pastOld.length) h+='<div class="tr-past">'+ic('clock',14,2)+'<span>Ha già parlato: '+pastOld.map(p=>(iso(romeDate(p.from))===t?'oggi ':dayShort(iso(romeDate(p.from)))+' ')+hmOf(p.from)+'–'+hmOf(p.to)).join(' · ')+'</span></div>';
   // fonti, in piccolo: spunta se funziona; FinancialJuice in pausa (429) mentre YouTube va: grigio; altri problemi: giallo
   const sv = (n,v,quiet) => v==='ok' ? '<span class="ok">'+ic('check',13,2.4)+n+'</span>'
@@ -504,4 +509,4 @@ function briefing() {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['home.js'] = '2026-11-16.19';
+EB_V['home.js'] = '2026-11-16.20';
