@@ -1371,7 +1371,7 @@ nav.bar button:active .pill { transform:scale(.88); }
 @media (max-width:520px) { .rvp-w { grid-template-columns:24px minmax(0,1fr); } .rvp-n { grid-column:2; justify-content:flex-start; } }
 
 /* versione del foglio di stile (la scrive tools/build.py): index.html controlla che sia uguale a BUILD */
-:root { --eb-build: "2026-11-16.6"; }
+:root { --eb-build: "2026-11-16.7"; }
 /* Ottimizza · uscita dal trade (dalle note) */
 .op-xb { justify-self:end; padding:5px 12px !important; font-size:12.5px !important; }
 .op-xc { display:flex; flex-direction:column; gap:8px; padding:12px 14px; border-radius:16px; background:var(--sunk); min-width:0; animation:rise 420ms calc(350ms + var(--k,0) * 80ms) cubic-bezier(.23,1,.32,1) both; }
@@ -1479,3 +1479,12 @@ nav.bar button:active .pill { transform:scale(.88); }
 .op-ar[open] > summary { padding-bottom:8px; }
 @media (max-width:640px) { .op-cd { font-size:19px; } .op-cat.ok .op-cd { font-size:17px; } .op-rkh, .op-rr { grid-template-columns:minmax(0,1.6fr) minmax(28px,.7fr) 46px 54px; gap:8px; } }
 @media (prefers-reduced-motion: reduce) { .op-rr, .op-rb > b { animation:none; } }
+/* Ottimizza: scelta della vista delle categorie (consigliato / ultime 3 settimane / storico) */
+.op-vw { display:flex; flex-direction:column; gap:8px; } .op-vw > p { margin:0 2px; font-size:12.5px; line-height:1.45; color:var(--fg3); text-wrap:pretty; }
+.op-vw > .seg button { font-size:13.5px; }
+.op-chip.q:not(.rec):not(.rk) { background:var(--sunk); color:var(--fg2); }
+.op-cat.view .op-ci { background:var(--sunk); color:var(--fg2); } .op-cat.view .op-cd { font-size:20px; font-weight:700; }
+.op-crec { display:flex; align-items:flex-start; gap:8px; margin:0; padding:9px 11px; border-radius:12px; background:color-mix(in srgb,var(--win) 10%,transparent); font-size:13px; line-height:1.4; color:var(--fg2); }
+.op-crec > .ic { flex:none; margin-top:2px; color:var(--win); } .op-crec b { color:var(--fg); font-weight:650; }
+.op-crec.change { background:var(--accent-soft); } .op-crec.change > .ic { color:var(--accent); }
+

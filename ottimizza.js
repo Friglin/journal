@@ -675,11 +675,47 @@ function optWeekCard(O) { const R=optRoutine(O), w=R.last, a=w.n, d0=pdIso(w.wk)
 // La ricerca non cambia (optGreedy, controllata da tools/test/coerenza.js): qui si spiega soltanto.
 const OPT_KEEP = { be:'Non spostare lo stop', tr:'Non usare il trailing', pz:'Non uscire a parziali', bande:'Tieni i tuoi orari', idee:'Tieni i tuoi setup', giorni:'Tieni i tuoi giorni', ctx:'Tieni le tue condizioni', day:'Tieni le tue regole del giorno' };
 const OPT_UNIT = { x:'R a settimana', g:'R a trade', day:'R a settimana rispetto al tuo piano' };
+// la classifica di una carta: barra e primo numero sul periodo scelto (storico, oppure ultime 3 settimane), l'altro accanto
+function optRank(rows, unit, f, w3) { const v=r=>w3?r.r:r.a, o=r=>w3?r.a:r.r, mx=Math.max(.2, ...rows.map(r=>Math.abs(v(r))).filter(isFinite));
+  return '<div class="op-rk"><div class="op-rkh"><span>'+unit+'</span><span>'+(w3?'3 sett.':'Storico')+'</span><span>'+(w3?'Storico':'3 sett.')+'</span></div>'+
+    rows.map((r,k)=>'<div class="op-rr'+(r.hi?' hi':'')+(r.off?' off':'')+'" style="--k:'+k+'"><span class="op-rl"><b>'+esc(r.l)+'</b>'+(r.tag?'<em class="tag'+(/usare|migliore/.test(r.tag)?'':' q')+'">'+r.tag+'</em>':'')+(r.off?'<small>fuori dal piano'+(r.n?' · '+r.n+' trade':'')+'</small>':r.n?'<small>'+r.n+' trade</small>':'')+'</span>'+
+      '<i class="op-rb"><b class="'+sgn(v(r))+'" style="--w:'+(isFinite(v(r))?Math.max(3,Math.abs(v(r))/mx*100):0)+'%"></b></i><b class="num '+(isFinite(v(r))?sgn(v(r)):'')+'">'+f(v(r))+'</b><em class="num '+(isFinite(o(r))?sgn(o(r)):'')+'">'+f(o(r))+'</em></div>').join('')+'</div>'; }
+// la decisione di Ottimizza per una categoria, a parole
+function optCatHead(O, a) { const P=O.P, steps=O.prop ? O.prop.steps : [], chg=a.st==='change', st=a.x ? steps.filter(x=>x.cat==='g' && chg) : a.ch;
+  return chg ? st.map(x=>optLbl(x)).join(' · ') : a.id==='tp' ? (optFamOf(P.g)==='T' ? 'Tieni target '+fmtX(P.g.t)+'R' : 'Non passare al target fisso')
+    : a.x && optFamOf(P.g)===a.f && !steps.some(x=>x.cat==='g') ? 'Tieni '+low1(mgTxt(P.g,true)) : a.id==='asset' ? 'Resta su '+mkList(P.asset) : OPT_KEEP[a.id]; }
+// La stessa carta vista per periodo (16/11/2026, richiesta dell'utente: poter scegliere se vedere cosa ha reso di più nelle ultime 3
+// settimane o sullo storico, oltre al consiglio): in testa il valore che ha reso di più nel periodo scelto, la classifica ordinata
+// su quel periodo, e sempre una riga con quello che Ottimizza consiglia (così le due cose non si confondono). È solo una vista:
+// la proposta in alto non cambia. Con pochi trade (meno di 3 nelle ultime 3 settimane, meno di 8 sullo storico) un valore si vede
+// ma non può essere «il migliore».
+function optCatView(O, a, mode) { const B=O.B, P=O.P, W=B.weeks.length, w3=mode==='w3', X=optExit(O), K=JSON.stringify, Q=O.prop ? O.prop.P : P, v=r=>w3?r.r:r.a, minN=w3?3:8;
+  const perL=w3?'nelle ultime 3 settimane':'sullo storico', othL=w3?'sullo storico':'nelle ultime 3 settimane';
+  let rows=[], unit=OPT_UNIT.g, f=fRt, cx='', txt='', head='';
+  if (a.x) { unit=OPT_UNIT.x; f=fRw; const gs=X.grid.filter(x=>x.f===a.f).map(x=>x.g); [Q.g, P.g].forEach(g=>{ if (!gs.some(x=>K(x)===K(g))) gs.push(g); });
+    rows=gs.map(g=>{ const sm=O.simOf(Object.assign({}, Q, { g })); return { l:optCap(mgTxt(g,true)), a:optNums(B,sm,'all').rw, r:optNums(B,sm,3).rw, fam:optFamOf(g)===a.f, tag:K(g)===K(P.g)?'la tua':K(g)===K(Q.g)?'consigliata':'' }; }); }
+  else if (a.id==='day') { unit=OPT_UNIT.day; f=fRw; rows=[{ l:'Le tue regole', a:0, r:0, tag:'le tue', fam:true }, ...a.ms.map(m=>({ l:optLbl(m), a:m.c.all, r:m.c.w3, fam:true, tag:a.ch.some(x=>x.l===m.l)?'consigliata':'' }))]; }
+  else if (a.id==='ctx') { const j=w3?2:0;
+    cx=a.gs.map(g=>{ const rs=g.rows.filter(r=>r.w[j].n>=minN).sort((p,q)=>q.w[j].rt-p.w[j].rt); if (rs.length<2) return ''; const b=rs[0], w=rs[rs.length-1];
+      return '<div class="op-cxr"><span>'+esc(g.name)+'</span><b class="'+sgn(b.w[j].rt)+'">'+esc(b.k)+' <i class="num">'+fRt(b.w[j].rt)+'</i></b><em class="'+sgn(w.w[j].rt)+'">'+esc(w.k)+' <i class="num">'+fRt(w.w[j].rt)+'</i></em></div>'; }).join('');
+    head='Le condizioni che hanno reso di più'; txt='Per ogni condizione, il valore che ha reso di più e quello che ha reso di meno '+perL+' (con almeno '+minN+' trade).'; }
+  else { const g=a.gs[0]; if (g) rows=g.rows.map(r=>({ l:r.k, a:r.w[0].rt, r:r.w[2].n?r.w[2].rt:NaN, n:r.w[w3?2:0].n, off:!r.on, fam:r.w[w3?2:0].n>=minN })); }
+  if (!cx) { rows=rows.filter(r=>isFinite(v(r))).sort((p,q)=>v(q)-v(p)); const best=rows.find(r=>r.fam);
+    if (best) { best.hi=true; if (!best.tag) best.tag='il migliore'; head=best.l;
+      txt = a.id==='day' ? (best.tag==='le tue' ? 'Nessun\'altra regola del giorno ha reso più delle tue '+perL+'.' : fRw(v(best))+' R a settimana rispetto al tuo piano '+perL+'; '+othL+' '+fRw(w3?best.a:best.r)+'.')
+        : f(v(best))+' '+(a.x?'R a settimana':'R a trade')+' '+perL+(best.n?' ('+best.n+' trade)':'')+'; '+othL+' '+f(w3?best.a:best.r)+'.'; }
+    else { head='Troppi pochi trade'; txt='In questo periodo nessun valore ha abbastanza trade per un confronto.'; }
+    rows=rows.filter((r,k)=>k<5 || r.tag); }
+  const rank = cx ? '<div class="op-rk op-cx"><div class="op-rkh"><span>R a trade · '+(w3?'3 sett.':'storico')+'</span><span>Rende di più</span><span>Rende di meno</span></div>'+cx+'</div>' : rows.length ? optRank(rows, unit, f, w3) : '';
+  const d0=w3 ? pdIso(B.weeks[Math.max(0,W-3)]) : B.ts[0].t.d, d1=addDays(pdIso(B.cut),4), dt=d=>d.getDate()+' '+MESI[d.getMonth()];
+  return '<section class="card rise op-cat view" data-cat="'+a.id+'"><div class="op-ch"><span class="op-ci">'+ic(a.icon,17,2.2)+'</span><b>'+a.name+'</b><span class="op-chip q">'+(w3?'Ultime 3 sett.':'Storico')+'</span></div>'+
+    '<h3 class="op-cd">'+esc(head)+'</h3><p class="op-cwn">'+esc(txt)+'</p>'+
+    '<p class="op-crec '+a.st+'">'+ic(a.st==='change'?'trendUp':'check',14,2.6)+'<span>Ottimizza consiglia: <b>'+esc(low1(optCatHead(O,a)))+'</b></span></p>'+rank+
+    '<p class="op-cp">'+ic('cal',14,2.2)+'<span>Misurato dal '+dt(d0)+' al '+dt(d1)+' ('+(w3?'le ultime 3 settimane chiuse':W+' settimane chiuse')+').'+(a.x && O.prop && O.prop.steps.some(x=>x.cat!=='g') ? ' La classifica conta anche le altre modifiche consigliate.' : '')+'</span></p>'+
+    '<details class="op-ar" data-ar="'+a.id+'"'+((S.optOpen||[]).includes(a.id)?' open':'')+'><summary>'+ic('chev',14,2.4)+'Tutti i numeri</summary><div class="op-arb">'+(a.x ? optXBody(O,a) : optGBody(O,a))+'</div></details></section>'; }
 function optCat(O, a) { const B=O.B, P=O.P, W=B.weeks.length, steps=O.prop ? O.prop.steps : [], X=optExit(O), me=X.me, mine=v=>v===me || v.mine;
   const st=a.x ? steps.filter(x=>x.cat==='g' && a.st==='change') : a.ch, chg=a.st==='change';
-  // la decisione a parole
-  const head = chg ? st.map(x=>optLbl(x)).join(' · ') : a.id==='tp' ? (optFamOf(P.g)==='T' ? 'Tieni target '+fmtX(P.g.t)+'R' : 'Non passare al target fisso')
-    : a.x && optFamOf(P.g)===a.f && !steps.some(x=>x.cat==='g') ? 'Tieni '+low1(mgTxt(P.g,true)) : a.id==='asset' ? 'Resta su '+mkList(P.asset) : OPT_KEEP[a.id];
+  const head=optCatHead(O,a);
   // la classifica: storico e ultime 3 settimane
   let rows=[], unit=OPT_UNIT.g, cx='';
   let paper=null;
@@ -701,11 +737,8 @@ function optCat(O, a) { const B=O.B, P=O.P, W=B.weeks.length, steps=O.prop ? O.p
       return '<div class="op-cxr"><span>'+esc(g.name)+'</span><b class="'+sgn(b.w[0].rt)+'">'+esc(b.k)+' <i class="num">'+fRt(b.w[0].rt)+'</i></b><em class="'+sgn(w.w[0].rt)+'">'+esc(w.k)+' <i class="num">'+fRt(w.w[0].rt)+'</i></em></div>'; }).join(''); }
   else { const g=a.gs[0]; if (g) { const ok=g.rows.filter(r=>r.w[0].n>=8), best=ok.length ? ok.reduce((p,q)=>q.w[0].rt>p.w[0].rt?q:p) : null;
       rows=(['idee','asset'].includes(a.id) ? g.rows.slice().sort((p,q)=>q.w[0].rt-p.w[0].rt) : g.rows).map(r=>({ l:r.k, a:r.w[0].rt, r:r.w[2].n?r.w[2].rt:NaN, n:r.w[0].n, off:!r.on, tag:r===best?'il migliore':'', hi:r===best })); } }
-  const mx=Math.max(.2, ...rows.map(r=>Math.abs(r.a)).filter(isFinite)), f=a.x || a.id==='day' ? fRw : fRt;
-  const rank = rows.length ? '<div class="op-rk"><div class="op-rkh"><span>'+unit+'</span><span>Storico</span><span>3 sett.</span></div>'+
-    rows.map((r,k)=>'<div class="op-rr'+(r.hi?' hi':'')+(r.off?' off':'')+'" style="--k:'+k+'"><span class="op-rl"><b>'+esc(r.l)+'</b>'+(r.tag?'<em class="tag'+(/usare|migliore/.test(r.tag)?'':' q')+'">'+r.tag+'</em>':'')+(r.off?'<small>fuori dal piano'+(r.n?' · '+r.n+' trade':'')+'</small>':r.n?'<small>'+r.n+' trade</small>':'')+'</span>'+
-      '<i class="op-rb"><b class="'+sgn(r.a)+'" style="--w:'+Math.max(3,Math.abs(r.a)/mx*100)+'%"></b></i><b class="num '+sgn(r.a)+'">'+f(r.a)+'</b><em class="num '+(isFinite(r.r)?sgn(r.r):'')+'">'+f(r.r)+'</em></div>').join('')+'</div>'
-    : cx ? '<div class="op-rk op-cx"><div class="op-rkh"><span>R a trade · storico</span><span>Rende di più</span><span>Rende di meno</span></div>'+cx+'</div>' : '';
+  const f=a.x || a.id==='day' ? fRw : fRt;
+  const rank = rows.length ? optRank(rows, unit, f, false) : cx ? '<div class="op-rk op-cx"><div class="op-rkh"><span>R a trade · storico</span><span>Rende di più</span><span>Rende di meno</span></div>'+cx+'</div>' : '';
   // il perché: per ogni modifica cosa cambia nei trade e in quali periodi regge; se non si cambia, il motivo
   const how=c=>c.verdict==='recente' ? 'Decidono le ultime 3 settimane, con gli ultimi 3 mesi positivi e lo storico non contrario.' : c.verdict==='si' || c.verdict==='indizio' ? 'Decide lo storico, confermato dagli ultimi 3 mesi; le ultime 3 settimane non lo smentiscono.' : 'Vale insieme alle altre modifiche della proposta.';
   const per=c=>'<div class="op-per"><span>Storico<b class="num '+sgn(c.all)+'">'+fRw(c.all)+'</b></span><span>3 mesi<b class="num '+sgn(c.m3)+'">'+fRw(c.m3)+'</b></span><span>Ultime 3 sett.<b class="num '+sgn(c.w3)+'">'+fRw(c.w3)+'</b></span></div>';
@@ -717,9 +750,15 @@ function optCat(O, a) { const B=O.B, P=O.P, W=B.weeks.length, steps=O.prop ? O.p
     '<h3 class="op-cd">'+esc(head)+'</h3>'+why+rank+
     '<p class="op-cp">'+ic('cal',14,2.2)+'<span>Misurato dal '+dt(d0)+' al '+dt(d1)+' ('+W+' settimane chiuse). Scelta rifatta con i dati fino a venerdì '+dt(d1)+'.'+(a.x && O.prop && O.prop.steps.some(x=>x.cat!=='g') ? ' La classifica conta anche le altre modifiche da fare.' : '')+'</span></p>'+
     '<details class="op-ar" data-ar="'+a.id+'"'+((S.optOpen||[]).includes(a.id)?' open':'')+'><summary>'+ic('chev',14,2.4)+'Tutti i numeri</summary><div class="op-arb">'+(a.x ? optXBody(O,a) : optGBody(O,a))+'</div></details></section>'; }
+const OPT_VW = [['rec','Consigliato'], ['w3','Ultime 3 sett.'], ['all','Storico']];
 function optCheckCard(O) { const R=optRoutine(O), nOk=R.areas.length-R.nC, sec={ tp:'Come esci dal trade', bande:'Quando e cosa tradi', day:'Durante la giornata' };
-  let h='<div class="op-cth rise"><h2 class="h2">Il piano, categoria per categoria</h2><span class="sub">'+[R.nC?R.nC+' da cambiare':'', nOk+' da non cambiare'].filter(Boolean).join(' · ')+'</span></div>';
-  R.areas.forEach(a=>{ if (sec[a.id]) h+='<div class="op-cs rise">'+sec[a.id]+'</div>'; h+=optCat(O,a); });
+  const vw=OPT_VW.some(x=>x[0]===S.optView) ? S.optView : (S.optView=store.get('optView','rec')), vi=Math.max(0, OPT_VW.findIndex(x=>x[0]===vw));
+  let h='<div class="op-cth rise"><h2 class="h2">Il piano, categoria per categoria</h2><span class="sub">'+[R.nC?R.nC+' da cambiare':'', nOk+' da non cambiare'].filter(Boolean).join(' · ')+'</span></div>'+
+    '<div class="op-vw rise"><div class="seg" style="--n:3;--i:'+vi+'">'+OPT_VW.map((x,k)=>'<button type="button" data-act="optview" data-v="'+x[0]+'" class="'+(k===vi?'on':'')+'" aria-pressed="'+(k===vi)+'">'+x[1]+'</button>').join('')+'</div>'+
+    '<p>'+(vw==='rec' ? 'Cosa conviene fare, categoria per categoria: decide lo storico, controllato sugli ultimi 3 mesi e sulle ultime 3 settimane.'
+      : vw==='w3' ? 'Cosa ha reso di più nelle ultime 3 settimane. Sono pochi trade: da sole tre settimane non bastano per decidere, per questo ogni carta dice anche cosa consiglia Ottimizza.'
+      : 'Cosa ha reso di più su tutto lo storico, senza gli altri controlli. Ogni carta dice anche cosa consiglia Ottimizza.')+'</p></div>';
+  R.areas.forEach(a=>{ if (sec[a.id]) h+='<div class="op-cs rise">'+sec[a.id]+'</div>'; h+=vw==='rec' ? optCat(O,a) : optCatView(O,a,vw); });
   return h; }
 // dentro un'area di uscita: le uscite di quel tipo contro la tua (R a settimana) e cosa dicono le note
 function optXBody(O, a) { const X=optExit(O), W=O.B.weeks.length, J=a.J, me=X.me, fR=x=>fmtN(x,1,true), cap=g=>optCap(mgTxt(g,true)), td=(v,c)=>'<td class="num '+(c||'')+' '+sgn(v)+'">'+fR(v)+'</td>';
@@ -776,6 +815,7 @@ function optClick(b) {
   if (S.sheet==='plan' && b.closest('#sh-body')) return planClick(b);
   const a=b.dataset.act;
   if (a==='planedit') { openPlan(); return true; }
+  if (a==='optview') { if (S.optView===b.dataset.v) return true; S.optView=b.dataset.v; store.set('optView', S.optView); const y=window.scrollY; renderCurrent(true); window.scrollTo(0, y); return true; }
   if (a==='planundo') { if (S._planPrev) { CFG.piano=S._planPrev; S._planPrev=null; planSaved(); toast('Piano com\'era prima'); renderCurrent(true); } return true; }
   if (a==='optstep') { const O=S._opt, G=O && O.prop; if (!G) return true; optPick(O); const l=G.steps[+b.dataset.i].l;
     S.optOff = S.optOff.includes(l) ? S.optOff.filter(x=>x!==l) : S.optOff.concat(l);
@@ -820,4 +860,4 @@ function optCtx() { const O=optAll(); if (!O) return 'servono almeno 6 settimane
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['ottimizza.js'] = '2026-11-16.6';
+EB_V['ottimizza.js'] = '2026-11-16.7';
