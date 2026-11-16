@@ -698,7 +698,9 @@ function optCatBE(O, a, vw) { const B=O.B, P=O.P, W=B.weeks.length, X=optExit(O)
   const Td=Q.g.k==='T' ? Q.g.t : X.Tref, TS=PLAN_MG.T.filter(t=>t>=1.5); if (S.optBeKey!==O.key) { S.optBeKey=O.key; S.optBeT=0; }
   const T=TS.includes(S.optBeT) ? S.optBeT : Td, own=T===Td, qb=own && optPureBE(Q.g) ? Q.g.be : 0, exCh=JSON.stringify(Q.g)!==JSON.stringify(P.g), v=r=>w3?r.r:r.a;
   const sim=g=>O.simOf(Object.assign({}, Q, { g })), num=sm=>({ a:optNums(B,sm,'all').rw, r:optNums(B,sm,3).rw }), s0=sim({ k:'T', t:T });
-  const none=Object.assign({ l:'Senza BE', lv:0 }, num(s0)), lv=PLAN_MG.BE.filter(b=>b<T).map(b=>{ const sm=sim({ k:'T', t:T, be:b }); let sv=0, kl=0;
+  // «Senza BE» è il riferimento: dice quanti trade ha nel periodo, quanti arrivano al target e quanti vanno in stop
+  let n0=0, w0=0, l0=0; s0.rs.forEach((r,i)=>{ if (w3 && B.wi[B.ts[i].wk]<W-3) return; n0++; if (r>1e-9) w0++; else if (r<-1e-9) l0++; });
+  const none=Object.assign({ l:'Senza BE', lv:0, sub:(w3?'in 3 settimane ':'sullo storico ')+n0+' trade: '+w0+' al target, '+l0+' in stop' }, num(s0)), lv=PLAN_MG.BE.filter(b=>b<T).map(b=>{ const sm=sim({ k:'T', t:T, be:b }); let sv=0, kl=0;
     // loss salvati e win chiusi a zero si contano nel periodo della vista (storico, oppure le ultime 3 settimane) e la riga lo dice
     s0.rs.forEach((r0,i)=>{ const r1=sm.rs.get(i); if (r1===undefined || (w3 && B.wi[B.ts[i].wk]<W-3)) return; if (r1>r0+1e-9) sv++; else if (r1<r0-1e-9) kl++; });
     return Object.assign({ l:'BE da '+fmtX(b)+'R', lv:b, sv, kl, sub:(w3?'in 3 settimane':'sullo storico')+' salva '+sv+' loss, chiude a zero '+kl+' win' }, num(sm)); });
@@ -918,4 +920,4 @@ function optCtx() { const O=optAll(); if (!O) return 'servono almeno 6 settimane
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['ottimizza.js'] = '2026-11-16.13';
+EB_V['ottimizza.js'] = '2026-11-16.14';
