@@ -53,7 +53,11 @@ function renderStats() {
     kpi('Profit factor', a.pf===Infinity?'∞':numEl(a.pf,2), isFinite(a.pf)?fmtN(a.pf,1)+' R guadagnati per R perso':'', 150)+
     kpi('Expectancy', numEl(a.exp,2,true)+'<small>R</small>', U?fmtU(uT/ts.length)+' in media a trade':'Resa media per trade', 180, sgn(a.exp))+
     kpi('Max drawdown', numEl(a.dd,1)+'<small>R</small>', U?usd(usdDD(ts,m))+' dal picco':'Calo massimo dal picco', 210);
-  if (E) { const mx=ts.filter(t=>isFinite(t.max)); html+=kpi('Max RR medio', numEl(mx.reduce((s,t)=>s+t.max,0)/(mx.length||1),2)+'<small>R</small>', 'Escursione favorevole media', 240)+
+  // Max RR medio: il massimo raggiunto è una proprietà del trade, non dipende dal target scelto. Con le regole del giorno attive i
+  // trade presi cambiano col target (lo stop dopo il primo TP scatta prima o dopo), e la media cambiava con loro (16/11/2026,
+  // dubbio dell'utente). Ora si conta su tutti i setup che passano i filtri, senza le regole del giorno: resta fermo.
+  if (E) { const day=S.filt.plan==='max2', base=day ? filtered(m, false, true) : ts, mx=base.filter(t=>isFinite(t.max));
+    html+=kpi('Max RR medio', numEl(mx.reduce((s,t)=>s+t.max,0)/(mx.length||1),2)+'<small>R</small>', day ? 'Su '+mx.length+' setup, prima delle regole del giorno' : 'Escursione favorevole media', 240)+
       kpi('Tempo medio a '+Math.min(T,5)+'R', (()=>{ const v=ts.map(t=>t.h[Math.min(T,5)-1]).filter(isFinite); return v.length?hhmm(v.reduce((x,y)=>x+y,0)/v.length):'–'; })(), 'Dall\'ingresso al livello', 270)+'</div>'; }
   else { const hs=ts.map(t=>t.hold).filter(isFinite); html+=kpi('Holding medio', hs.length?hhmm(hs.reduce((x,y)=>x+y,0)/hs.length):'–', 'Durata media del trade', 240)+
       kpi('Win rate con BE', numEl(a.wrAll*100,0)+'<small>%</small>', 'Pareggi contati come non vinti', 270)+'</div>'; }
@@ -298,4 +302,4 @@ async function delTrade() {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['analisi.js'] = '2026-11-16.18';
+EB_V['analisi.js'] = '2026-11-16.19';

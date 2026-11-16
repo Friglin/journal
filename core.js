@@ -616,7 +616,7 @@ function dayRules(P) { P=P||PL(); let day='', n=0, stop=false, ls=0, R=0, open=[
     if (stop || (P.maxN && n>=P.maxN) || (P.sll && ls>=P.sll) || (P.lossR && R<=-P.lossR+1e-9) || (P.uno && open.length)) return false;
     n++; open.push({ at:isFinite(o) ? o+tradeDur(t,r,g) : -1, r }); return true; }; }
 function plan(ts, rOf, P, g) { const take=dayRules(P); return ts.filter(t=>take(t, rOf(t), g)); }
-function filtered(m, noPer) {
+function filtered(m, noPer, noDay) {   // noDay: senza le regole del giorno (che dipendono dal target scelto)
   const F=S.filt; m=m||curModel();
   let ts=all().filter(t=>
     (!fAs(F).length||fAs(F).includes(t.a)) && (!(F.idea&&F.idea.length)||F.idea.includes(t.idea)) && (!(F.smt&&F.smt.length)||F.smt.includes(t.smt)) &&
@@ -624,7 +624,7 @@ function filtered(m, noPer) {
   if (!noPer && S.per!=='all') ts=inRange(ts, periodRange(S.per,0));
   if (F.plan==='max2') {   // il piano: condizioni, orari e giorni (solo EOW; mercati e idee hanno i loro filtri), poi le regole del giorno
     if (S.type==='EOW') { const Pc=Object.assign({}, PL(), { asset:L.asset, idee:L.idea }); ts=ts.filter(t=>optPass(Pc, planX(t))); }
-    ts=plan(ts, m.rOf, null, tgtP() ? PL().g : { k:'T', t:tgt() }); }
+    if (!noDay) ts=plan(ts, m.rOf, null, tgtP() ? PL().g : { k:'T', t:tgt() }); }
   return ts;
 }
 // il periodo è lo stesso ovunque: la barra Sett./Mese/3M/Anno/Tutto della Panoramica e il «Periodo» dei filtri
@@ -692,4 +692,4 @@ function filtClick(b) {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['core.js'] = '2026-11-16.18';
+EB_V['core.js'] = '2026-11-16.19';
