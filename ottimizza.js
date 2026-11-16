@@ -712,7 +712,7 @@ function optCatBE(O, a, vw) { const B=O.B, P=O.P, W=B.weeks.length, X=optExit(O)
   // per ogni target: senza BE e il livello migliore
   const sumr=TS.map(t=>{ const n0=num(sim({ k:'T', t })), bs=PLAN_MG.BE.filter(b=>b<t).map(b=>({ b, x:num(sim({ k:'T', t, be:b })) })), bb=bs.length ? bs.reduce((p,q)=>v(q.x)>v(p.x)?q:p) : null; return { t, n:v(n0), b:bb ? bb.b : 0, x:bb ? v(bb.x) : NaN }; });
   const sumt='<div class="op-sub">Per ogni target, il livello di BE migliore · '+(w3?'ultime 3 settimane':'storico')+'</div><div class="tbl-wrap"><table class="ex-t op-t op-bes"><tr><th>Target</th><th>Senza BE</th><th>BE migliore</th><th>Diff.</th></tr>'+
-    sumr.map(r=>'<tr class="'+(r.t===T?'cur':'')+'"><td>'+fmtX(r.t)+'R'+(r.t===Td?' <em class="tag'+(exCh?'':' q')+'">'+(exCh?'da usare':'il tuo')+'</em>':'')+'</td><td class="num '+sgn(r.n)+'">'+fRw(r.n)+'</td><td class="num">'+(r.b?fmtX(r.b)+'R · '+fRw(r.x):'–')+'</td><td class="num '+(r.b?sgn(r.x-r.n):'')+'">'+(r.b?fRw(r.x-r.n):'–')+'</td></tr>').join('')+'</table></div>';
+    sumr.map(r=>'<tr class="'+(r.t===T?'cur':'')+'"><td>'+fmtX(r.t)+'R'+(r.t===Td?' <em class="tag'+(exCh?'':' q')+'">'+(exCh?'da usare':'il tuo')+'</em>':'')+'</td><td class="num '+sgn(r.n)+'">'+fRw(r.n)+'</td><td class="num">'+(r.b?'<span class="op-bel">BE da '+fmtX(r.b)+'R</span> <b class="'+sgn(r.x)+'">'+fRw(r.x)+'</b>':'–')+'</td><td class="num '+(r.b?sgn(r.x-r.n):'')+'">'+(r.b?fRw(r.x-r.n):'–')+'</td></tr>').join('')+'</table></div>';
   const pick='<div class="op-bt" role="group" aria-label="Target">'+TS.map(t=>'<button type="button" class="chip'+(t===T?' on':'')+'" data-act="optbet" data-t="'+t+'" aria-pressed="'+(t===T)+'">'+fmtX(t)+'R</button>').join('')+'</div>';
   if (!own && bl && !w3) { head='Con target '+fmtX(T)+'R: '+(bl.a>none.a+.05 ? 'BE da '+fmtX(bl.lv)+'R' : 'meglio senza BE');
     txt = bl.a>none.a+.05 ? 'Il BE da '+fmtX(bl.lv)+'R '+cost(bl)+': '+fRw(bl.a-none.a)+' R a settimana rispetto a senza BE. È un conto sullo storico, non una modifica consigliata.'
@@ -920,4 +920,4 @@ function optCtx() { const O=optAll(); if (!O) return 'servono almeno 6 settimane
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['ottimizza.js'] = '2026-11-16.14';
+EB_V['ottimizza.js'] = '2026-11-16.15';
