@@ -472,7 +472,7 @@ function optGroups(B, P) {
 // (segnalata ma non ancora provata, con il numero di weekend di fila da cui lo è) o «Confermato».
 const OPT_ST = { change:['Cambia',''], ok:['Non cambiare','rec'] };   // due soli stati: niente vie di mezzo (richiesta dell'utente)
 const OPT_AREAS = [['tp','Target','target'], ['be','Stop a BE o in profitto','shield'], ['tr','Trailing stop','trendUp'], ['pz','Uscita a parziali','grid'],
-  ['bande','Orari','clock'], ['idee','Setup','spark'], ['giorni','Giorni','cal'], ['asset','Mercati','chart'], ['ctx','Condizioni','filter'], ['day','Regole del giorno','list']];
+  ['bande','Orari','clock'], ['idee','Setup di entrata','spark'], ['giorni','Giorni','cal'], ['asset','Mercati','chart'], ['ctx','Condizioni','filter'], ['day','Regole del giorno','list']];
 const OPT_XA = { tp:'T', be:'B', tr:'L', pz:'P' }, OPT_GA = { bande:['bande'], idee:['idee'], giorni:['giorni'], asset:['asset'], ctx:['news','smt','lvn','clean','cc2','dir','pb'], day:[] };
 const low1 = s => /^[A-Z]{2}/.test(s) ? String(s) : String(s).replace(/^./, c=>c.toLowerCase());
 const optFamOf = g => g.k==='L' ? 'L' : g.k==='P' ? 'P' : g.be ? 'B' : 'T';
@@ -493,8 +493,8 @@ function optRoutine(O) { if (O.rt) return O.rt;
   const exStep=steps.find(x=>x.cat==='g'), exG = exStep ? (exStep.g || OPT_GS().find(g=>'gestione: '+mgTxt(g)===exStep.l) || null) : null, exF = exG ? optFamOf(exG) : '', meF=optFamOf(P.g);
   const xArea=id=>{ const f=OPT_XA[id], J=X.fam[f], b=J.best, mine=meF===f, nm='«'+(f==='T' ? 'target '+fmtX(b.g.t)+'R' : low(mgTxt(b.g,true)))+'»', dl=fR(J.gain)+' R a settimana';
     // con un target nella proposta la tabella dei target è fatta sul piano con le altre modifiche già applicate: è lì che è stato scelto
-    const onQ = id==='tp' && exF==='T' && steps.length>1, key=g=>JSON.stringify(g), nq=v=>OPT_WIN.map(w=>optNums(B,v,w.k));
-    const rows = onQ ? PLAN_MG.T.map(t=>{ const g={ k:'T', t }, sim=O.simOf(Object.assign({}, O.prop.P, { g })); return { g, sim, n:nq(sim), use:t===exG.t, mine:key(g)===key(P.g), gi:X.grid.findIndex(v=>key(v.g)===key(g)) }; })
+    const onQ = id==='tp' && !!O.prop && (exF!=='T' || steps.length>1), key=g=>JSON.stringify(g), nq=v=>OPT_WIN.map(w=>optNums(B,v,w.k));
+    const rows = onQ ? PLAN_MG.T.map(t=>{ const g={ k:'T', t }, sim=O.simOf(Object.assign({}, O.prop.P, { g })); return { g, sim, n:nq(sim), use:exF==='T' && t===exG.t, mine:key(g)===key(P.g), gi:X.grid.findIndex(v=>key(v.g)===key(g)) }; })
       : (id==='tp' ? X.grid.filter(v=>v.f==='T') : J.top3.slice()); if (!onQ && !rows.includes(me)) rows.unshift(me);
     if (!onQ && exF===f) rows.forEach(v=>{ if (key(v.g)===key(exG)) v.use=true; });
     const be=X.be, beLo=be.length ? Math.min(...be.map(x=>x.net)) : 0, beHi=be.length ? Math.max(...be.map(x=>x.net)) : 0;
@@ -668,12 +668,59 @@ function optWeekCard(O) { const R=optRoutine(O), w=R.last, a=w.n, d0=pdIso(w.wk)
       '<div class="rc-days op-wd" style="--z:'+z+'%">'+wd.map((l,i)=>'<div style="--k:'+i+'"><div class="rc-col">'+(w.days[i]?'<i class="'+sgn(w.days[i])+'" style="--h:'+Math.abs(w.days[i])*k+'%"></i>':'')+'</div><b class="'+sgn(w.days[i])+'">'+(w.days[i]?fR(w.days[i]):'–')+'</b><span>'+l+'</span></div>').join('')+'</div></div>'+
     '<ul class="op-wl">'+li.map((x,i)=>'<li style="--k:'+i+'">'+ic(x[0],16,2.2)+'<span>'+x[1]+'</span></li>').join('')+'</ul></div>'; }
 // la checklist: una riga per area con lo stato e la risposta; si apre per vedere i numeri
-function optCheckCard(O) { const R=optRoutine(O), nOk=R.areas.length-R.nC, sec={ tp:'Come esci dal trade', bande:'Quando e cosa tradi', day:'Durante la giornata' }, open=S.optOpen||[];
-  let h='<div class="card wide rise op-ck"><div class="card-h"><h2 class="h2">Il piano, punto per punto</h2><span class="sub">'+[R.nC?R.nC+' da cambiare':'', nOk+' da non cambiare'].filter(Boolean).join(' · ')+'</span></div>';
-  R.areas.forEach((a,i)=>{ const st=OPT_ST[a.st]; if (sec[a.id]) h+='<div class="op-cs">'+sec[a.id]+'</div>';
-    h+='<details class="op-ar '+a.st+'" data-ar="'+a.id+'" style="--k:'+i+'"'+(open.includes(a.id)?' open':'')+'><summary><span class="op-ari">'+ic(a.icon,17,2.2)+'</span><div class="op-art"><b>'+a.name+'<span class="op-chip '+st[1]+'">'+st[0]+'</span></b><small>'+esc(a.say)+'</small></div>'+ic('chev',15,2.4)+'</summary>'+
-      '<div class="op-arb">'+(a.x ? optXBody(O,a) : optGBody(O,a))+'</div></details>'; });
-  return h+'</div>'; }
+// Il piano, categoria per categoria (16/11/2026, richiesta dell'utente: «suddividi per categorie… in ogni sezione quello che ha
+// performato meglio o che conviene attuare, il perché dietro ogni scelta e il periodo in cui è stata misurata»). Una carta per
+// categoria, sempre con lo stesso ordine di lettura: decisione (Cambia / Non cambiare, detta a parole), perché, classifica dei
+// valori (storico e ultime 3 settimane affiancati), periodo della misura e della scelta; i numeri completi restano chiusi sotto.
+// La ricerca non cambia (optGreedy, controllata da tools/test/coerenza.js): qui si spiega soltanto.
+const OPT_KEEP = { be:'Non spostare lo stop', tr:'Non usare il trailing', pz:'Non uscire a parziali', bande:'Tieni i tuoi orari', idee:'Tieni i tuoi setup', giorni:'Tieni i tuoi giorni', ctx:'Tieni le tue condizioni', day:'Tieni le tue regole del giorno' };
+const OPT_UNIT = { x:'R a settimana', g:'R a trade', day:'R a settimana rispetto al tuo piano' };
+function optCat(O, a) { const B=O.B, P=O.P, W=B.weeks.length, steps=O.prop ? O.prop.steps : [], X=optExit(O), me=X.me, mine=v=>v===me || v.mine;
+  const st=a.x ? steps.filter(x=>x.cat==='g' && a.st==='change') : a.ch, chg=a.st==='change';
+  // la decisione a parole
+  const head = chg ? st.map(x=>optLbl(x)).join(' · ') : a.id==='tp' ? (optFamOf(P.g)==='T' ? 'Tieni target '+fmtX(P.g.t)+'R' : 'Non passare al target fisso')
+    : a.x && optFamOf(P.g)===a.f && !steps.some(x=>x.cat==='g') ? 'Tieni '+low1(mgTxt(P.g,true)) : a.id==='asset' ? 'Resta su '+mkList(P.asset) : OPT_KEEP[a.id];
+  // la classifica: storico e ultime 3 settimane
+  let rows=[], unit=OPT_UNIT.g, cx='';
+  let paper=null;
+  // le classifiche delle uscite contano le altre modifiche da fare (il piano proposto): lo stesso numero in ogni carta
+  const Q=O.prop ? O.prop.P : P, K=JSON.stringify, row=(g,tag,hi)=>{ const v=O.simOf(Object.assign({}, Q, { g })); return { g, l:optCap(mgTxt(g,true)), a:optNums(B,v,'all').rw, r:optNums(B,v,3).rw, tag, hi }; };
+  if (a.id==='tp') { unit=OPT_UNIT.x; const all=a.rows.slice().sort((p,q)=>q.n[0].rw-p.n[0].rw), top=all.filter((v,k)=>k<4 || mine(v) || v.use);
+    rows=top.map(v=>({ l:optCap(mgTxt(v.g,true)), a:v.n[0].rw, r:v.n[3].rw, tag:v.use?'da usare':mine(v)?'la tua':'', hi:v.use || (mine(v) && !chg) }));
+    if (!top.some(mine)) { rows.push(row(P.g,'la tua',!chg)); rows.sort((p,q)=>q.a-p.a); } }
+  else if (a.x) { unit=OPT_UNIT.x;   // stop spostato, trailing, parziali: le due migliori del tipo contro l'uscita da usare, sui trade che prenderai
+    const ref=row(Q.g, K(Q.g)===K(P.g) ? 'la tua' : 'da usare', true), fam=a.J.top3.map(v=>v.g).filter(g=>K(g)!==K(Q.g)).slice(0,2).map(g=>row(g,'',false));
+    rows=[ref, ...fam]; if (K(Q.g)!==K(P.g) && !rows.some(r=>K(r.g)===K(P.g))) rows.push(row(P.g,'la tua',false));
+    rows.sort((p,q)=>q.a-p.a); fam.forEach(r=>{ if (r.a>ref.a+.05) r.tag='solo sulla carta'; });
+    if (!chg && fam.length) { const b=fam.reduce((p,q)=>q.a>p.a?q:p), be=(/(Lo stop a BE semplice non conviene|Non conviene: con target)[^.]*\./.exec(a.say)||[''])[0].replace(/^Non conviene: c/,'Lo stop a BE semplice non conviene: c');
+      paper=(be?be+' ':'')+(b.a>ref.a+.05 ? 'Sulla carta «'+low1(b.l)+'» rende '+fRw(b.a-ref.a)+' R a settimana in più di «'+low1(ref.l)+'», ma nelle prove sul passato scegliere questo tipo di uscita non ha reso di più: resta fuori.'
+        : 'Nessuna variante batte «'+low1(ref.l)+'»: la migliore, «'+low1(b.l)+'», fa '+fRw(b.a)+' R a settimana contro '+fRw(ref.a)+'.'); } }
+  else if (a.id==='day') { unit=OPT_UNIT.day; if (!chg) rows=a.ms.slice().sort((p,q)=>q.c.all-p.c.all).filter((m,k)=>k<3 || st.some(x=>x.l===m.l)).map(m=>({ l:optLbl(m), a:m.c.all, r:m.c.w3, tag:st.some(x=>x.l===m.l)?'da usare':'', hi:st.some(x=>x.l===m.l) })); }
+  else if (a.id==='ctx') { const ok=r=>r.w[0].n>=8;
+    cx=a.gs.map(g=>{ const rs=g.rows.filter(ok).sort((p,q)=>q.w[0].rt-p.w[0].rt); if (rs.length<2) return ''; const b=rs[0], w=rs[rs.length-1];
+      return '<div class="op-cxr"><span>'+esc(g.name)+'</span><b class="'+sgn(b.w[0].rt)+'">'+esc(b.k)+' <i class="num">'+fRt(b.w[0].rt)+'</i></b><em class="'+sgn(w.w[0].rt)+'">'+esc(w.k)+' <i class="num">'+fRt(w.w[0].rt)+'</i></em></div>'; }).join(''); }
+  else { const g=a.gs[0]; if (g) { const ok=g.rows.filter(r=>r.w[0].n>=8), best=ok.length ? ok.reduce((p,q)=>q.w[0].rt>p.w[0].rt?q:p) : null;
+      rows=(['idee','asset'].includes(a.id) ? g.rows.slice().sort((p,q)=>q.w[0].rt-p.w[0].rt) : g.rows).map(r=>({ l:r.k, a:r.w[0].rt, r:r.w[2].n?r.w[2].rt:NaN, n:r.w[0].n, off:!r.on, tag:r===best?'il migliore':'', hi:r===best })); } }
+  const mx=Math.max(.2, ...rows.map(r=>Math.abs(r.a)).filter(isFinite)), f=a.x || a.id==='day' ? fRw : fRt;
+  const rank = rows.length ? '<div class="op-rk"><div class="op-rkh"><span>'+unit+'</span><span>Storico</span><span>3 sett.</span></div>'+
+    rows.map((r,k)=>'<div class="op-rr'+(r.hi?' hi':'')+(r.off?' off':'')+'" style="--k:'+k+'"><span class="op-rl"><b>'+esc(r.l)+'</b>'+(r.tag?'<em class="tag'+(/usare|migliore/.test(r.tag)?'':' q')+'">'+r.tag+'</em>':'')+(r.off?'<small>fuori dal piano'+(r.n?' · '+r.n+' trade':'')+'</small>':r.n?'<small>'+r.n+' trade</small>':'')+'</span>'+
+      '<i class="op-rb"><b class="'+sgn(r.a)+'" style="--w:'+Math.max(3,Math.abs(r.a)/mx*100)+'%"></b></i><b class="num '+sgn(r.a)+'">'+f(r.a)+'</b><em class="num '+(isFinite(r.r)?sgn(r.r):'')+'">'+f(r.r)+'</em></div>').join('')+'</div>'
+    : cx ? '<div class="op-rk op-cx"><div class="op-rkh"><span>R a trade · storico</span><span>Rende di più</span><span>Rende di meno</span></div>'+cx+'</div>' : '';
+  // il perché: per ogni modifica cosa cambia nei trade e in quali periodi regge; se non si cambia, il motivo
+  const how=c=>c.verdict==='recente' ? 'Decidono le ultime 3 settimane, con gli ultimi 3 mesi positivi e lo storico non contrario.' : c.verdict==='si' || c.verdict==='indizio' ? 'Decide lo storico, confermato dagli ultimi 3 mesi; le ultime 3 settimane non lo smentiscono.' : 'Vale insieme alle altre modifiche della proposta.';
+  const per=c=>'<div class="op-per"><span>Storico<b class="num '+sgn(c.all)+'">'+fRw(c.all)+'</b></span><span>3 mesi<b class="num '+sgn(c.m3)+'">'+fRw(c.m3)+'</b></span><span>Ultime 3 sett.<b class="num '+sgn(c.w3)+'">'+fRw(c.w3)+'</b></span></div>';
+  const say=paper!==null ? paper : chg ? String(a.say).replace(/^Cambia: [^.]*\.\s*/, '') : String(a.say).replace(/(^|\. )Non (cambiare|conviene)( qui| per ora)?[:.]\s*(.)/g, (m,p1,p2,p3,p4)=>p1+p4.toUpperCase()), sayC=say ? optCap(say) : '';
+  const why = chg ? st.map(x=>{ const w=optWhy(x); return '<div class="op-cw">'+(st.length>1?'<b>'+esc(optLbl(x))+'</b>':'')+(w?'<p>'+esc(w)+'</p>':'')+per(x.c)+'<small>R a settimana in più, dopo le modifiche che vengono prima. '+(a.x ? 'L\'uscita è scelta sullo storico insieme ai target vicini, sui trade che prenderai.' : how(x.c))+'</small></div>'; }).join('')+(sayC?'<p class="op-cwn">'+esc(sayC)+'</p>':'')
+    : '<p class="op-cwn">'+esc(sayC || 'Nessuna alternativa rende di più in modo affidabile.')+'</p>';
+  const d0=B.ts[0].t.d, d1=addDays(pdIso(B.cut),4), dt=d=>d.getDate()+' '+MESI[d.getMonth()];
+  return '<section class="card rise op-cat '+a.st+'" data-cat="'+a.id+'"><div class="op-ch"><span class="op-ci">'+ic(a.icon,17,2.2)+'</span><b>'+a.name+'</b><span class="op-chip '+OPT_ST[a.st][1]+'">'+OPT_ST[a.st][0]+'</span></div>'+
+    '<h3 class="op-cd">'+esc(head)+'</h3>'+why+rank+
+    '<p class="op-cp">'+ic('cal',14,2.2)+'<span>Misurato dal '+dt(d0)+' al '+dt(d1)+' ('+W+' settimane chiuse). Scelta rifatta con i dati fino a venerdì '+dt(d1)+'.'+(a.x && O.prop && O.prop.steps.some(x=>x.cat!=='g') ? ' La classifica conta anche le altre modifiche da fare.' : '')+'</span></p>'+
+    '<details class="op-ar" data-ar="'+a.id+'"'+((S.optOpen||[]).includes(a.id)?' open':'')+'><summary>'+ic('chev',14,2.4)+'Tutti i numeri</summary><div class="op-arb">'+(a.x ? optXBody(O,a) : optGBody(O,a))+'</div></details></section>'; }
+function optCheckCard(O) { const R=optRoutine(O), nOk=R.areas.length-R.nC, sec={ tp:'Come esci dal trade', bande:'Quando e cosa tradi', day:'Durante la giornata' };
+  let h='<div class="op-cth rise"><h2 class="h2">Il piano, categoria per categoria</h2><span class="sub">'+[R.nC?R.nC+' da cambiare':'', nOk+' da non cambiare'].filter(Boolean).join(' · ')+'</span></div>';
+  R.areas.forEach(a=>{ if (sec[a.id]) h+='<div class="op-cs rise">'+sec[a.id]+'</div>'; h+=optCat(O,a); });
+  return h; }
 // dentro un'area di uscita: le uscite di quel tipo contro la tua (R a settimana) e cosa dicono le note
 function optXBody(O, a) { const X=optExit(O), W=O.B.weeks.length, J=a.J, me=X.me, fR=x=>fmtN(x,1,true), cap=g=>optCap(mgTxt(g,true)), td=(v,c)=>'<td class="num '+(c||'')+' '+sgn(v)+'">'+fR(v)+'</td>';
   let h='<div class="tbl-wrap"><table class="ex-t op-t"><tr><th>R a settimana</th><th>Tutto</th><th class="op-c3">3 mesi</th><th>3 sett.</th><th>Ultima</th><th></th></tr>'+
@@ -690,12 +737,8 @@ function optXBody(O, a) { const X=optExit(O), W=O.B.weeks.length, J=a.J, me=X.me
     (ho && ho.v!==me ? 'Senza le ultime '+ho.H+' settimane la scelta era '+esc(low1(cap(ho.v.g)))+', che proprio in quelle ha fatto '+fmtN(ho.R,1,true)+' R contro '+fmtN(ho.Rme,1,true)+' della tua. ' : '')+
     'Stop spostato, trailing e parziali seguono il percorso scritto nelle note; se la nota finisce prima, conta il caso peggiore.</p>'; }
 // dentro un'area del piano: le modifiche proposte o segnalate, poi ogni valore con i suoi R a trade
-function optGBody(O, a) { const mx=Math.max(.5, ...a.ch.map(x=>x.c).flatMap(c=>[c.all, c.m3, c.w3, c.w1].map(Math.abs)));
-  const bar=(l,v)=>'<div class="op-br"><span>'+l+'</span><i><b class="'+sgn(v)+'" style="--w:'+Math.max(4,Math.abs(v)/mx*100)+'%"></b></i><em class="num '+sgn(v)+'">'+fRw(v)+'</em></div>';
-  const mv=(m,c,i)=>'<div class="op-a" style="--k:'+i+'"><div class="op-at"><b>'+esc(optLbl(m))+'</b><span class="op-chip">Da cambiare</span></div>'+
-      '<div class="op-bars">'+bar('Tutto',c.all)+bar('3 mesi',c.m3)+bar('3 sett.',c.w3)+bar('Ultima',c.w1)+'</div>'+
-      '<div class="op-af">'+optDots(c.p)+'<small>'+c.aff+' trade cambiano</small></div></div>';
-  let h = a.ch.length ? '<div class="op-sub">R a settimana in più, dopo le modifiche che vengono prima</div><div class="op-al">'+a.ch.map((x,i)=>mv(x,x.c,i)).join('')+'</div>' : '';
+function optGBody(O, a) {
+  let h='';
   a.dr.forEach(d=>{ h+='<p class="op-calm op-dr">'+ic(d.mr>d.mb?'trendUp':'trendDn',16,2.4)+'<span><b>'+esc(d.k)+'</b>'+(d.on?'':' (fuori dal piano)')+': da '+fmtN(d.mb,2,true)+' a '+fmtN(d.mr,2,true)+' R a trade nelle ultime '+d.win+' settimane ('+d.c+' trade). Per caso succede '+(d.p<.01?'meno di 1 volta':Math.round(d.p*100)+' volte')+' su 100.</span></p>'; });
   if (a.id==='asset' && O.mkt) h+=optMktBody(O);
   if (a.id==='day') { const ms=a.ms.slice().sort((x,y)=>y.c.all-x.c.all), td=v=>'<td class="num '+(Math.abs(v)<.05?'':sgn(v))+'">'+(Math.abs(v)<.05?'=':fRw(v))+'</td>';
@@ -777,4 +820,4 @@ function optCtx() { const O=optAll(); if (!O) return 'servono almeno 6 settimane
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['ottimizza.js'] = '2026-11-16.5';
+EB_V['ottimizza.js'] = '2026-11-16.6';
