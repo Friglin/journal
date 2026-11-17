@@ -310,7 +310,8 @@ async function save() {
 // ───────────────────────── scheda: apertura e chiusura ─────────────────────────
 function openSheet(panel) { $('sheet').classList.toggle('panel', !!panel);   // «panel»: su PC la scheda è un pannello a destra (non «side», che è la barra laterale)
   $('sheet').classList.add('open'); $('scrim').classList.add('open'); $('fab').classList.add('hide'); $('aifab').classList.add('hide'); document.body.style.overflow='hidden'; $('sh-body').scrollTop=0; }
-function closeSheet() { if (S.sheet==='chat') setTimeout(()=>{ if (!S.sheet) { $('sh-body').innerHTML=''; $('sh-foot').innerHTML=''; } }, 520);
+function closeSheet() { if (S.sheet==='plan' && S._planDirty) { S._planDirty=false; setTimeout(()=>renderCurrent(true), 0); }   // il piano cambiato vale subito anche per la pagina sotto
+  if (S.sheet==='chat') setTimeout(()=>{ if (!S.sheet) { $('sh-body').innerHTML=''; $('sh-foot').innerHTML=''; } }, 520);
   $('sheet').classList.remove('open'); $('scrim').classList.remove('open'); $('fab').classList.toggle('hide', ['mc','opt','coach','news','set'].includes(S.tab)); $('aifab').classList.toggle('hide', S.tab==='coach'); document.body.style.overflow=''; S.sheet=null; }
 
 // ───────────────────────── eventi ─────────────────────────
@@ -449,4 +450,4 @@ if (!viaScript() && !(store.get('api','') && store.get('key',''))) showSetup(); 
 }
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['scheda.js'] = '2026-11-16.20';
+EB_V['scheda.js'] = '2026-11-17.1';

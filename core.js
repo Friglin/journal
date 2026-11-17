@@ -668,7 +668,7 @@ function renderFilters() {
   h+='<div class="fsec"><div class="field"><span class="flabel">Asset · anche più di uno</span>'+segm('f-asset',L.asset,fAs(F))+'</div>'+
      (hasCol('Direzione')?'<div class="field"><span class="flabel">Direzione</span>'+seg('f-dir',[{v:'',l:'Tutte'},...L.dir],F.dir||'')+'</div>':'')+
      '<div class="field"><span class="flabel">Idea 5m · anche più di una</span>'+chips('f-idea',L.idea,F.idea||[],true)+'</div>'+
-     (hasCol('SMT')?'<div class="field"><span class="flabel">SMT · anche più di una</span>'+chips('f-smt',L.smt,F.smt||[],true)+'</div>':'')+
+     (hasCol('SMT')?'<div class="field"><span class="flabel">SMT · anche più di una</span>'+chips('f-smt',L.smt,F.smt||[],true)+(E&&PL().smt?'<span class="hint" id="f-smt-h"'+(F.plan==='max2'?'':' hidden')+'>Con «Regole del piano» attive vale già il tuo piano: '+PL_SMT[PL().smt]+'. Quei trade restano fuori anche se qui li scegli; per vederli metti «Nessuna» in Regole del piano.</span>':'')+'</div>':'')+
      '<div class="field"><span class="flabel">Fascia oraria</span>'+chips('f-band',[{v:'',l:'Tutte'},...L.bands.map(b=>b[0])],F.band||'')+'</div>'+
      '<div class="g2"><div class="field"><span class="flabel">Coming from LVN</span>'+seg('f-lvn',[{v:'',l:'Tutti'},{v:'Si',l:'Sì'},'No'],F.lvn||'')+'</div>'+
      '<div class="field"><span class="flabel">1m clean</span>'+seg('f-clean',[{v:'',l:'Tutti'},'Sì','No'],F.clean||'')+'</div></div></div>';
@@ -687,9 +687,10 @@ function filtClick(b) {
     if (k==='quick') { setPer(v); renderFilters(); renderCurrent(true); return; }
     if (ch.dataset.multi) { const f=k.slice(2), a=f==='asset'?fAs(F):(F[f]||[]); F[f]=a.includes(v)?a.filter(x=>x!==v):[...a,v]; b.classList.toggle('on'); }
     else { F[k.slice(2)]=v; ch.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on', c===b)); } }
+  if (sg && sg.dataset.seg==='f-plan' && $('f-smt-h')) $('f-smt-h').hidden=F.plan!=='max2';
   saveFilt(); filtFoot(); renderCurrent(true);
 }
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['core.js'] = '2026-11-16.20';
+EB_V['core.js'] = '2026-11-17.1';
