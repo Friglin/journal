@@ -577,7 +577,7 @@ const emptyState = (t, p, btn) => '<div class="card empty rise">'+logo(40)+'<div
 // filtro mercati: elenco (vuoto = tutti); i filtri salvati prima erano un solo mercato in testo
 const fAs = F => Array.isArray(F.asset) ? F.asset : (F.asset ? [F.asset] : []);
 const FILT_DEF = f => { if ((f||S.file)==='Journal') return { asset:[], plan:'', tgt:2, idea:[] };
-  const P=PL(), day=P.maxN||P.sw||P.sll||P.lossR||P.uno||P.dir||P.smt||P.lvn||P.clean||P.cc2||P.news||P.pb.length||P.bande.length<L.bands.length||P.giorni.length<L.days.length;
+  const P=PL(), day=P.maxN||P.sw||P.sll||P.lossR||P.uno;
   return { asset:P.asset.length<L.asset.length?P.asset.slice():[], plan:day?'max2':'', tgt:P.g.k==='T' && !P.g.be && Number.isInteger(P.g.t)?P.g.t:'P', idea:P.idee.length<L.idea.length?P.idee.slice():[] }; };
 function loadFilt() { let v=null; try { v=JSON.parse(sessionStorage.getItem('tj.filtBy2')||'null'); } catch(e) {}
   return v && v.EOW && v.Journal ? v : { EOW:FILT_DEF('EOW'), Journal:FILT_DEF('Journal') }; }
@@ -622,9 +622,9 @@ function filtered(m, noPer, noDay) {   // noDay: senza le regole del giorno (che
     (!fAs(F).length||fAs(F).includes(t.a)) && (!(F.idea&&F.idea.length)||F.idea.includes(t.idea)) && (!(F.smt&&F.smt.length)||F.smt.includes(t.smt)) &&
     (!F.lvn||t.lvn===F.lvn) && (!F.clean||(F.clean==='Sì')===t.clean) && (!F.band||bandOf(t)===F.band) && (!F.dir||t.dir===F.dir));
   if (!noPer && S.per!=='all') ts=inRange(ts, periodRange(S.per,0));
-  if (F.plan==='max2') {   // il piano: condizioni, orari e giorni (solo EOW; mercati e idee hanno i loro filtri), poi le regole del giorno
-    if (S.type==='EOW') { const Pc=Object.assign({}, PL(), { asset:L.asset, idee:L.idea }); ts=ts.filter(t=>optPass(Pc, planX(t))); }
-    if (!noDay) ts=plan(ts, m.rOf, null, tgtP() ? PL().g : { k:'T', t:tgt() }); }
+  // «Regole del piano» = solo le regole del giorno (quanti trade al giorno e quando fermarsi), scelta dell'utente del 17/11/2026:
+  // SMT, LVN, orari e le altre condizioni si scelgono solo dai filtri
+  if (F.plan==='max2' && !noDay) ts=plan(ts, m.rOf, null, tgtP() ? PL().g : { k:'T', t:tgt() });
   return ts;
 }
 // il periodo è lo stesso ovunque: la barra Sett./Mese/3M/Anno/Tutto della Panoramica e il «Periodo» dei filtri
@@ -633,7 +633,7 @@ function perLabel() { const now=new Date(), cr=S.per==='c'?periodRange('c',0):nu
     c: cr && cr[0].getFullYear()>2000 ? fmtIt(iso(cr[0]))+' → '+fmtIt(iso(addDays(cr[1],-1))) : 'Date da scegliere' }[S.per]; }
 function setPer(v) { S.per=v; store.set('per',v); }
 function activeFilters() { const F=S.filt, a=[];
-  if (F.plan==='max2') a.push({k:'plan', l:'Piano', t:'Regole del piano (condizioni, orari, regole del giorno): '+dayRuleTxt(null,true)});   // t: il testo intero (tooltip e Claude)
+  if (F.plan==='max2') a.push({k:'plan', l:'Piano', t:'Regole del piano (trade al giorno e quando fermarsi): '+dayRuleTxt(null,true)});   // t: il testo intero (tooltip e Claude)
   if (fAs(F).length) a.push({k:'asset', l:mkList(fAs(F))});
   if (F.dir) a.push({k:'dir', l:F.dir});
   if (tgtP()) a.push({k:'tgt', l:'Uscite del piano', t:'Esito con le uscite del piano: '+mgTxt(PL().g)});
@@ -660,7 +660,7 @@ function openFilters() {
 function renderFilters() {
   const F=S.filt, E=S.type==='EOW';
   let h='<div class="fsec"><div class="field"><span class="flabel">Regole del piano</span>'+seg('f-plan',[{v:'max2',l:'Quelle del piano'},{v:'',l:'Nessuna'}],F.plan||'')+
-        '<span class="hint">'+(E?'Condizioni, orari e regole del giorno del tuo piano':'Le regole del giorno del tuo piano')+': '+esc(dayRuleTxt())+'. Le cambi in Impostazioni → Il mio piano.</span></div>'+
+        '<span class="hint">'+'Quanti trade al giorno e quando fermarti, dal tuo piano: '+esc(dayRuleTxt())+'. Le cambi in Impostazioni → Il mio piano.</span></div>'+
         (E?'<div class="field"><span class="flabel">Esito del trade</span>'+seg('f-tgt',[...[1,2,3,4,5].map(k=>({v:k,l:k+'R'})),{v:'P',l:'Piano'}],tgtP()?'P':tgt())+
           '<span class="hint">«Piano» usa le uscite del tuo piano: '+esc(mgTxt())+'.</span></div>':'')+'</div>';
   h+='<div class="fsec"><div class="flabel">Periodo · lo stesso della barra in Panoramica</div>'+chips('quick',[{v:'all',l:'Tutto'},{v:'w',l:wkLbl()},{v:'m',l:'Questo mese'},{v:'3m',l:'Ultimi 3 mesi'},{v:'y',l:'Quest\'anno'},{v:'c',l:'Date'}],S.per).replace('class="chips"','class="chips scrollx"')+
@@ -668,7 +668,7 @@ function renderFilters() {
   h+='<div class="fsec"><div class="field"><span class="flabel">Asset · anche più di uno</span>'+segm('f-asset',L.asset,fAs(F))+'</div>'+
      (hasCol('Direzione')?'<div class="field"><span class="flabel">Direzione</span>'+seg('f-dir',[{v:'',l:'Tutte'},...L.dir],F.dir||'')+'</div>':'')+
      '<div class="field"><span class="flabel">Idea 5m · anche più di una</span>'+chips('f-idea',L.idea,F.idea||[],true)+'</div>'+
-     (hasCol('SMT')?'<div class="field"><span class="flabel">SMT · anche più di una</span>'+chips('f-smt',L.smt,F.smt||[],true)+(E&&PL().smt?'<span class="hint" id="f-smt-h"'+(F.plan==='max2'?'':' hidden')+'>Con «Regole del piano» attive vale già il tuo piano: '+PL_SMT[PL().smt]+'. Quei trade restano fuori anche se qui li scegli; per vederli metti «Nessuna» in Regole del piano.</span>':'')+'</div>':'')+
+     (hasCol('SMT')?'<div class="field"><span class="flabel">SMT · anche più di una</span>'+chips('f-smt',L.smt,F.smt||[],true)+'</div>':'')+
      '<div class="field"><span class="flabel">Fascia oraria</span>'+chips('f-band',[{v:'',l:'Tutte'},...L.bands.map(b=>b[0])],F.band||'')+'</div>'+
      '<div class="g2"><div class="field"><span class="flabel">Coming from LVN</span>'+seg('f-lvn',[{v:'',l:'Tutti'},{v:'Si',l:'Sì'},'No'],F.lvn||'')+'</div>'+
      '<div class="field"><span class="flabel">1m clean</span>'+seg('f-clean',[{v:'',l:'Tutti'},'Sì','No'],F.clean||'')+'</div></div></div>';
@@ -687,10 +687,9 @@ function filtClick(b) {
     if (k==='quick') { setPer(v); renderFilters(); renderCurrent(true); return; }
     if (ch.dataset.multi) { const f=k.slice(2), a=f==='asset'?fAs(F):(F[f]||[]); F[f]=a.includes(v)?a.filter(x=>x!==v):[...a,v]; b.classList.toggle('on'); }
     else { F[k.slice(2)]=v; ch.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on', c===b)); } }
-  if (sg && sg.dataset.seg==='f-plan' && $('f-smt-h')) $('f-smt-h').hidden=F.plan!=='max2';
   saveFilt(); filtFoot(); renderCurrent(true);
 }
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['core.js'] = '2026-11-17.1';
+EB_V['core.js'] = '2026-11-17.2';
