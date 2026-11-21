@@ -124,15 +124,20 @@ function noteCheck(s) { s=String(s||'').trim(); if (!s) return null;
     : /\d\s*r(?!r)/i.test(bad) || /\dR\b/.test(bad) ? 'dopo il numero va «rr»' : /chiude/i.test(bad) ? 'la chiusura si scrive «alle 21:59 chiude a 0.77rr senza toccare lo stop»' : 'frase non prevista';
   return { ok:false, bad:bad||'', why }; }
 const NOTE_RULES = 'regole-note.md';
-// Percorso di un trade dell'EOW: quello completo dai dati (file «EOW Percorsi», colonne Percorso / Percorso fine / Percorso chiusura
-// aggiunte da getTrades di Code.gs) se c'è, altrimenti quello scritto nella nota. cl = valore di chiusura alle 21:59 (null = chiuso
-// allo stop o fine ignota). Si calcola una volta per trade.
+// Percorso di un trade dell'EOW: quello completo dai dati minuto per minuto (file «EOW Percorsi», che getTrades di Code.gs manda in
+// D.pc: { 'ES|id del link 1m': [percorso, fine, chiusura] }) se c'è, altrimenti quello scritto nella nota. Con i dati la fine è
+// sempre nota: «stop» (l'ultimo punto è l'estremo della candela che tocca lo stop, quindi i punti sotto −1 contano −1) oppure
+// «21:59» (cl = chiusura). Si calcola una volta per trade.
+const linkId = s => { s=String(s||'').trim(); const m=s.match(/\/x\/([A-Za-z0-9]+)/); return m ? m[1] : (/^[A-Za-z0-9]+$/.test(s) ? s : ''); };
+function pcOf(t) { const D=S.data && S.data.EOW, pc=D && D.pc, r=t.raw||{}; if (!pc) return null;
+  const e=pc[String(r.Asset||'').trim()+'|'+linkId(r['1m Link'])]; if (!e) return null;
+  const p=String(e[0]||'').trim().split(/\s+/).map(x=>parseFloat(x.replace(',','.'))); if (p.length<2 || !p.every(isFinite)) return null;
+  const f=String(e[1]||'').trim().toLowerCase(), stop=f==='stop', c=parseFloat(String(e[2]??'').replace(',','.'));
+  if (stop) { for (let i=1;i<p.length;i++) if (p[i]<=-1) { p.length=i; p.push(-1); break; } }
+  else if (!f) return null;
+  return { p, af:null, stop, cl: stop ? null : (isFinite(c) ? c : p[p.length-1]), chk:false, dati:true }; }
 function pathOf(t) { if (!t) return null; if (t._pth!==undefined) return t._pth;
-  const r=t.raw||{}, s=String(r.Percorso||'').trim(); let q=null;
-  if (s) { const p=s.split(/\s+/).map(x=>parseFloat(x.replace(',','.')));
-    if (p.length>=2 && p.every(isFinite)) { const f=String(r['Percorso fine']||'').trim().toLowerCase(), stop=f==='stop', c=parseFloat(String(r['Percorso chiusura']??'').replace(',','.'));
-      q={ p, af:null, stop, cl: !stop && f ? (isFinite(c) ? c : p[p.length-1]) : null, chk:false, dati:true }; } }
-  return (t._pth = q || notePath(r.Note)); }
+  return (t._pth = pcOf(t) || notePath((t.raw||{}).Note)); }
 const tCl = t => { const q=pathOf(t); return q && q.cl!==null && isFinite(q.cl) ? q.cl : null; };
 // esito a target fisso T senza BE: T se ci arriva, altrimenti la chiusura delle 21:59 se il trade è chiuso lì, altrimenti lo stop
 const tgtR = (t, T, mx) => (mx??t.best)>=T-1e-9 ? T : (tCl(t) ?? -1);
@@ -716,4 +721,4 @@ function filtClick(b) {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['core.js'] = '2026-11-21.1';
+EB_V['core.js'] = '2026-11-21.2';

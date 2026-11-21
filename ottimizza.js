@@ -124,7 +124,7 @@ function optBase() {
   const weeks=[], wi={};
   if (ts.length) for (let d=pdIso(ts[0].wk); iso(d)<=ts[ts.length-1].wk; d=addDays(d,7)) { wi[iso(d)]=weeks.length; weeks.push(iso(d)); }
   return (S._optB={ src:E, cut, ts, weeks, wi, dir:ts.some(x=>x.t.dir), cc2:hasCol('2° CC')||ts.some(x=>x.t.cc2) }); }
-// Target fisso senza BE: esatto dal Max Real RR (massimo di tutto il trade: il trade finisce al target o allo stop). Stop a BE e
+// Target fisso senza BE: esatto dal Max Real RR (massimo di tutto il trade: finisce al target, allo stop o alle 21:59, tgtR). Stop a BE e
 // parziali dipendono dall'ordine dei movimenti: si seguono gli estremi scritti nella nota (notePath); dopo la fine della nota si
 // sa solo il massimo, e se non basta per decidere si prende il caso peggiore (mai una stima per eccesso).
 function optR(B, x, g, best) { const mx=x.mx;
@@ -700,15 +700,15 @@ function optCatBE(O, a, vw) { const B=O.B, P=O.P, W=B.weeks.length, X=optExit(O)
   const T=TS.includes(S.optBeT) ? S.optBeT : Td, own=T===Td, qb=own && optPureBE(Q.g) ? Q.g.be : 0, exCh=JSON.stringify(Q.g)!==JSON.stringify(P.g), v=r=>w3?r.r:r.a;
   const sim=g=>O.simOf(Object.assign({}, Q, { g })), num=sm=>({ a:optNums(B,sm,'all').rw, r:optNums(B,sm,3).rw }), s0=sim({ k:'T', t:T });
   // «Senza BE» è il riferimento: dice quanti trade ha nel periodo, quanti arrivano al target e quanti vanno in stop
-  let n0=0, w0=0, l0=0; s0.rs.forEach((r,i)=>{ if (w3 && B.wi[B.ts[i].wk]<W-3) return; n0++; if (r>1e-9) w0++; else if (r<-1e-9) l0++; });
-  const none=Object.assign({ l:'Senza BE', lv:0, sub:(w3?'in 3 settimane ':'sullo storico ')+n0+' trade: '+w0+' al target, '+l0+' in stop' }, num(s0)), lv=PLAN_MG.BE.filter(b=>b<T).map(b=>{ const sm=sim({ k:'T', t:T, be:b }); let sv=0, kl=0;
+  let n0=0, w0=0, l0=0, c0=0; s0.rs.forEach((r,i)=>{ if (w3 && B.wi[B.ts[i].wk]<W-3) return; n0++; if (r>=T-1e-9) w0++; else if (r<=-1+1e-9) l0++; else c0++; });
+  const none=Object.assign({ l:'Senza BE', lv:0, sub:(w3?'in 3 settimane ':'sullo storico ')+n0+' trade: '+w0+' al target, '+l0+' in stop'+(c0?', '+c0+' chiusi alle 21:59':'') }, num(s0)), lv=PLAN_MG.BE.filter(b=>b<T).map(b=>{ const sm=sim({ k:'T', t:T, be:b }); let sv=0, kl=0;
     // loss salvati e win chiusi a zero si contano nel periodo della vista (storico, oppure le ultime 3 settimane) e la riga lo dice
     s0.rs.forEach((r0,i)=>{ const r1=sm.rs.get(i); if (r1===undefined || (w3 && B.wi[B.ts[i].wk]<W-3)) return; if (r1>r0+1e-9) sv++; else if (r1<r0-1e-9) kl++; });
     return Object.assign({ l:'BE da '+fmtX(b)+'R', lv:b, sv, kl, sub:(w3?'in 3 settimane':'sullo storico')+' salva '+sv+' loss, chiude a zero '+kl+' win' }, num(sm)); });
   const rows=[none, ...lv], ref=rows.find(r=>r.lv===qb) || none; if (own) ref.tag=exCh ? 'da usare' : 'la tua';
   const top=rows.reduce((p,q)=>v(q)>v(p)?q:p), bl=lv.length ? lv.reduce((p,q)=>v(q)>v(p)?q:p) : null; top.hi=true; if (!top.tag) top.tag='il migliore';
   const rec=chg ? 'Stop a BE da '+fmtX(qb)+'R' : qb ? 'Tieni lo stop a BE da '+fmtX(qb)+'R' : 'Non mettere lo stop a BE', per=w3?'nelle ultime 3 settimane':'sullo storico';
-  const cost=r=>'sullo storico salva '+r.sv+' loss ma chiude a zero '+r.kl+' trade che poi arrivano al target';
+  const cost=r=>'sullo storico salva '+r.sv+' loss ma chiude a zero '+r.kl+' trade che poi chiudono in profitto';
   let head=rec, txt;
   // per ogni target: senza BE e il livello migliore
   const sumr=TS.map(t=>{ const n0=num(sim({ k:'T', t })), bs=PLAN_MG.BE.filter(b=>b<t).map(b=>({ b, x:num(sim({ k:'T', t, be:b })) })), bb=bs.length ? bs.reduce((p,q)=>v(q.x)>v(p.x)?q:p) : null; return { t, n:v(n0), b:bb ? bb.b : 0, x:bb ? v(bb.x) : NaN }; });
@@ -832,7 +832,7 @@ function optXBody(O, a) { const X=optExit(O), W=O.B.weeks.length, J=a.J, me=X.me
   const r=J.roll, ho=J.ho;
   return h+'<p class="op-leg">'+(r ? 'Le prove: scegliendo ogni settimana la migliore di questo tipo fino a quel momento (col suo gruppo di uscite vicine) e usandola la settimana dopo, avresti fatto '+fRw(r.rw)+' R a settimana contro '+fRw(r.rb)+' della tua (meglio in '+r.up+', peggio in '+r.dn+' settimane su '+r.n+'). ' : '')+
     (ho && ho.v!==me ? 'Senza le ultime '+ho.H+' settimane la scelta era '+esc(low1(cap(ho.v.g)))+', che proprio in quelle ha fatto '+fmtN(ho.R,1,true)+' R contro '+fmtN(ho.Rme,1,true)+' della tua. ' : '')+
-    'Stop spostato, trailing e parziali seguono il percorso scritto nelle note; se la nota finisce prima, conta il caso peggiore.</p>'; }
+    'Stop spostato, trailing e parziali seguono il percorso minuto per minuto dei dati, o la nota dove i dati mancano; se la nota finisce prima, conta il caso peggiore. Chi arriva alle 21:59 senza toccare stop né target chiude lì.</p>'; }
 // dentro un'area del piano: le modifiche proposte o segnalate, poi ogni valore con i suoi R a trade
 function optGBody(O, a) {
   let h='';
@@ -866,7 +866,7 @@ function optHowCard(O) { const p=optRoutine(O).pers, pc=x=>x===null ? 'una quota
     '<li><b>Come le metto insieme.</b> Prima decido quali trade prendere (condizioni, mercati, setup, orari, giorni, regole del giorno), una modifica alla volta finché ce n\'è una che passa. Poi scelgo l\'uscita sui trade che restano: tra i target che rendono simile prendo il più basso, perché ha cali meno profondi. Così il risultato non dipende da come è scritto oggi il tuo piano.</li>'+
     '<li><b>Quanto conta il breve periodo.</b> '+(p.w1===null && p.w3===null ? 'Lo misuro sui tuoi dati, ma per ora le settimane sono poche. ' : 'Sui tuoi dati, quando un orario, un setup o un giorno va meglio o peggio del solito, la settimana dopo se ne ritrova '+pc(p.w1)+' guardando solo l\'ultima settimana e '+pc(p.w3)+' guardando le ultime 3. ')+'Per questo una settimana da sola non decide mai.</li>'+
     '<li><b>Quanto fidarsi.</b> Rifaccio la stessa routine ogni weekend del passato con i soli dati di prima e guardo com\'è andata la settimana dopo: è il numero in «La routine alla prova».</li>'+
-    '<li><b>Uscite.</b> Il target fisso è esatto dal Max Real RR. Stop a BE, trailing e parziali seguono il percorso scritto nelle note; se la nota finisce prima, conta il caso peggiore.</li>'+
+    '<li><b>Uscite.</b> Il target fisso è esatto dal Max Real RR. Stop a BE, trailing e parziali seguono il percorso minuto per minuto dei dati (file «EOW Percorsi», ES e NQ) e, dove manca, quello scritto nelle note; se la nota finisce prima, conta il caso peggiore. Chi arriva alle 21:59 senza toccare stop né target chiude lì.</li>'+
     '<li><b>Quando leggerla.</b> Da venerdì a fine sessione e nel weekend vale per la settimana che viene; a metà settimana vale per quella in corso.</li></ul></details>'; }
 // pulsanti della pagina e della scheda del piano
 function optClick(b) {
@@ -921,4 +921,4 @@ function optCtx() { const O=optAll(); if (!O) return 'servono almeno 6 settimane
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['ottimizza.js'] = '2026-11-21.1';
+EB_V['ottimizza.js'] = '2026-11-21.2';
