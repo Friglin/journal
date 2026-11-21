@@ -91,29 +91,51 @@ const PL = () => CFG.piano;
 // percorso di un trade dalla nota dell'EOW: «scende a −0.3rr, raggiunge 1.2rr, torna a BE, … poi torna allo stop (−1rr)
 // (screenshot fino alle 17:53), oltre lo screenshot arriva a 6.3rr (EOW)». p = gli estremi in ordine (da 0), af = massimo dopo lo
 // screenshot, stop = finisce allo stop. null se la nota manca o ha frasi che non si riconoscono (allora vale solo il Max Real RR).
+// Fine della nota (dal 21/11/2026): «…, va/torna allo stop (-1rr)», «…, alle 21:59 chiude a 0.77rr senza toccare lo stop» (il trade
+// è chiuso lì: cl = valore di chiusura) oppure «… (screenshot fino alle 16:46), [oltre lo screenshot arriva a 8.46rr (EOW),] dopo lo
+// screenshot non si sa se torna allo stop» (fine ignota: l'ultima frase si toglie).
+const NOTE_STRIP = s => s.replace(/,?\s*\[da verificare[^\]]*\]/gi,'').replace(/\(screenshot fino alle [^)]*\)/gi,'')
+  .replace(/,?\s*oltre lo screenshot arriva a [^,]*\(EOW\)/gi,'').replace(/,?\s*dopo lo screenshot non si sa se torna allo stop\.?/gi,'');
+const NOTE_CL = /^alle\s+\d{1,2}[:.]\d{2}\s+chiude a\s+(BE|-?\d+(?:[.,]\d+)?\s*rr)(?:\s+senza toccare lo stop)?\.?$/i;
+const NOTE_MV = /^(scende a|raggiunge|torna a|arriva a|risale a)\s+(-?\d+(?:[.,]\d+)?)\s*rr\.?$/i;
 function notePath(s) {
   s=String(s||'').trim(); if (!s) return null;
   const num=t=>parseFloat(String(t).replace(',','.')), af=s.match(/oltre lo screenshot arriva a\s*(-?\d+(?:[.,]\d+)?)\s*rr/i);
   // [da verificare: …] lo aggiunge chi scrive le note quando il grafico e l'EOW non tornano: il percorso si usa lo stesso
   const chk=/\[da verificare[^\]]*\]/i.test(s);
-  const core=s.replace(/,?\s*\[da verificare[^\]]*\]/gi,'').replace(/\(screenshot fino alle [^)]*\)/gi,'').replace(/,?\s*oltre lo screenshot arriva a [^,]*\(EOW\)/gi,'');
-  const p=[0]; let stop=false, bad=0;
-  core.split(',').map(x=>x.trim()).filter(Boolean).forEach(part=>{ const q=part.replace(/^poi\s+/i,'');
+  const p=[0]; let stop=false, cl=null, bad=0;
+  NOTE_STRIP(s).split(',').map(x=>x.trim()).filter(Boolean).forEach(part=>{ const q=part.replace(/^poi\s+/i,'');
+    if (stop || cl!==null) { bad++; return; }   // dopo lo stop o la chiusura non c'è altro
     if (/^(va|torna) allo stop/i.test(q)) { p.push(-1); stop=true; return; }
     if (/^(torna|scende) a BE\b/i.test(q)) { p.push(0); return; }
-    const m=q.match(/^(scende a|raggiunge|torna a|arriva a|risale a)\s+(-?\d+(?:[.,]\d+)?)\s*rr$/i); if (m) p.push(num(m[2])); else bad++; });
-  return bad || p.length<2 ? null : { p, af:af?num(af[1]):null, stop, chk };
+    const c=q.match(NOTE_CL); if (c) { cl=/^BE$/i.test(c[1]) ? 0 : num(c[1]); if (Math.abs(p[p.length-1]-cl)>1e-9) p.push(cl); return; }
+    const m=q.match(NOTE_MV); if (m) p.push(num(m[2])); else bad++; });
+  return bad || p.length<2 && cl===null ? null : { p, af:af?num(af[1]):null, stop, cl, chk };
 }
 // controllo di una nota per chi la scrive: il primo pezzo che non si legge (con le regole di regole-note.md), oppure i punti letti
 function noteCheck(s) { s=String(s||'').trim(); if (!s) return null;
-  const P=notePath(s); if (P) return { ok:true, n:P.p.length-1, mx:Math.max(...P.p, P.af||0), stop:P.stop, chk:P.chk };
-  const core=s.replace(/,?\s*\[da verificare[^\]]*\]/gi,'').replace(/\(screenshot fino alle [^)]*\)/gi,'').replace(/,?\s*oltre lo screenshot arriva a [^,]*\(EOW\)/gi,'');
-  const bad=core.split(',').map(x=>x.trim()).filter(Boolean).find(part=>{ const q=part.replace(/^poi\s+/i,'');
-    return !(/^(va|torna) allo stop/i.test(q) || /^(torna|scende) a BE\b/i.test(q) || /^(scende a|raggiunge|torna a|arriva a|risale a)\s+(-?\d+(?:[.,]\d+)?)\s*rr$/i.test(q)); });
-  const why = !bad ? 'manca il percorso' : /\d,\d+\s*rr/i.test(s) && (/\d$/.test(bad) || /^\d/.test(bad)) ? 'i decimali vanno col punto (1.5rr, non 1,5rr)' : /−/.test(bad) ? 'usa il trattino - per i numeri negativi, non −'
-    : /\d\s*r(?!r)/i.test(bad) || /\dR\b/.test(bad) ? 'dopo il numero va «rr»' : 'frase non prevista';
+  const P=notePath(s); if (P) return { ok:true, n:P.p.length-1, mx:Math.max(...P.p, P.af||0), stop:P.stop, cl:P.cl, chk:P.chk };
+  let end=false;
+  const bad=NOTE_STRIP(s).split(',').map(x=>x.trim()).filter(Boolean).find(part=>{ const q=part.replace(/^poi\s+/i,'');
+    if (end) return true; if (/^(va|torna) allo stop/i.test(q) || NOTE_CL.test(q)) { end=true; return false; }
+    return !(/^(torna|scende) a BE\b/i.test(q) || NOTE_MV.test(q)); });
+  const why = !bad ? 'manca il percorso' : end ? 'dopo lo stop o la chiusura delle 21:59 non va scritto altro'
+    : /\d,\d+\s*rr/i.test(s) && (/\d$/.test(bad) || /^\d/.test(bad)) ? 'i decimali vanno col punto (1.5rr, non 1,5rr)' : /−/.test(bad) ? 'usa il trattino - per i numeri negativi, non −'
+    : /\d\s*r(?!r)/i.test(bad) || /\dR\b/.test(bad) ? 'dopo il numero va «rr»' : /chiude/i.test(bad) ? 'la chiusura si scrive «alle 21:59 chiude a 0.77rr senza toccare lo stop»' : 'frase non prevista';
   return { ok:false, bad:bad||'', why }; }
 const NOTE_RULES = 'regole-note.md';
+// Percorso di un trade dell'EOW: quello completo dai dati (file «EOW Percorsi», colonne Percorso / Percorso fine / Percorso chiusura
+// aggiunte da getTrades di Code.gs) se c'è, altrimenti quello scritto nella nota. cl = valore di chiusura alle 21:59 (null = chiuso
+// allo stop o fine ignota). Si calcola una volta per trade.
+function pathOf(t) { if (!t) return null; if (t._pth!==undefined) return t._pth;
+  const r=t.raw||{}, s=String(r.Percorso||'').trim(); let q=null;
+  if (s) { const p=s.split(/\s+/).map(x=>parseFloat(x.replace(',','.')));
+    if (p.length>=2 && p.every(isFinite)) { const f=String(r['Percorso fine']||'').trim().toLowerCase(), stop=f==='stop', c=parseFloat(String(r['Percorso chiusura']??'').replace(',','.'));
+      q={ p, af:null, stop, cl: !stop && f ? (isFinite(c) ? c : p[p.length-1]) : null, chk:false, dati:true }; } }
+  return (t._pth = q || notePath(r.Note)); }
+const tCl = t => { const q=pathOf(t); return q && q.cl!==null && isFinite(q.cl) ? q.cl : null; };
+// esito a target fisso T senza BE: T se ci arriva, altrimenti la chiusura delle 21:59 se il trade è chiuso lì, altrimenti lo stop
+const tgtR = (t, T, mx) => (mx??t.best)>=T-1e-9 ? T : (tCl(t) ?? -1);
 const planLoss = () => PL().lossR || NaN;   // limite di perdita giornaliero in R (NaN = nessuno)
 // gestione e regole del giorno in parole
 const fmtX = x => fmtN(x, x%1?1:0);
@@ -301,11 +323,11 @@ function all() {
 }
 // EOW: esito a un target fisso (default 2R) · Journal: RR scritto nel trade
 function model(T) {
-  if (S.type==='EOW') { T=T||2; return { rOf:t=> t.best>=T ? T : -1, isWin:t=>t.best>=T, isLoss:t=>!(t.best>=T) }; }
+  if (S.type==='EOW') return eModel(T||2);
   return { rOf:t=> isFinite(t.rr)?t.rr:0, isWin:t=>t.out==='Win', isLoss:t=>t.out==='Loss' };
 }
 // modelli fissi per file, da usare quando si guarda un file diverso da quello aperto
-const eModel = (T=2) => ({ rOf:t=> t.best>=T ? T : -1, isWin:t=>t.best>=T, isLoss:t=>!(t.best>=T) });
+const eModel = (T=2) => ({ rOf:t=>tgtR(t,T), isWin:t=>tgtR(t,T)>0, isLoss:t=>tgtR(t,T)<0 });
 function agg(ts, m) {
   const n=ts.length, w=ts.filter(m.isWin).length, l=ts.filter(m.isLoss).length; let R=0,gp=0,gl=0,eq=0,pk=0,dd=0;
   ts.forEach(t=>{ const r=m.rOf(t); R+=r; if (r>0) gp+=r; else gl-=r; eq+=r; pk=Math.max(pk,eq); dd=Math.min(dd,eq-pk); });
@@ -596,7 +618,9 @@ const curModel = () => tgtP() ? planModel() : model(tgt());
 const R_MIN = 5;
 function tradeDur(t, r, g) {
   if (isFinite(t.hold)) return Math.max(0, t.hold);
-  g=g||{ k:'T', t:2 }; const h=t.h||[];
+  g=g||{ k:'T', t:2 }; const h=t.h||[], cl=tCl(t);
+  // chiuso alle 21:59 (né target finale né stop): resta aperto fino a lì
+  if (cl!==null && isFinite(t.o) && (Math.abs(r-cl)<1e-9 || (g.k==='P' && Math.abs(r-(.5*g.t1+.5*cl))<1e-9))) return Math.max(0, 21*60+59-t.o);
   const lv=x=>{ const c=Math.min(5,Math.ceil(x-1e-9)), f=Math.min(5,Math.floor(x+1e-9)); return isFinite(h[c-1]) ? h[c-1] : f>=1 && isFinite(h[f-1]) ? h[f-1]+R_MIN*(x-f) : R_MIN*2*x; };
   if (g.k==='P') { if (r>0) return lv(g.t1); }
   else if (g.k==='L') { if (g.t && r>=g.t-1e-9) return lv(g.t); if (r>-1) { const top=Math.min(5, r+g.d); return lv(top)+R_MIN*g.d; } }
@@ -692,4 +716,4 @@ function filtClick(b) {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['core.js'] = '2026-11-17.2';
+EB_V['core.js'] = '2026-11-21.1';

@@ -128,8 +128,8 @@ function optBase() {
 // parziali dipendono dall'ordine dei movimenti: si seguono gli estremi scritti nella nota (notePath); dopo la fine della nota si
 // sa solo il massimo, e se non basta per decidere si prende il caso peggiore (mai una stima per eccesso).
 function optR(B, x, g, best) { const mx=x.mx;
-  if (g.k==='T' && !g.be) return mx>=g.t-1e-9 ? g.t : -1;
-  if (x.pth===undefined) x.pth = notePath(x.t && x.t.raw ? x.t.raw.Note : '');
+  if (g.k==='T' && !g.be) return tgtR(x.t, g.t, mx);
+  if (x.pth===undefined) x.pth = pathOf(x.t);
   if (x.pth) return optWalk(x.pth, mx, g)[best?1:0];
   // senza nota: come prima (stima)
   if (g.k==='T') return mx>=g.t-1e-9 ? g.t : mx>=g.be-1e-9 ? (g.bs||0) : -1;
@@ -152,6 +152,7 @@ function optWalk(N, mx, g) {
   for (let i=1;i<N.p.length;i++) { const v=N.p[i];
     if (v<=stop+1e-9) { const r=ex(stop); return [r,r]; }
     const r=up(v); if (r!==null) return [r,r]; }
+  if (N.cl!==null && N.cl!==undefined && isFinite(N.cl)) { const r=ex(N.cl); return [r,r]; }   // chiuso alle 21:59: esito esatto
   const M=Math.max(mx||0, top), save=[stop,half,top];
   const best=(()=>{ const r=up(M); return r!==null ? r : ex(stop); })();
   [stop,half,top]=save;
@@ -920,4 +921,4 @@ function optCtx() { const O=optAll(); if (!O) return 'servono almeno 6 settimane
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['ottimizza.js'] = '2026-11-17.2';
+EB_V['ottimizza.js'] = '2026-11-21.1';

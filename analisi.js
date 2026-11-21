@@ -66,7 +66,7 @@ function renderStats() {
   C.eq=card('Curva dei risultati', ts.length+' trade', '<div class="chart" id="c-eq"></div>', 300);
   C.mo=card('R per mese', '', '<div class="chart" id="c-mo"></div>', 330);
   if (E) {
-    C.tg=card('Win rate per target', 'expectancy a destra', levelRows([1,2,3,4,5].map(k=>{ const p=ts.filter(t=>t.best>=k).length/ts.length, ex=p*k-(1-p); return { l:k+'R', p, right:fmtN(ex,2,true), cls:sgn(ex), sub:k===T?(tgtP()?(PL().g.k==='P'?'prima metà del piano':'target del piano'):'target attuale'):'' }; })), 360);
+    C.tg=card('Win rate per target', 'expectancy a destra', levelRows([1,2,3,4,5].map(k=>{ const p=ts.filter(t=>t.best>=k).length/ts.length, ex=ts.reduce((a,t)=>a+tgtR(t,k),0)/ts.length; return { l:k+'R', p, right:fmtN(ex,2,true), cls:sgn(ex), sub:k===T?(tgtP()?(PL().g.k==='P'?'prima metà del piano':'target del piano'):'target attuale'):'' }; })), 360);
     const conv=(x,y)=>{ const nx=ts.filter(t=>t.best>=x).length, ny=ts.filter(t=>t.best>=y).length; return { l:x+'R → '+y+'R', p:nx?ny/nx:NaN, right:ny+'/'+nx }; };
     C.cv=card('Conversione tra livelli', 'chi arriva a… poi arriva a…', levelRows([conv(1,2),conv(2,3),conv(3,4),conv(4,5),conv(2,5)]), 390);
   } else {
@@ -302,4 +302,4 @@ async function delTrade() {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['analisi.js'] = '2026-11-17.2';
+EB_V['analisi.js'] = '2026-11-21.1';

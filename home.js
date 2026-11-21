@@ -34,7 +34,7 @@ function palAll(q) {
     rows.filter(({t,f})=>[t.raw.Data, String(t.raw.Ora).slice(0,5), t.a, t.idea, t.dir, t.news, f, (t.errs||[]).join(' '), t.note].join(' ').toLowerCase().includes(q))
       .sort((a,b)=>(b.t.d-a.t.d)||(b.t.o-a.t.o)).slice(0,8)
       .forEach(({t,f})=>out.push({ g:'Trade', l:t.a+' '+t.raw.Data+' '+String(t.raw.Ora).slice(0,5)+' · '+(t.idea||''), i:f==='EOW'?'list':'book',
-        em: f+' · '+(f==='EOW' ? (t.best>=2?'+2':'−1') : fmtN(isFinite(t.rr)?t.rr:0,2,true))+' R', run:()=>{ switchFile(f); openForm(t.row); } }));
+        em: f+' · '+(f==='EOW' ? (r=>r===2?'+2':r===-1?'−1':fmtN(r,2,true))(tgtR(t,2)) : fmtN(isFinite(t.rr)?t.rr:0,2,true))+' R', run:()=>{ switchFile(f); openForm(t.row); } }));
   }
   return out;
 }
@@ -168,7 +168,7 @@ function lastCard() {
 }
 // riga di trade per la Panoramica: indica il file e apre il trade giusto
 function mrow(t, f) {
-  const E=f==='EOW', r=E?(t.best>=2?2:-1):(isFinite(t.rr)?t.rr:0), w=E?t.best>=2:t.out==='Win', l=E?!(t.best>=2):t.out==='Loss';
+  const E=f==='EOW', r=E?tgtR(t,2):(isFinite(t.rr)?t.rr:0), w=E?r>0:t.out==='Win', l=E?r<0:t.out==='Loss';
   return '<button type="button" class="trow" data-open="'+f+':'+t.row+'">'+tline(t, f, { r, w, l, date:true, tag:true })+'</button>';
 }
 function openNewPick() {
@@ -509,4 +509,4 @@ function briefing() {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['home.js'] = '2026-11-17.2';
+EB_V['home.js'] = '2026-11-21.1';

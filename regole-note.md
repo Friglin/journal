@@ -27,13 +27,18 @@ Le sezioni 1–6 sono il metodo di chi scrive le note. Le sezioni 7–8 sono que
 
 ## 2. Dove finisce la nota
 
-La nota finisce al primo di questi tre eventi:
+Dal 21/11/2026 ogni nota finisce in uno di questi tre modi:
 
-1. **Il prezzo tocca 5R:** la nota finisce con `raggiunge 5rr`. Quello che succede dopo non viene descritto, anche se lo
-   screenshot continua.
-2. **Il prezzo tocca lo stop** (−1R, con tolleranza di 0,015R): `poi torna allo stop (-1rr)`, oppure `va allo stop (-1rr)` se
+1. **Il prezzo tocca lo stop** (−1R, con tolleranza di 0,015R): `poi torna allo stop (-1rr)`, oppure `va allo stop (-1rr)` se
    non è mai arrivato a +0,15R.
-3. **Lo screenshot finisce prima:** la nota finisce con `(screenshot fino alle HH:MM)`.
+2. **Il trade arriva alla candela delle 21:59 senza toccare lo stop:** la nota finisce con
+   `alle 21:59 chiude a 0.77rr senza toccare lo stop` (il valore è la chiusura di quella candela; `chiude a BE` se è tra −0,05R e
+   +0,05R). Per l'app il trade è chiuso lì: con target, stop spostati o parziali che non sono scattati prima, esce a quel valore.
+3. **Lo screenshot finisce prima:** la nota finisce con `(screenshot fino alle HH:MM)`, eventualmente
+   `, oltre lo screenshot arriva a 8.46rr (EOW)`, e poi `, dopo lo screenshot non si sa se torna allo stop`. L'app sa solo il
+   massimo di tutto il trade e prende il caso peggiore.
+
+Le note scritte prima possono finire anche con `raggiunge 5rr` (l'analisi si fermava a 5R): l'app le legge ancora.
 
 ## 3. Cosa entra nella nota
 
@@ -100,14 +105,21 @@ si può mettere `poi`.
 | `scende a -0.3rr` | il prezzo scende fino a −0,3R |
 | `torna a BE` | il prezzo torna all'ingresso (0R) |
 | `torna allo stop (-1rr)` / `va allo stop (-1rr)` | il prezzo arriva allo stop: il trade è finito |
+| `alle 21:59 chiude a 0.77rr senza toccare lo stop` | il trade è chiuso alle 21:59 a +0,77R (anche `chiude a BE`) |
 
-In fondo alla nota, e solo lì, sono ammessi, in quest'ordine:
+Dopo lo stop o la chiusura delle 21:59 non va scritto altro (solo l'eventuale `[da verificare: …]`).
+
+Se lo screenshot finisce prima, in fondo alla nota, e solo lì, sono ammessi, in quest'ordine:
 
 1. `(screenshot fino alle HH:MM)`;
-2. ` [da verificare: …]`.
+2. `, oltre lo screenshot arriva a 8.46rr (EOW)` (facoltativo: il massimo dell'EOW quando è oltre quello visto);
+3. `, dopo lo screenshot non si sa se torna allo stop`;
+4. ` [da verificare: …]`.
 
-Le note scritte con le regole precedenti possono avere anche `, oltre lo screenshot arriva a 11.1rr (EOW)` dopo lo screenshot:
-l'app lo legge ancora, ma le note nuove non lo usano.
+**Esempi di fine:**
+
+- `…, torna a 0.69rr, alle 21:59 chiude a 0.77rr senza toccare lo stop`
+- `…, torna a 2rr (screenshot fino alle 16:46), oltre lo screenshot arriva a 8.46rr (EOW), dopo lo screenshot non si sa se torna allo stop`
 
 Regole sui numeri:
 
@@ -130,15 +142,19 @@ Per ogni nota:
 1. Ogni pezzo tra due virgole è una frase della sezione 7, con o senza `poi`.
 2. I numeri hanno il punto, il trattino `-` e finiscono con `rr`.
 3. I punti sono in ordine di tempo e alternano salite e discese.
-4. La nota finisce con `raggiunge 5rr`, con lo stop oppure con `(screenshot fino alle HH:MM)`, ed eventualmente `[da verificare: …]`.
+4. La nota finisce con lo stop, con `alle 21:59 chiude a …rr senza toccare lo stop`, oppure con `(screenshot fino alle HH:MM)`
+   seguito da `dopo lo screenshot non si sa se torna allo stop`; eventualmente `[da verificare: …]` in fondo.
 
 Questa funzione Python legge le note esattamente come l'app. Restituisce `None` se la nota non si legge.
 
 ```python
 import re
 
+MV = r'^(scende a|raggiunge|torna a|arriva a|risale a)\s+(-?\d+(?:[.,]\d+)?)\s*rr\.?$'
+CL = r'^alle\s+\d{1,2}[:.]\d{2}\s+chiude a\s+(BE|-?\d+(?:[.,]\d+)?\s*rr)(?:\s+senza toccare lo stop)?\.?$'
+
 def leggi_nota(s):
-    """(punti, massimo_oltre_lo_screenshot, stop, da_verificare) oppure None se la nota non si legge."""
+    """(punti, massimo_oltre_lo_screenshot, stop, chiusura_21_59, da_verificare) oppure None se la nota non si legge."""
     s = (s or '').strip()
     if not s:
         return None
@@ -148,21 +164,32 @@ def leggi_nota(s):
     core = re.sub(r',?\s*\[da verificare[^\]]*\]', '', s, flags=re.I)
     core = re.sub(r'\(screenshot fino alle [^)]*\)', '', core, flags=re.I)
     core = re.sub(r',?\s*oltre lo screenshot arriva a [^,]*\(EOW\)', '', core, flags=re.I)
-    p, stop = [0.0], False
+    core = re.sub(r',?\s*dopo lo screenshot non si sa se torna allo stop\.?', '', core, flags=re.I)
+    p, stop, cl = [0.0], False, None
     for part in [x.strip() for x in core.split(',') if x.strip()]:
+        if stop or cl is not None:
+            return None          # dopo lo stop o la chiusura non c'è altro
         q = re.sub(r'^poi\s+', '', part, flags=re.I)
         if re.match(r'^(va|torna) allo stop', q, re.I):
             p.append(-1.0); stop = True; continue
         if re.match(r'^(torna|scende) a BE\b', q, re.I):
             p.append(0.0); continue
-        m = re.match(r'^(scende a|raggiunge|torna a|arriva a|risale a)\s+(-?\d+(?:[.,]\d+)?)\s*rr$', q, re.I)
+        c = re.match(CL, q, re.I)
+        if c:
+            cl = 0.0 if c.group(1).upper() == 'BE' else num(re.sub(r'\s*rr$', '', c.group(1), flags=re.I))
+            if abs(p[-1] - cl) > 1e-9:
+                p.append(cl)
+            continue
+        m = re.match(MV, q, re.I)
         if not m:
             return None          # frase non riconosciuta: la nota non si legge
         p.append(num(m.group(2)))
-    if len(p) < 2:
+    if len(p) < 2 and cl is None:
         return None
-    return p, (num(af.group(1)) if af else None), stop, chk
+    return p, (num(af.group(1)) if af else None), stop, cl, chk
 ```
 
 Per esempio, `leggi_nota("scende a -0.3rr, raggiunge 1.2rr, torna a 0.4rr, risale a 0.9rr")` restituisce
-`([0.0, -0.3, 1.2, 0.4, 0.9], None, False, False)`.
+`([0.0, -0.3, 1.2, 0.4, 0.9], None, False, None, False)` e
+`leggi_nota("raggiunge 1.5rr, torna a 0.69rr, alle 21:59 chiude a 0.77rr senza toccare lo stop")` restituisce
+`([0.0, 1.5, 0.69, 0.77], None, False, 0.77, False)`.
