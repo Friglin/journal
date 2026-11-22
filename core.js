@@ -614,7 +614,13 @@ const emptyState = (t, p, btn) => '<div class="card empty rise">'+logo(40)+'<div
 const fAs = F => Array.isArray(F.asset) ? F.asset : (F.asset ? [F.asset] : []);
 const FILT_DEF = f => { if ((f||S.file)==='Journal') return { asset:[], plan:'', tgt:2, idea:[] };
   const P=PL(), day=P.maxN||P.sw||P.sll||P.lossR||P.uno;
-  return { asset:P.asset.length<L.asset.length?P.asset.slice():[], plan:day?'max2':'', tgt:P.g.k==='T' && !P.g.be && Number.isInteger(P.g.t)?P.g.t:'P', idea:P.idee.length<L.idea.length?P.idee.slice():[] }; };
+  const sub=(a,all)=>a.length<all.length?a.slice():[];
+  // tutte le condizioni del piano diventano filtri (22/11/2026: prima SMT, LVN, news, orari… del piano non arrivavano ai filtri)
+  return { asset:sub(P.asset,L.asset), plan:day?'max2':'', tgt:P.g.k==='T' && !P.g.be && Number.isInteger(P.g.t)?P.g.t:'P', idea:sub(P.idee,L.idea),
+    smt:P.smt.slice(), lvn:P.lvn, clean:P.clean?'Sì':'', dir:P.dir, cc2:P.cc2, news:NEWS_OF[P.news].slice(), bande:sub(P.bande,L.bands.map(b=>b[0])), giorni:sub(P.giorni,L.days), pb:P.pb.slice() }; };
+const NEWS_OF = { '':[], nored:['No News Day','Orange News'], none:['No News Day'] };
+const fBand = F => Array.isArray(F.bande) ? F.bande : (F.band ? [F.band] : []);   // fasce: elenco (prima una sola, F.band)
+const fL = (F, k) => Array.isArray(F[k]) ? F[k] : [];
 function loadFilt() { let v=null; try { v=JSON.parse(sessionStorage.getItem('tj.filtBy2')||'null'); } catch(e) {}
   return v && v.EOW && v.Journal ? v : { EOW:FILT_DEF('EOW'), Journal:FILT_DEF('Journal') }; }
 const saveFilt = () => { S.filtBy[S.file]=S.filt; try { sessionStorage.setItem('tj.filtBy2', JSON.stringify(S.filtBy)); } catch(e) {} };
@@ -658,7 +664,9 @@ function filtered(m, noPer, noDay) {   // noDay: senza le regole del giorno (che
   const F=S.filt; m=m||curModel();
   let ts=all().filter(t=>
     (!fAs(F).length||fAs(F).includes(t.a)) && (!(F.idea&&F.idea.length)||F.idea.includes(t.idea)) && (!(F.smt&&F.smt.length)||F.smt.includes(t.smt)) &&
-    (!F.lvn||t.lvn===F.lvn) && (!F.clean||(F.clean==='Sì')===t.clean) && (!F.band||bandOf(t)===F.band) && (!F.dir||t.dir===F.dir));
+    (!F.lvn||t.lvn===F.lvn) && (!F.clean||(F.clean==='Sì')===t.clean) && (!fBand(F).length||fBand(F).includes(bandOf(t))) && (!F.dir||t.dir===F.dir) &&
+    (!fL(F,'news').length||fL(F,'news').includes(t.news)) && (!fL(F,'giorni').length||fL(F,'giorni').includes(t.day)) &&
+    (!fL(F,'pb').length||fL(F,'pb').includes(String(t.raw['Candele PB']??'').trim())) && (!F.cc2||(F.cc2==='si')===!!t.cc2));
   if (!noPer && S.per!=='all') ts=inRange(ts, periodRange(S.per,0));
   // «Regole del piano» = solo le regole del giorno (quanti trade al giorno e quando fermarsi), scelta dell'utente del 17/11/2026:
   // SMT, LVN, orari e le altre condizioni si scelgono solo dai filtri
@@ -677,7 +685,12 @@ function activeFilters() { const F=S.filt, a=[];
   if (tgtP()) a.push({k:'tgt', l:'Uscite del piano', t:'Esito con le uscite del piano: '+mgTxt(PL().g)});
   else if (S.type==='EOW' && tgt()!==2) a.push({k:'tgt', l:'Target '+tgt()+'R'});
   if (S.per!=='all' && S.tab!=='home' && S.tab!=='cal') a.push({k:'per', l:perLabel()});   // in Panoramica c'è già la barra del periodo
-  if (F.band) a.push({k:'band', l:F.band}); if (F.lvn) a.push({k:'lvn', l:'LVN '+(F.lvn==='Si'?'sì':'no')});
+  const bd=fBand(F); if (bd.length) a.push({k:'bande', l:bd.length===1?bd[0]:'Orari: '+bd.length+' fasce', t:bd.join(', ')});
+  const nw=fL(F,'news'); if (nw.length) a.push({k:'news', l:nw.length===1?nw[0]:'News: '+nw.map(x=>x==='No News Day'?'nessuna':x.replace(' News','')).join(' o ')});
+  const gg=fL(F,'giorni'); if (gg.length) a.push({k:'giorni', l:gg.length===1?gg[0]:gg.length+' giorni', t:gg.join(', ')});
+  const pb=fL(F,'pb'); if (pb.length) a.push({k:'pb', l:'Pullback: '+pb.join(', ')});
+  if (F.cc2) a.push({k:'cc2', l:F.cc2==='si'?'Con 2° CC':'Senza 2° CC'});
+  if (F.lvn) a.push({k:'lvn', l:'LVN '+(F.lvn==='Si'?'sì':'no')});
   if (F.clean) a.push({k:'clean', l:'1m clean '+F.clean.toLowerCase()});
   const sm=F.smt||[]; if (sm.length) a.push({k:'smt', l:sm.length===1?sm[0]:'SMT: '+sm.map(x=>x==='No SMT'?'nessuna':x.replace('SMT a ','a ')).join(' o ')});
   const id=F.idea||[]; if (id.length>2) a.push({k:'idea', l:'Idee: '+id.length+' su '+L.idea.length}); else id.forEach(i=>a.push({k:'idea:'+i, l:i}));
@@ -689,7 +702,7 @@ function fbar(d) {
 }
 function removeFilter(k) { const F=S.filt;
   if (k.indexOf('idea:')===0) F.idea=(F.idea||[]).filter(x=>x!==k.slice(5));
-  else if (k==='idea'||k==='smt'||k==='asset') F[k]=[]; else if (k==='per') setPer('all'); else if (k==='tgt') F.tgt=2; else F[k]='';
+  else if (['idea','smt','asset','news','giorni','pb'].includes(k)) F[k]=[]; else if (k==='bande') { F.bande=[]; delete F.band; } else if (k==='per') setPer('all'); else if (k==='tgt') F.tgt=2; else F[k]='';
   saveFilt(); renderCurrent(true);
 }
 function openFilters() {
@@ -707,9 +720,13 @@ function renderFilters() {
      (hasCol('Direzione')?'<div class="field"><span class="flabel">Direzione</span>'+seg('f-dir',[{v:'',l:'Tutte'},...L.dir],F.dir||'')+'</div>':'')+
      '<div class="field"><span class="flabel">Idea 5m · anche più di una</span>'+chips('f-idea',L.idea,F.idea||[],true)+'</div>'+
      (hasCol('SMT')?'<div class="field"><span class="flabel">SMT · anche più di una</span>'+chips('f-smt',L.smt,F.smt||[],true)+'</div>':'')+
-     '<div class="field"><span class="flabel">Fascia oraria</span>'+chips('f-band',[{v:'',l:'Tutte'},...L.bands.map(b=>b[0])],F.band||'')+'</div>'+
+     '<div class="field"><span class="flabel">Fasce orarie · anche più di una</span>'+chips('f-bande',L.bands.map(b=>b[0]),fBand(F),true)+'</div>'+
+     '<div class="field"><span class="flabel">Giorni · anche più di uno</span>'+chips('f-giorni',L.days,fL(F,'giorni'),true)+'</div>'+
+     '<div class="field"><span class="flabel">News · anche più di una</span>'+chips('f-news',L.news,fL(F,'news'),true)+'</div>'+
+     (hasCol('Candele PB')?'<div class="field"><span class="flabel">Candele di pullback · anche più di una</span>'+chips('f-pb',L.pb,fL(F,'pb'),true)+'</div>':'')+
      '<div class="g2"><div class="field"><span class="flabel">Coming from LVN</span>'+seg('f-lvn',[{v:'',l:'Tutti'},{v:'Si',l:'Sì'},'No'],F.lvn||'')+'</div>'+
-     '<div class="field"><span class="flabel">1m clean</span>'+seg('f-clean',[{v:'',l:'Tutti'},'Sì','No'],F.clean||'')+'</div></div></div>';
+     '<div class="field"><span class="flabel">1m clean</span>'+seg('f-clean',[{v:'',l:'Tutti'},'Sì','No'],F.clean||'')+'</div></div>'+
+     (hasCol('2° CC')?'<div class="field"><span class="flabel">2° CC</span>'+seg('f-cc2',[{v:'',l:'Tutti'},{v:'si',l:'Con'},{v:'no',l:'Senza'}],F.cc2||'')+'</div>':'')+'</div>';
   $('sh-body').innerHTML=h; stagger(); filtFoot();
 }
 function filtFoot() { const n=filtered().length;
@@ -723,11 +740,11 @@ function filtClick(b) {
   else if (sg) { const k=sg.dataset.seg.slice(2); F[k]= k==='tgt' ? (b.dataset.v==='P' ? 'P' : +b.dataset.v) : b.dataset.v; setSeg(sg,b.dataset.v); }
   else if (ch) { const k=ch.dataset.chips, v=b.dataset.v;
     if (k==='quick') { setPer(v); renderFilters(); renderCurrent(true); return; }
-    if (ch.dataset.multi) { const f=k.slice(2), a=f==='asset'?fAs(F):(F[f]||[]); F[f]=a.includes(v)?a.filter(x=>x!==v):[...a,v]; b.classList.toggle('on'); }
+    if (ch.dataset.multi) { const f=k.slice(2), a=f==='asset'?fAs(F):f==='bande'?fBand(F):(F[f]||[]); F[f]=a.includes(v)?a.filter(x=>x!==v):[...a,v]; if (f==='bande') delete F.band; b.classList.toggle('on'); }
     else { F[k.slice(2)]=v; ch.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on', c===b)); } }
   saveFilt(); filtFoot(); renderCurrent(true);
 }
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['core.js'] = '2026-11-22.1';
+EB_V['core.js'] = '2026-11-22.2';

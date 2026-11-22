@@ -195,7 +195,7 @@ function renderSet() {
   h+=sec('Prop firm e dollari','copy trading',propSet(fld2),85);
   h+=sec('Il mio piano','uguale su telefono e PC',planSumHtml()+
      '<div class="pl-acts"><button type="button" class="btn sm" data-act="planedit">'+ic('gear',16,2)+'Modifica il piano</button><button type="button" class="btn sec sm" data-nav="opt">'+ic('target',16,2)+'Ottimizza</button></div>'+
-     '<p class="hint" style="margin:12px 0 8px">L\'EOW si apre con mercati, setup e regole del giorno del piano. Disciplina e riepilogo di oggi usano le sue regole del giorno.</p>'+
+     '<p class="hint" style="margin:12px 0 8px">L\'EOW si apre con tutto il piano nei filtri: mercati, setup, SMT, LVN, news, orari, giorni e regole del giorno. Disciplina e riepilogo di oggi usano le sue regole del giorno.</p>'+
      '<button type="button" class="btn sec sm" data-act="cfgapply">Applica subito ai filtri dell\'EOW</button>',100);
   h+=sec('Note dei trade','come scriverle',noteSetHtml(),130);
   h+=sec('Checklist pre-sessione','una voce per riga',fld2('','<textarea class="inp" rows="6" data-cfg="check">'+esc(C.check.join('\n'))+'</textarea>','Compare nella Panoramica finché la sessione è aperta e si azzera ogni giorno.'),160);
@@ -632,4 +632,4 @@ function renderList() {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['pagine.js'] = '2026-11-22.1';
+EB_V['pagine.js'] = '2026-11-22.2';
