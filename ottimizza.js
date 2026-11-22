@@ -3,7 +3,6 @@
 // l'ordine conta (core.js → home.js → pagine.js → analisi.js → simula.js → ottimizza.js → scheda.js).
 
 // ───────────────────────── IL MIO PIANO: descrizione e scheda per modificarlo ─────────────────────────
-const PL_SMT = { '':'', nosf:'niente SMT a sfavore', fav:'solo SMT a favore' };
 const PL_LVN = { '':'', Si:'solo da LVN', No:'solo non da LVN' };
 const PL_CC2 = { '':'', si:'solo con 2° CC', no:'solo senza 2° CC' };
 const PL_NEWS = { '':'', nored:'niente giorni con Red News', none:'solo giorni senza news' };
@@ -11,7 +10,7 @@ const pbKey = pb => Object.keys(PLAN_PB).find(k=>PLAN_PB[k].join()===pb.join()) 
 const bandNames = () => L.bands.map(b=>b[0]);
 // le condizioni d'ingresso che il piano chiede (quelle lasciate «indifferente» non compaiono)
 function planCond(P) { P=P||PL(); const a=[];
-  if (P.dir) a.push('solo '+P.dir); if (P.smt) a.push(PL_SMT[P.smt]); if (P.lvn) a.push(PL_LVN[P.lvn]); if (P.clean) a.push('solo 1m pulito');
+  if (P.dir) a.push('solo '+P.dir); if (P.smt.length) a.push(smtTxt(P.smt)); if (P.lvn) a.push(PL_LVN[P.lvn]); if (P.clean) a.push('solo 1m pulito');
   if (P.cc2) a.push(PL_CC2[P.cc2]); if (P.pb.length) a.push('fino a '+P.pb.length+' candele di pullback'); if (P.news) a.push(PL_NEWS[P.news]);
   return a; }
 function planWhen(P) { P=P||PL(); const xb=bandNames().filter(b=>!P.bande.includes(b)), xd=L.days.filter(d=>!P.giorni.includes(d)), a=[];
@@ -31,7 +30,7 @@ function renderPlanSheet() {
   let h=sec('Cosa tradi','',f('Mercati · anche più di uno',chips('pl-asset',L.asset,P.asset,true))+f('Idee 5m che fanno parte del piano',chips('pl-idee',L.idea,P.idee,true))+
     f('Direzione',seg('pl-dir',[{v:'',l:'Long e Short'},'Long','Short'],P.dir)));
   h+=sec('Condizioni d\'ingresso','lascia «indifferente» quello che non guardi',
-    f('SMT',seg('pl-smt',[{v:'',l:'Indifferente'},{v:'nosf',l:'Non a sfavore'},{v:'fav',l:'Solo a favore'}],P.smt))+
+    f('SMT · anche più di una',chips('pl-smt',L.smt,P.smt.length?P.smt:L.smt,true),'Tutte accese = indifferente.')+
     '<div class="g2">'+f('Coming from LVN',seg('pl-lvn',[{v:'',l:'Indiff.'},{v:'Si',l:'Sì'},{v:'No',l:'No'}],P.lvn))+f('1m pulito obbligatorio',seg('pl-clean',[{v:'',l:'Indiff.'},{v:'si',l:'Sì'}],P.clean))+'</div>'+
     f('2° CC',seg('pl-cc2',[{v:'',l:'Indifferente'},{v:'si',l:'Obbligatoria'},{v:'no',l:'Esclusa'}],P.cc2))+
     f('Candele di pullback',seg('pl-pb',[{v:'',l:'Tutte'},{v:'2',l:'Fino a 2'},{v:'3',l:'Fino a 3'},{v:'4',l:'Fino a 4'}],pbKey(P.pb)))+
@@ -58,7 +57,9 @@ function planClick(b) {
   const sg=b.closest('[data-seg]'), ch=b.closest('[data-chips]'), k=(sg||ch||{}).dataset; if (!k) return false;
   const key=(sg?k.seg:k.chips); if (key.indexOf('pl-')!==0) return false;
   const P=JSON.parse(JSON.stringify(PL())), prev=JSON.parse(JSON.stringify(PL())), v=b.dataset.v, n=+v, name=key.slice(3);
-  if (ch && ch.dataset.multi) { const a=P[name]; P[name]=a.includes(v)?a.filter(x=>x!==v):a.concat(v);
+  if (name==='smt') { const a=P.smt.length?P.smt:L.smt.slice(), b=a.includes(v)?a.filter(x=>x!==v):a.concat(v);
+    if (!b.length) { toast('Lascia accesa almeno una SMT', true); return true; } P.smt=smtNorm(b); }
+  else if (ch && ch.dataset.multi) { const a=P[name]; P[name]=a.includes(v)?a.filter(x=>x!==v):a.concat(v);
     if (!P[name].length) { toast('Nel piano ne serve almeno uno', true); return true; } }
   else if (name==='pb') P.pb=PLAN_PB[v]||[];
   else if (name==='gk') P.g = v==='T' ? { k:'T', t:P.g.k==='P'?P.g.t1:P.g.k==='L'?(P.g.t||4):P.g.t } : v==='L' ? { k:'L', a:2, d:1, t:4 } : { k:'P', t1:2, s:1, t2:4 };
@@ -165,7 +166,7 @@ function optWalk(N, mx, g) {
   return [Math.min(worst,best), Math.max(worst,best)]; }
 function optPass(P, x) { const t=x.t;
   if (!P.asset.includes(mktOf(t.a)) || !P.idee.includes(t.idea) || !P.giorni.includes(t.day) || !P.bande.includes(x.band)) return false;
-  if ((P.dir && t.dir!==P.dir) || (P.smt==='fav' && t.smt!=='SMT a favore') || (P.smt==='nosf' && t.smt==='SMT a sfavore')) return false;
+  if ((P.dir && t.dir!==P.dir) || !smtIn(P, t.smt)) return false;
   if ((P.lvn && t.lvn!==P.lvn) || (P.clean && !t.clean) || (P.cc2==='si' && !t.cc2) || (P.cc2==='no' && t.cc2)) return false;
   if ((P.news==='nored' && t.news==='Red News') || (P.news==='none' && t.news!=='No News Day')) return false;
   if (P.pb.length && !P.pb.includes(x.pb)) return false;
@@ -265,7 +266,7 @@ function optMoves(B, P) {
   const tog=(cat,key,all,v,lbl)=>{ const on=P[key].includes(v); if (on && P[key].length<2) return; add(cat, (on?'togli ':'aggiungi ')+lbl, q=>{ q[key]=on ? q[key].filter(x=>x!==v) : all.filter(x=>q[key].includes(x)||x===v); }); };
   L.idea.forEach(i=>tog('idee','idee',L.idea,i,i)); bandNames().forEach(b=>tog('bande','bande',bandNames(),b,b)); L.days.forEach(d=>tog('giorni','giorni',L.days,d,d.toLowerCase()));
   const opt=(cat,key,vals,lbl)=>vals.forEach(v=>{ if (v!==P[key]) add(cat, lbl(v), q=>{ q[key]=v; }); });
-  opt('ctx','news',['','nored','none'],v=>v?PL_NEWS[v]:'tutti i giorni di news'); opt('ctx','smt',['','nosf','fav'],v=>v?PL_SMT[v]:'SMT indifferente');
+  opt('ctx','news',['','nored','none'],v=>v?PL_NEWS[v]:'tutti i giorni di news'); [[],SMT_OLD.nosf,SMT_OLD.fav].forEach(v=>{ if (v.join()!==P.smt.join()) add('ctx', v.length?smtTxt(v):'SMT indifferente', q=>{ q.smt=v.slice(); }); });
   opt('ctx','lvn',['','Si','No'],v=>v?PL_LVN[v]:'LVN indifferente'); opt('ctx','clean',['','si'],v=>v?'solo 1m pulito':'1m pulito indifferente');
   if (B.cc2) opt('ctx','cc2',['','si','no'],v=>v?PL_CC2[v]:'2° CC indifferente'); if (B.dir) opt('ctx','dir',['','Long','Short'],v=>v?'solo '+v:'Long e Short');
   ['','2','3','4'].forEach(k=>{ if (k!==pbKey(P.pb)) add('ctx', k?'fino a '+k+' candele di pullback':'tutte le candele di pullback', q=>{ q.pb=PLAN_PB[k]; }); });
@@ -313,7 +314,7 @@ function optGreedy(B, P0, to, ok, simOf, N, solo) {   // solo: serve solo il pia
   const same=q=>J(optGreedy(B,q,to,ok,simOf,N,true).P)===J(F);
   const steps=[], diff=(a,b)=>Array.isArray(a) ? a.filter(x=>!b.includes(x)).length+b.filter(x=>!a.includes(x)).length : (J(a)===J(b)?0:1);
   let Q=P0, bq=simOf(Q);
-  for (let k=0;k<20 && J(Q)!==J(F);k++) { const ms=optMoves(B,Q).filter(m=>{ const ks=Object.keys(F).filter(f=>J(m.P[f])!==J(Q[f])); return ks.length===1 && diff(m.P[ks[0]],F[ks[0]])<diff(Q[ks[0]],F[ks[0]]) && (!['asset','pb'].includes(ks[0]) || J(m.P[ks[0]])===J(F[ks[0]])); });
+  for (let k=0;k<20 && J(Q)!==J(F);k++) { const ms=optMoves(B,Q).filter(m=>{ const ks=Object.keys(F).filter(f=>J(m.P[f])!==J(Q[f])); return ks.length===1 && diff(m.P[ks[0]],F[ks[0]])<diff(Q[ks[0]],F[ks[0]]) && (!['asset','pb','smt'].includes(ks[0]) || J(m.P[ks[0]])===J(F[ks[0]])); });
     const cs=[...ms.filter(m=>m.cat!=='g'), ...ms.filter(m=>m.cat==='g')], last=cs.some(m=>J(m.P)===J(F));
     const m=(to===undefined && !last && cs.length>1 && cs.find(m=>same(m.P))) || cs[0]; if (!m) break; const v=simOf(m.P);
     steps.push({ l:m.l, cat:m.cat, c:optCmp(B,bq,v,to,N), b:bq, v, g2:m.cat==='g'?m.P.g:null }); Q=m.P; bq=v; }
@@ -438,14 +439,14 @@ function optDims(B, P) {
     ['bande','Fasce orarie',x=>x.band,bandNames(),q=>{ q.bande=bandNames(); }],
     ['giorni','Giorni',x=>x.t.day,L.days,q=>{ q.giorni=L.days.slice(); }],
     ['news','News',x=>x.t.news,L.news,q=>{ q.news=''; }],
-    ['smt','SMT',x=>x.t.smt,L.smt,q=>{ q.smt=''; }],
+    ['smt','SMT',x=>x.t.smt,L.smt,q=>{ q.smt=[]; }],
     ['lvn','Coming from LVN',x=>x.t.lvn==='Si'?'Da LVN':x.t.lvn==='No'?'Non da LVN':'',['Da LVN','Non da LVN'],q=>{ q.lvn=''; }],
     ['clean','Struttura 1m',x=>x.t.clean?'1m pulito':'1m non pulito',['1m pulito','1m non pulito'],q=>{ q.clean=''; }],
     ['pb','Candele di pullback',x=>x.pb?x.pb+(x.pb==='1'?' candela':x.pb==='Altro'?'':' candele'):'',L.pb.map(v=>v+(v==='1'?' candela':v==='Altro'?'':' candele')),q=>{ q.pb=[]; }]];
   if (B.cc2) dims.splice(8,0,['cc2','2° CC',x=>x.t.cc2?'Con 2° CC':'Senza 2° CC',['Con 2° CC','Senza 2° CC'],q=>{ q.cc2=''; }]);
   if (B.dir) dims.splice(8,0,['dir','Direzione',x=>x.t.dir,L.dir,q=>{ q.dir=''; }]);
   const inPlan={ asset:v=>P.asset.includes(v), idee:v=>P.idee.includes(v), bande:v=>P.bande.includes(v), giorni:v=>P.giorni.includes(v),
-    news:v=>!(P.news==='nored'&&v==='Red News') && !(P.news==='none'&&v!=='No News Day'), smt:v=>!(P.smt==='fav'&&v!=='SMT a favore') && !(P.smt==='nosf'&&v==='SMT a sfavore'),
+    news:v=>!(P.news==='nored'&&v==='Red News') && !(P.news==='none'&&v!=='No News Day'), smt:v=>smtIn(P,v),
     lvn:v=>!P.lvn || (P.lvn==='Si')===(v==='Da LVN'), clean:v=>!P.clean || v==='1m pulito', cc2:v=>!P.cc2 || (P.cc2==='si')===(v==='Con 2° CC'),
     dir:v=>!P.dir || v===P.dir, pb:v=>!P.pb.length || P.pb.includes(String(v).split(' ')[0]) };
   return { dims, inPlan }; }
@@ -921,4 +922,4 @@ function optCtx() { const O=optAll(); if (!O) return 'servono almeno 6 settimane
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['ottimizza.js'] = '2026-11-21.2';
+EB_V['ottimizza.js'] = '2026-11-22.1';

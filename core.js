@@ -69,15 +69,24 @@ normProp();
 // il prezzo a distanza LD da quando arriva a LA, con target LT (0 = nessuno), metà a P1 con stop a +PS e resto a P2
 const PLAN_MG = { T:[1,1.5,2,2.5,3,3.5,4,4.5,5], BE:[1,1.5,2,2.5,3], BS:[0,.5,1,1.5,2], LA:[1,1.5,2,2.5,3], LD:[.5,1,1.5,2], LT:[0,3,4,5], P1:[1.5,2,2.5,3], PS:[0,.5,1,1.5], P2:[3,4,5] };
 const PLAN_PB = { '':[], '2':['1','2'], '3':['1','2','3'], '4':['1','2','3','4'] };
+// SMT del piano: elenco dei valori ammessi (vuoto = tutti), a scelta multipla dal 22/11/2026. Prima era '' / 'nosf' / 'fav'.
+const SMT_OLD = { nosf:['SMT a favore','No SMT'], fav:['SMT a favore'] };
+function smtNorm(v) { const a=Array.isArray(v) ? L.smt.filter(x=>v.includes(x)) : (SMT_OLD[v]||[]).slice(); return a.length===L.smt.length ? [] : a; }
+const smtIn = (P, v) => !P.smt.length || P.smt.includes(v);
+const SMT_N = { 'SMT a favore':'SMT a favore', 'SMT a sfavore':'SMT a sfavore', 'No SMT':'senza SMT' };
+function smtTxt(a) { a=smtNorm(a); if (!a.length) return '';
+  if (a.length===1) return 'solo '+SMT_N[a[0]];
+  const out=L.smt.find(x=>!a.includes(x)); return out==='No SMT' ? 'niente trade senza SMT' : 'niente '+SMT_N[out]; }
 function planDef() { const P=CFG.plan;   // le impostazioni di prima (asset, idee e «max 2 al giorno» dell'EOW, limite di perdita)
-  return { asset: CFG.asset ? [CFG.asset] : L.asset.slice(), idee: L.idea.filter(i=>!(CFG.exIdea||[]).includes(i)), dir:'', smt:'', lvn:'', clean:'', cc2:'', news:'',
+  return { asset: CFG.asset ? [CFG.asset] : L.asset.slice(), idee: L.idea.filter(i=>!(CFG.exIdea||[]).includes(i)), dir:'', smt:[], lvn:'', clean:'', cc2:'', news:'',
     bande: L.bands.map(b=>b[0]), giorni: L.days.slice(), pb: [], g:{ k:'P', t1:2, s:1, t2:4 }, maxN: P==='max2'?2:0, sw: P==='max2'?1:0, sll:0, uno:0,
     lossR: isFinite(num(CFG.lossR)) && num(CFG.lossR)>0 ? num(CFG.lossR) : 0, altro:'' }; }
 function normPiano() {
   const d=planDef(), q=Object.assign({}, d, CFG.piano||{}), inL=(a,all,def)=>{ const v=Array.isArray(a)?all.filter(x=>a.includes(x)):[]; return v.length?v:def; };
   q.asset=inL(q.asset, L.asset, d.asset); q.idee=inL(q.idee, L.idea, d.idee); q.bande=inL(q.bande, L.bands.map(b=>b[0]), d.bande); q.giorni=inL(q.giorni, L.days, d.giorni);
   q.pb=Array.isArray(q.pb)?L.pb.filter(x=>q.pb.includes(x)):[];
-  ['dir','smt','lvn','clean','cc2','news'].forEach(k=>{ q[k]=String(q[k]||''); });
+  q.smt=smtNorm(q.smt);
+  ['dir','lvn','clean','cc2','news'].forEach(k=>{ q[k]=String(q[k]||''); });
   const g=q.g||{}, has=(a,v)=>a.includes(+v);
   q.g = g.k==='T' && has(PLAN_MG.T,g.t) ? Object.assign({ k:'T', t:+g.t }, has(PLAN_MG.BE,g.be) && +g.be<+g.t ? Object.assign({ be:+g.be }, has(PLAN_MG.BS,g.bs) && +g.bs>0 && +g.bs<+g.be ? { bs:+g.bs } : {}) : {})
       : g.k==='L' && has(PLAN_MG.LA,g.a) && has(PLAN_MG.LD,g.d) && has(PLAN_MG.LT,g.t||0) && (!+g.t || +g.t>+g.a) ? { k:'L', a:+g.a, d:+g.d, t:+g.t||0 }
@@ -721,4 +730,4 @@ function filtClick(b) {
 
 
 // questo file è stato letto tutto: versione (la scrive tools/build.py)
-EB_V['core.js'] = '2026-11-21.2';
+EB_V['core.js'] = '2026-11-22.1';
